@@ -18,7 +18,7 @@
 
 .app-shell > header.topbar { grid-area: top; }
 .app-shell > aside.left-rail { grid-area: left; }
-.app-shell > main.stage-placeholder { grid-area: main; }
+.app-shell > main.stage { grid-area: main; }
 .app-shell > footer.statusbar { grid-area: status; }
 
 /* Right-rail inspector slot is reserved for Task H (comparison mode). For now,
@@ -172,18 +172,6 @@
 .sample-item__meta {
   font-size: var(--font-size-tiny);
   color: var(--color-text-tertiary);
-}
-
-/* ---------- Main placeholder ---------- */
-
-.stage-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg);
-  color: var(--color-text-tertiary);
-  font-size: var(--font-size-body);
-  overflow: hidden;
 }
 
 /* ---------- StatusBar ---------- */

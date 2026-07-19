@@ -1,14 +1,11 @@
 import type { JSX } from 'react';
+import { formatBp } from '../../genomics/coords';
 import { useViewport } from '../../store/viewport';
 
-function formatBp(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}Mb`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}kb`;
-  return `${n}bp`;
-}
-
 export function StatusBar(): JSX.Element {
-  const { chr, start, end } = useViewport((s) => s.viewport);
+  const chr = useViewport((state) => state.chr);
+  const start = useViewport((state) => state.start);
+  const end = useViewport((state) => state.end);
 
   return (
     <footer className="statusbar">

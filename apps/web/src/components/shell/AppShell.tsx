@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import { Stage } from '../stage/Stage';
 import { TopBar } from './TopBar';
 import { LeftRail } from './LeftRail';
 import { StatusBar } from './StatusBar';
@@ -9,7 +10,7 @@ export function AppShell(): JSX.Element {
     <div className="app-shell">
       <TopBar />
       <LeftRail />
-      <main className="stage-placeholder">中央 Stage — Task D 起实现</main>
+      <Stage />
       <StatusBar />
     </div>
   );
