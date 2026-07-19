@@ -37,6 +37,10 @@ interface LaneProps {
   trackName?: string;
   bedKind?: BedKind;
   height?: number;
+  /** Override the active sample (used by comparison mode). */
+  sampleId?: string;
+  /** Mirror bigwig fill direction (sample B in comparison mode). */
+  mirror?: boolean;
 }
 
 function isBigwigData(data: LaneData | undefined): data is BigwigData {
@@ -53,10 +57,12 @@ export function Lane({
   trackName,
   bedKind,
   height,
+  sampleId: sampleIdOverride,
+  mirror = false,
 }: LaneProps): JSX.Element {
   const viewport = useViewport();
   const activeSample = useActiveSample();
-  const sampleId = activeSample ?? 'Brain_BF3';
+  const sampleId = sampleIdOverride ?? activeSample ?? 'Brain_BF3';
   const laneHeight = height ?? HEIGHTS[kind];
   const [colorMap, setColorMap] = useState<ColormapName>('rdbu');
   const viewportWidth = viewport.end - viewport.start;
@@ -173,6 +179,7 @@ export function Lane({
           loading={query.isLoading}
           error={query.error}
           height={laneHeight}
+          mirror={mirror}
         />
       </div>
     </div>

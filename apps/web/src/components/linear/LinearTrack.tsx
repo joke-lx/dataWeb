@@ -31,6 +31,7 @@ interface LinearTrackProps {
   vmin?: number;
   vmax?: number;
   height: number;
+  mirror?: boolean;
 }
 
 export function LinearTrack({
@@ -43,6 +44,7 @@ export function LinearTrack({
   vmin = 0,
   vmax = 1,
   height,
+  mirror = false,
 }: LinearTrackProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,7 +88,7 @@ export function LinearTrack({
     try {
       switch (kind) {
         case 'bigwig':
-          renderBigwig(renderContext, data as Float32Array, vmin, vmax);
+          renderBigwig(renderContext, data as Float32Array, vmin, vmax, mirror);
           break;
         case 'bedGraph':
           renderBedGraph(
@@ -115,7 +117,7 @@ export function LinearTrack({
     } finally {
       ctx.globalAlpha = 1;
     }
-  }, [kind, data, viewport, height, vmin, vmax, sampleId, trackName]);
+  }, [kind, data, viewport, height, vmin, vmax, sampleId, trackName, mirror]);
 
   useEffect(() => {
     render();
