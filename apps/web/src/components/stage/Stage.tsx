@@ -6,17 +6,6 @@ import { useViewport } from '../../store/viewport';
 import { Lane } from './Lane';
 import './stage.css';
 
-const SAMPLE_ID = 'Brain_BF3';
-
-const LANE_CONFIGS = [
-  { kind: 'hic', title: 'Hi-C matrix' },
-  { kind: 'bigwig', title: 'RNA-seq', trackName: 'rna_seq' },
-  { kind: 'bedGraph', title: 'AB index', trackName: 'ab' },
-  { kind: 'tadBar', title: 'TAD boundary', trackName: 'tad' },
-  { kind: 'pei', title: 'PEI anchors', trackName: 'pei' },
-  { kind: 'gene', title: 'Gene model', trackName: 'gene' },
-] as const;
-
 export function Stage(): JSX.Element {
   const stageRef = useRef<HTMLDivElement>(null);
   useD3Zoom(stageRef);
@@ -34,14 +23,32 @@ export function Stage(): JSX.Element {
         <span className="bin">bin {bin.toLocaleString()} bp</span>
       </header>
       <div className="stage-content">
-        {LANE_CONFIGS.map((lane) => (
-          <Lane
-            key={lane.kind}
-            {...lane}
-            sampleId={SAMPLE_ID}
-            trackName={'trackName' in lane ? lane.trackName : undefined}
-          />
-        ))}
+        <Lane kind="hic" title="Hi-C matrix" />
+        <Lane kind="bigwig" title="RNA-seq" trackName="rna_seq" />
+        <Lane
+          kind="bedGraph"
+          title="AB index"
+          trackName="ab"
+          bedKind="ab"
+        />
+        <Lane
+          kind="tadBar"
+          title="TAD boundary"
+          trackName="tad"
+          bedKind="tad"
+        />
+        <Lane
+          kind="pei"
+          title="PEI anchors"
+          trackName="pei"
+          bedKind="pei"
+        />
+        <Lane
+          kind="gene"
+          title="Gene model"
+          trackName="gene"
+          bedKind="gene"
+        />
       </div>
     </main>
   );

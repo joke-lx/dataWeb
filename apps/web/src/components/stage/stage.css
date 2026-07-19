@@ -79,10 +79,21 @@
 .lane-content {
   display: flex;
   min-width: 0;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   overflow: hidden;
   color: var(--color-text-tertiary);
+}
+
+.lane-content > .linear-track,
+.hic-lane-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.hic-lane-content {
+  width: 100%;
+  min-height: 0;
 }
 
 .placeholder {

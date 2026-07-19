@@ -1,0 +1,28 @@
+.linear-track {
+  position: relative;
+  width: 100%;
+  background: var(--color-surface-1);
+  border-bottom: var(--track-separator) solid var(--color-border);
+  overflow: hidden;
+}
+
+.linear-track canvas {
+  display: block;
+}
+
+.track-loading {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.track-error {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 11px;
+  color: var(--color-sv-del);
+  font-weight: bold;
+}

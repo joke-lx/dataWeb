@@ -1,4 +1,9 @@
-import type { Species, Sample } from './types';
+import type {
+  BedKind,
+  BedRecordByKind,
+  Sample,
+  Species,
+} from './types';
 
 const API_BASE = ''; // proxied via vite
 
@@ -14,6 +19,72 @@ export async function fetchSamples(species: string): Promise<Sample[]> {
   return r.json();
 }
 
+export async function fetchBigwig(
+  sample: string,
+  track: string,
+  chr: string,
+  start: number,
+  end: number,
+  bins: number,
+): Promise<{ values: Float32Array; vmin: number; vmax: number }> {
+  const params = new URLSearchParams({
+    sample,
+    track,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bins: String(Math.max(1, Math.round(bins))),
+  });
+  const r = await fetch(`${API_BASE}/api/bigwig/values?${params}`);
+  if (!r.ok) throw new Error(`bigwig: ${r.status}`);
+  const buf = await r.arrayBuffer();
+  const dtype = r.headers.get('X-Genomics-Dtype') ?? 'float32';
+  if (dtype !== 'float32') throw new Error(`unexpected dtype: ${dtype}`);
+
+  const values = new Float32Array(buf);
+  const headerVmin = r.headers.get('X-Genomics-Vmin');
+  const headerVmax = r.headers.get('X-Genomics-Vmax');
+  let inferredMin = 0;
+  let inferredMax = 1;
+  if (values.length > 0) {
+    inferredMin = values[0];
+    inferredMax = values[0];
+    for (let index = 1; index < values.length; index += 1) {
+      inferredMin = Math.min(inferredMin, values[index]);
+      inferredMax = Math.max(inferredMax, values[index]);
+    }
+  }
+
+  return {
+    values,
+    vmin: headerVmin === null ? inferredMin : Number.parseFloat(headerVmin),
+    vmax: headerVmax === null ? inferredMax : Number.parseFloat(headerVmax),
+  };
+}
+
+export async function fetchBed<K extends BedKind>(
+  sample: string,
+  kind: K,
+  chr: string,
+  start: number,
+  end: number,
+): Promise<BedRecordByKind[K][]> {
+  const params = new URLSearchParams({
+    sample,
+    kind,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+  });
+  const r = await fetch(`${API_BASE}/api/bed/overlap?${params}`);
+  if (!r.ok) throw new Error(`bed: ${r.status}`);
+  const response = (await r.json()) as {
+    records?: BedRecordByKind[K][];
+  };
+  return response.records ?? [];
+}
+
+
 export interface HicMatrixResponse {
   matrix: Float32Array;
   shape: [number, number];
@@ -28,9 +99,14 @@ export async function fetchHicMatrix(
   end: number,
   bin: number,
 ): Promise<HicMatrixResponse> {
-  const r = await fetch(
-    `${API_BASE}/api/hic/matrix?sample=${encodeURIComponent(sample)}&chr=${encodeURIComponent(chr)}&start=${start}&end=${end}&bin=${bin}`,
-  );
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+  });
+  const r = await fetch(`${API_BASE}/api/hic/matrix?${params}`);
   if (!r.ok) throw new Error(`hic: ${r.status}`);
   const buf = await r.arrayBuffer();
   const dtype = r.headers.get('X-Genomics-Dtype') ?? 'float32';
