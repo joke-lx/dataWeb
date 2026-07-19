@@ -1,0 +1,265 @@
+"""Deterministic mock generators for Hi-C, bigwig and bed-style tracks.
+
+Every generator derives a seed from
+``sha256(f"{sample_id}|{chr}|{start}|{end}|{bin}|{track}")`` so the same
+request always yields the same bytes. The shape of each response matches the
+real backend contract (see ``docx/plan/architecture.md`` §2).
+"""
+
+from __future__ import annotations
+
+import hashlib
+
+import numpy as np
+
+
+def seed_rng(*parts: object) -> np.random.Generator:
+    """Return a ``numpy.random.Generator`` keyed by a sha256 of ``parts``."""
+    payload = "|".join(str(p) for p in parts)
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+    return np.random.default_rng(int(digest, 16))
+
+
+# ---------------------------------------------------------------------------
+# Hi-C contact matrix
+# ---------------------------------------------------------------------------
+
+# Vectorised diagonal band fallback for large n to avoid O(n^2) Python loops.
+_DIAG_BAND_N_MAX = 400
+
+
+def hic_matrix(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+    bin_bp: int,
+) -> tuple[np.ndarray, float, float]:
+    """Generate a synthetic Hi-C contact matrix.
+
+    Components (per the plan):
+      1. Diagonal warm band: ``exp(-distance / 50kb) * 100``
+      2. TAD block-diagonal stripes every ~200kb
+      3. Sparse loop pixels (~50 random anchor pairs, each a 5x5 bright spot)
+      4. AB compartment signal: alternating row/col blocks every ~5Mb
+
+    Returns ``(mat, vmin, vmax)`` where ``vmin`` is the matrix minimum and
+    ``vmax`` is the 99th percentile (used as the client colour-map upper bound).
+    """
+    n = (end - start) // bin_bp
+    if n <= 0:
+        empty = np.zeros((0, 0), dtype=np.float32)
+        return empty, 0.0, 0.0
+
+    rng = seed_rng(sample_id, chrom, start, end, bin_bp, "hic")
+    mat = np.zeros((n, n), dtype=np.float32)
+
+    # 1. Diagonal warm band -------------------------------------------------
+    if n > _DIAG_BAND_N_MAX:
+        idx = np.arange(n, dtype=np.int64)
+        dist = np.abs(np.subtract.outer(idx, idx)) * bin_bp
+        diag = (np.exp(-dist / 50_000.0) * 100.0).astype(np.float32)
+        mat += diag
+        del dist, diag
+    else:
+        for i in range(n):
+            for j in range(n):
+                d = abs(i - j) * bin_bp
+                mat[i, j] += np.exp(-d / 50_000) * 100
+
+    # 2. TAD block-diagonal stripes every ~200kb ---------------------------
+    tad_period_bins = max(1, 200_000 // bin_bp)
+    for tad_start in range(0, n, tad_period_bins):
+        tad_end = min(tad_start + tad_period_bins, n)
+        mat[tad_start:tad_end, tad_start:tad_end] *= 2.5
+
+    # 3. Sparse loop pixels (~50 random anchor pairs, 5x5 bright spots) -----
+    for _ in range(50):
+        a, b = rng.integers(0, n, size=2)
+        if abs(int(a) - int(b)) > 10:
+            for di in range(-2, 3):
+                for dj in range(-2, 3):
+                    ai = int(a) + di
+                    bj = int(b) + dj
+                    if 0 <= ai < n and 0 <= bj < n:
+                        mat[ai, bj] += 30
+
+    # 4. AB compartment signal: alternating row/col blocks every ~5Mb ------
+    ab_period_bins = max(1, 5_000_000 // bin_bp)
+    for block_start in range(0, n, ab_period_bins):
+        block_end = min(block_start + ab_period_bins, n)
+        sign = 1.0 if (block_start // ab_period_bins) % 2 == 0 else -1.0
+        mat[block_start:block_end, :] += sign * 5
+        mat[:, block_start:block_end] += sign * 5
+
+    # Apply log1p so the client sees log-scaled contact counts.
+    mat = np.log1p(np.maximum(mat, 0))
+
+    vmin = float(mat.min())
+    vmax = float(np.percentile(mat, 99))
+    return mat, vmin, vmax
+
+
+# ---------------------------------------------------------------------------
+# bigwig signal
+# ---------------------------------------------------------------------------
+
+
+def bigwig_track(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+    n_bins: int,
+    track_name: str,
+) -> np.ndarray:
+    """Generate a synthetic 1D bigwig track (RNA-seq / ChIP-seq style)."""
+    if n_bins <= 0:
+        return np.zeros(0, dtype=np.float32)
+
+    rng = seed_rng(sample_id, chrom, start, end, n_bins, track_name)
+    x = np.linspace(0.0, 8.0 * np.pi, n_bins)
+    base = 5.0 + 3.0 * np.sin(x) + 2.0 * np.cos(x * 1.7)
+
+    peaks = np.zeros(n_bins, dtype=np.float32)
+    n_peaks = max(5, n_bins // 200)
+    idx = np.arange(n_bins)
+    for _ in range(n_peaks):
+        center = int(rng.integers(0, n_bins))
+        sigma = max(20, int(rng.integers(50, 200)))
+        amplitude = float(rng.uniform(2, 12))
+        peaks += amplitude * np.exp(-0.5 * ((idx - center) / sigma) ** 2)
+
+    arr = (base + peaks).astype(np.float32)
+    return np.maximum(arr, 0)
+
+
+# ---------------------------------------------------------------------------
+# bed-style tracks (AB / TAD / PEI / gene)
+# ---------------------------------------------------------------------------
+
+
+def bed_records(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+    track_name: str,
+    kind: str,
+) -> list[dict]:
+    """Generate bed-style records.
+
+    ``kind`` selects the recipe:
+      * ``"ab"``  — AB index bedGraph (signed score)
+      * ``"tad"`` — TAD boundary intervals
+      * ``"pei"`` — PEI anchors with linked gene metadata
+      * ``"gene"``— gene model (5 genes × 5–10 exons)
+    """
+    rng = seed_rng(sample_id, chrom, start, end, 0, track_name)
+    width = end - start
+    if width <= 0:
+        return []
+
+    if kind == "ab":
+        n_bins = max(1, min(100, width // 50_000))
+        bin_size = max(1, width // n_bins)
+        records: list[dict] = []
+        for i in range(n_bins):
+            x = i / max(1, n_bins - 1)
+            score = float(3.0 * np.sin(x * 6.0 * np.pi) + rng.normal(0, 0.5))
+            records.append(
+                {
+                    "chrom": chrom,
+                    "start": start + i * bin_size,
+                    "end": start + (i + 1) * bin_size,
+                    "score": score,
+                }
+            )
+        return records
+
+    if kind == "tad":
+        n_tads = int(rng.integers(20, 50))
+        records = []
+        cursor = start
+        for i in range(n_tads):
+            tad_len = int(rng.integers(50_000, 2_000_000))
+            tad_end = min(cursor + tad_len, end)
+            if tad_end > cursor:
+                records.append(
+                    {
+                        "chrom": chrom,
+                        "start": cursor,
+                        "end": tad_end,
+                        "score": float(i),
+                    }
+                )
+            cursor = tad_end + int(rng.integers(0, 50_000))
+            if cursor >= end:
+                break
+        return records
+
+    if kind == "pei":
+        mock_genes = [
+            "ENSSSCG00000004008",
+            "ENSSSCG00000038931",
+            "ENSSSCG00000047845",
+            "ENSSSCG00000030155",
+            "ENSSSCG00000027726",
+        ]
+        n_pei = 30
+        records = []
+        for _ in range(n_pei):
+            pei_start = int(rng.integers(start, end))
+            pei_end = pei_start + int(rng.integers(5_000, 30_000))
+            if pei_end > end:
+                pei_end = end
+            dist_kb = int(rng.integers(10, 1000))
+            p_val = float(np.exp(-rng.uniform(2, 20)))
+            gene = mock_genes[int(rng.integers(0, len(mock_genes)))]
+            records.append(
+                {
+                    "chrom": chrom,
+                    "start": pei_start,
+                    "end": pei_end,
+                    "gene_id": gene,
+                    "distance_kb": dist_kb,
+                    "p_value": p_val,
+                    "score": float(-np.log10(max(p_val, 1e-16))),
+                }
+            )
+        return records
+
+    if kind == "gene":
+        gene_names = [
+            "MOCK_GENE_A",
+            "MOCK_GENE_B",
+            "MOCK_GENE_C",
+            "MOCK_GENE_D",
+            "MOCK_GENE_E",
+        ]
+        records = []
+        n_genes = 5
+        gene_spacing = width // (n_genes + 1)
+        for g in range(n_genes):
+            gene_start = start + (g + 1) * gene_spacing - 50_000
+            gene_end = gene_start + int(rng.integers(30_000, 100_000))
+            strand = "+" if g % 2 == 0 else "-"
+            n_exons = int(rng.integers(5, 10))
+            exon_len = max(1, (gene_end - gene_start) // n_exons)
+            for e in range(n_exons):
+                exon_start = gene_start + e * exon_len
+                exon_end = exon_start + exon_len
+                records.append(
+                    {
+                        "chrom": chrom,
+                        "start": exon_start,
+                        "end": exon_end,
+                        "gene_name": gene_names[g],
+                        "exon_index": e,
+                        "strand": strand,
+                        "is_exon": True,
+                    }
+                )
+        return records
+
+    return []

@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routes import bed, bigwig, hic, samples, species
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,3 +34,11 @@ app.add_middleware(
 async def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+# Mock data routes (Task B)
+app.include_router(species.router)
+app.include_router(samples.router)
+app.include_router(hic.router)
+app.include_router(bigwig.router)
+app.include_router(bed.router)
