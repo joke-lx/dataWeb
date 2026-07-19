@@ -1,0 +1,72 @@
+.hic-matrix {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.hic-matrix canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hic-loading,
+.hic-error,
+.hic-overlay-meta {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: var(--font-size-tiny);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.hic-error {
+  color: var(--color-sv-del);
+}
+
+.hic-overlay-meta {
+  top: auto;
+  bottom: 8px;
+  left: 8px;
+}
+
+.colormap-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface-1);
+  border-bottom: var(--track-separator) solid var(--color-border);
+  font-size: var(--font-size-tiny);
+}
+
+.colormap-bar-gradient {
+  flex: 0 0 200px;
+  height: 12px;
+  border: 1px solid var(--color-border);
+}
+
+.colormap-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  flex: 0 0 200px;
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.colormap-bar-select {
+  margin-left: auto;
+  font-size: var(--font-size-tiny);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  padding: 2px 4px;
+}
