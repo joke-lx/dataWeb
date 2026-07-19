@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { pxToBp } from '../../genomics/coords';
+import { useCursor, type CursorTrack } from '../../store/cursor';
 import { useViewport } from '../../store/viewport';
 import { renderBedGraph } from './kinds/bedGraph';
 import { renderBigwig } from './kinds/bigwig';
@@ -10,6 +12,14 @@ import type { RenderContext } from './kinds/types';
 import './linear-track.css';
 
 export type LinearKind = 'bigwig' | 'bedGraph' | 'tadBar' | 'pei' | 'gene';
+
+const CURSOR_TRACKS: Record<LinearKind, CursorTrack> = {
+  bigwig: 'bigwig',
+  bedGraph: 'ab',
+  tadBar: 'tad',
+  pei: 'pei',
+  gene: 'gene',
+};
 
 interface LinearTrackProps {
   kind: LinearKind;
@@ -126,6 +136,17 @@ export function LinearTrack({
       className="linear-track"
       ref={containerRef}
       style={{ height: `${height}px` }}
+      onMouseMove={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        if (rect.width <= 0) return;
+        const localX = event.clientX - rect.left;
+        const stageContent = event.currentTarget.closest('.stage-content');
+        const stageRect = stageContent?.getBoundingClientRect();
+        const stageX = event.clientX - (stageRect?.left ?? rect.left);
+        const bp = pxToBp(localX, viewport, rect.width);
+        useCursor.getState().setCursor(stageX, bp, CURSOR_TRACKS[kind]);
+      }}
+      onMouseLeave={() => useCursor.getState().setCursor(null, null, null)}
     >
       <canvas ref={canvasRef} />
       {loading && <span className="track-loading">…</span>}

@@ -1,0 +1,35 @@
+.region-input {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.region-input input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  width: 240px;
+}
+
+.region-input button {
+  font-size: 12px;
+  padding: 4px 12px;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.zoom-slider {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}

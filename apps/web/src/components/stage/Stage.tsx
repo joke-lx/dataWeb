@@ -3,6 +3,7 @@ import type { JSX } from 'react';
 
 import { useD3Zoom } from '../../hooks/useD3Zoom';
 import { useViewport } from '../../store/viewport';
+import { CrosshairLayer } from '../overlay/CrosshairLayer';
 import { Lane } from './Lane';
 import './stage.css';
 
@@ -23,6 +24,7 @@ export function Stage(): JSX.Element {
         <span className="bin">bin {bin.toLocaleString()} bp</span>
       </header>
       <div className="stage-content">
+        <CrosshairLayer />
         <Lane kind="hic" title="Hi-C matrix" />
         <Lane kind="bigwig" title="RNA-seq" trackName="rna_seq" />
         <Lane

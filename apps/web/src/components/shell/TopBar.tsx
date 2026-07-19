@@ -1,4 +1,7 @@
 import type { JSX } from 'react';
+
+import { RegionInput } from '../nav/RegionInput';
+import { ZoomSlider } from '../nav/ZoomSlider';
 import { useComparison } from '../../store/comparison';
 
 export function TopBar(): JSX.Element {
@@ -15,6 +18,8 @@ export function TopBar(): JSX.Element {
             <option value="pig">Pig</option>
           </select>
         </label>
+        <RegionInput />
+        <ZoomSlider />
       </div>
 
       <div className="topbar__right">
