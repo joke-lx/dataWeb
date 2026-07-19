@@ -1,6 +1,6 @@
-import type { JSX } from "react";
+import type { JSX } from 'react';
+import { AppShell } from './components/shell/AppShell';
 
-// Minimal scaffold app. Replaced in Phase C with AppShell + LeftRail + Stage.
 export function App(): JSX.Element {
-  return <div data-testid="scaffold-ok">dataWeb scaffold OK</div>;
+  return <AppShell />;
 }

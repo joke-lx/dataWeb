@@ -5,8 +5,8 @@
 :root {
   /* surface */
   --color-bg: #ffffff;
-  --color-surface-1: #fafafa; /* gutter / panel */
-  --color-surface-2: #f0f0f0; /* hover */
+  --color-surface-1: #fafafa;
+  --color-surface-2: #f0f0f0;
   --color-border: #e5e5e5;
   --color-divider-strong: #c8c8c8;
 
@@ -19,27 +19,26 @@
   /* accent */
   --color-accent: #c0392b;
   --color-accent-soft: #e6c8c4;
-  --color-link: #c0392b;
-  --color-link-hover: #962d22;
 
-  /* biology-specific tokens */
+  /* biology */
   --color-a-compartment: #c0392b;
   --color-b-compartment: #2c5fa6;
-  --color-a-bg: #fce8e6;
-  --color-b-bg: #e6edf6;
   --color-tad-boundary: #1a1a1a;
   --color-tad-body: #f5f5f5;
-  --color-loop-arc: #e0833b;
-  --color-loop-arc-highlight: #c0392b;
+  --color-loop-arc: #b8b8b8;
   --color-sv-del: #b5305d;
   --color-sv-dup: #2e8b57;
   --color-sv-inv: #6e4ca0;
   --color-sv-tra: #444444;
-  --color-ctcf-plus: #2c5fa6;
-  --color-ctcf-minus: #c0392b;
   --color-pei-anchor: #d4a017;
+  --color-gene-exon: #4a7dc9;
+  --color-gene-intron: #b8c8d8;
 
-  /* fonts */
+  /* sample palettes */
+  --sample-a: var(--color-a-compartment);
+  --sample-b: var(--color-b-compartment);
+
+  /* typography */
   --font-ui: "Inter", "Helvetica Neue", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Menlo", monospace;
   --font-size-tiny: 11px;
@@ -47,7 +46,6 @@
   --font-size-body: 13px;
   --font-size-label: 13px;
   --font-size-title: 16px;
-  --font-size-hero: 22px;
 
   /* spacing */
   --space-1: 4px;
@@ -56,23 +54,15 @@
   --space-4: 16px;
   --space-5: 24px;
 
-  /* track layout */
+  /* layout */
   --label-gutter-width: 120px;
-  --label-gutter-width-compact: 72px;
   --track-separator: 1px;
-  --track-pad-y: 4px;
-  --track-pad-x: 8px;
 
   /* track heights */
   --track-height-bigwig: 48px;
   --track-height-bedgraph: 36px;
-  --track-height-tad-bar: 28px;
+  --track-height-tad: 28px;
   --track-height-gene: 80px;
-  --track-height-loop: 70px;
-  --track-height-sv: 36px;
-  --track-height-pei: 28px;
+  --track-height-pei: 36px;
   --track-height-matrix: 480px;
-
-  /* stage sizing */
-  --stage-min-height: 480px;
 }
