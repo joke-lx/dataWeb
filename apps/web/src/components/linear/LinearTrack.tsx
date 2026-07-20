@@ -8,6 +8,7 @@ import { renderBigwig } from './kinds/bigwig';
 import { renderGene } from './kinds/gene';
 import { renderInsulationScore } from './kinds/insulationScore';
 import { renderPei } from './kinds/pei';
+import { renderSV } from './kinds/sv';
 import { renderTadBar } from './kinds/tadBar';
 import type { RenderContext } from './kinds/types';
 import './linear-track.css';
@@ -18,7 +19,8 @@ export type LinearKind =
   | 'tadBar'
   | 'pei'
   | 'gene'
-  | 'is';
+  | 'is'
+  | 'sv';
 
 const CURSOR_TRACKS: Record<LinearKind, CursorTrack> = {
   bigwig: 'bigwig',
@@ -27,6 +29,7 @@ const CURSOR_TRACKS: Record<LinearKind, CursorTrack> = {
   pei: 'pei',
   gene: 'gene',
   is: 'is',
+  sv: 'sv',
 };
 
 interface LinearTrackProps {
@@ -121,6 +124,9 @@ export function LinearTrack({
             renderContext,
             data as Parameters<typeof renderInsulationScore>[1],
           );
+          break;
+        case 'sv':
+          renderSV(renderContext, data as Parameters<typeof renderSV>[1]);
           break;
       }
       setRenderError(null);

@@ -2,7 +2,12 @@ import { useState } from 'react';
 import type { JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { fetchBed, fetchBigwig, fetchHicMatrix } from '../../api/client';
+import {
+  fetchBed,
+  fetchBigwig,
+  fetchHicMatrix,
+  fetchSV,
+} from '../../api/client';
 import type {
   BedKind,
   BedRecordByKind,
@@ -18,7 +23,8 @@ type TrackKind = 'hic' | LinearKind;
 type BigwigData = Awaited<ReturnType<typeof fetchBigwig>>;
 type HicData = Awaited<ReturnType<typeof fetchHicMatrix>>;
 type BedData = BedRecordByKind[BedKind][];
-type LaneData = BigwigData | HicData | BedData;
+type SVData = Awaited<ReturnType<typeof fetchSV>>;
+type LaneData = BigwigData | HicData | BedData | SVData;
 
 const MAX_MATRIX_DIM = 512;
 
@@ -30,6 +36,7 @@ const HEIGHTS: Record<TrackKind, number> = {
   pei: 36,
   gene: 80,
   is: 36,
+  sv: 36,
 };
 
 interface LaneProps {
@@ -107,6 +114,14 @@ export function Lane({
           viewport.start,
           viewport.end,
           bins,
+        );
+      }
+      if (kind === 'sv') {
+        return fetchSV(
+          sampleId,
+          viewport.chr,
+          viewport.start,
+          viewport.end,
         );
       }
       const resolvedBedKind = kind === 'is' ? 'is' : bedKind;
