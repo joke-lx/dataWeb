@@ -29,6 +29,7 @@ const HEIGHTS: Record<TrackKind, number> = {
   tadBar: 28,
   pei: 36,
   gene: 80,
+  is: 36,
 };
 
 interface LaneProps {
@@ -108,10 +109,11 @@ export function Lane({
           bins,
         );
       }
-      if (bedKind) {
+      const resolvedBedKind = kind === 'is' ? 'is' : bedKind;
+      if (resolvedBedKind) {
         return fetchBed(
           sampleId,
-          bedKind,
+          resolvedBedKind,
           viewport.chr,
           viewport.start,
           viewport.end,

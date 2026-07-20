@@ -41,11 +41,12 @@ export interface GeneRecord extends IntervalRecord {
   is_exon: boolean;
 }
 
-export type BedKind = 'ab' | 'tad' | 'pei' | 'gene';
+export type BedKind = 'ab' | 'tad' | 'pei' | 'gene' | 'is';
 
 export interface BedRecordByKind {
   ab: BedGraphRecord;
   tad: TadRecord;
   pei: PeiRecord;
   gene: GeneRecord;
+  is: BedGraphRecord;
 }
