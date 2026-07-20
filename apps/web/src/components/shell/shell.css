@@ -6,7 +6,7 @@
     'top top top'
     'left main main'
     'status status status';
-  grid-template-rows: 56px 1fr 24px;
+  grid-template-rows: auto auto 1fr 24px;
   grid-template-columns: 240px 1fr auto;
   height: 100vh;
   width: 100vw;
@@ -28,12 +28,30 @@
 
 .topbar {
   display: flex;
-  align-items: center;
-  height: 56px;
-  padding: 0 var(--space-3);
+  flex-direction: column;
   background: var(--color-surface-1);
   border-bottom: var(--track-separator) solid var(--color-border);
+  padding: 0;
+}
+
+.topbar-row {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
   gap: var(--space-3);
+  min-width: 0;
+}
+
+.topbar-nav-row {
+  height: 44px;
+  border-bottom: var(--track-separator) solid var(--color-border);
+}
+
+.topbar-controls-row {
+  height: 36px;
+  gap: var(--space-2);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .topbar__brand {
@@ -49,17 +67,19 @@
   gap: 2px;
   flex: 1 1 auto;
   overflow-x: auto;
+  overflow-y: hidden;
   min-width: 0;
 }
 
 .topbar-btn {
-  padding: 6px 12px;
-  font-size: 13px;
+  padding: 6px 10px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   text-decoration: none;
   border-radius: 3px;
   white-space: nowrap;
   border: var(--track-separator) solid transparent;
+  flex-shrink: 0;
   transition: background 0.12s ease, color 0.12s ease;
 }
 
@@ -72,14 +92,6 @@
   background: var(--color-accent);
   color: var(--color-text-on-accent);
   border-color: var(--color-accent);
-}
-
-.topbar__right {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  flex: 0 0 auto;
 }
 
 .topbar__toggle {
