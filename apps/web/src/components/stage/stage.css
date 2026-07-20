@@ -78,6 +78,7 @@
 }
 
 .lane-content {
+  position: relative;
   display: flex;
   min-width: 0;
   align-items: stretch;
@@ -86,10 +87,27 @@
   color: var(--color-text-tertiary);
 }
 
-.lane-content > .linear-track,
+.lane-content > .plotly-track,
 .hic-lane-content {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.lane-content .track-loading {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.lane-content .track-error {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 11px;
+  color: var(--color-sv-del);
+  font-weight: bold;
 }
 
 .hic-lane-content {

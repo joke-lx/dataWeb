@@ -1,0 +1,13 @@
+.plotly-track {
+  position: relative;
+  width: 100%;
+  background: var(--color-surface-1);
+  border-bottom: var(--track-separator) solid var(--color-border);
+  overflow: hidden;
+}
+
+/* Plotly injects a top-level <div> with inline width/height; let it follow the
+ * flex container rather than overriding the lane width. */
+.plotly-track > div {
+  width: 100% !important;
+}

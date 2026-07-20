@@ -9,15 +9,39 @@ import {
   fetchSV,
 } from '../../api/client';
 import type {
+  BedGraphRecord,
   BedKind,
   BedRecordByKind,
+  GeneRecord,
+  PeiRecord,
+  TadRecord,
 } from '../../api/types';
+import type { SVRecord } from '../../api/client';
 import { useActiveSample } from '../../hooks/useActiveSample';
-import { useViewport } from '../../store/viewport';
+import { useViewport, type Viewport } from '../../store/viewport';
 import { ColormapBar, type ColormapName } from '../hic/ColormapBar';
 import { HiCMatrix2D } from '../hic/HiCMatrix2D';
 import '../hic/hic.css';
-import { LinearTrack, type LinearKind } from '../linear/LinearTrack';
+import { PlotlyTrack } from '../linear/PlotlyTrack';
+import type { PlotlyBuild, PlotlyLayout } from '../linear/plotlyTypes';
+import {
+  buildBedGraph,
+  buildBigwig,
+  buildGene,
+  buildInsulationScore,
+  buildPei,
+  buildSv,
+  buildTadBar,
+} from '../linear/kinds/plotlyBuilders';
+
+export type LinearKind =
+  | 'bigwig'
+  | 'bedGraph'
+  | 'tadBar'
+  | 'pei'
+  | 'gene'
+  | 'is'
+  | 'sv';
 
 type TrackKind = 'hic' | LinearKind;
 type BigwigData = Awaited<ReturnType<typeof fetchBigwig>>;
@@ -25,18 +49,19 @@ type HicData = Awaited<ReturnType<typeof fetchHicMatrix>>;
 type BedData = BedRecordByKind[BedKind][];
 type SVData = Awaited<ReturnType<typeof fetchSV>>;
 type LaneData = BigwigData | HicData | BedData | SVData;
+type LinearData = BigwigData | BedData | SVData;
 
 const MAX_MATRIX_DIM = 512;
 
 const HEIGHTS: Record<TrackKind, number> = {
   hic: 480,
-  bigwig: 48,
-  bedGraph: 36,
-  tadBar: 28,
-  pei: 36,
-  gene: 80,
-  is: 36,
-  sv: 36,
+  bigwig: 180,
+  bedGraph: 150,
+  tadBar: 120,
+  pei: 180,
+  gene: 120,
+  is: 150,
+  sv: 120,
 };
 
 interface LaneProps {
@@ -51,12 +76,58 @@ interface LaneProps {
   mirror?: boolean;
 }
 
-function isBigwigData(data: LaneData | undefined): data is BigwigData {
+function isBigwigData(data: LinearData | undefined): data is BigwigData {
   return data !== undefined && !Array.isArray(data) && 'values' in data;
 }
 
-function isHicData(data: LaneData | undefined): data is HicData {
-  return data !== undefined && !Array.isArray(data) && 'matrix' in data;
+/**
+ * Translate the lane's data payload into a Plotly figure for the given linear
+ * kind. The title is rendered by Plotly itself (see `PlotlyTrack`), so the
+ * lane gutter only shows the sample id — no duplicate title.
+ */
+function buildLinearPlot(
+  kind: LinearKind,
+  data: LinearData | undefined,
+  viewport: Viewport,
+  title: string,
+  height: number,
+  mirror: boolean,
+): PlotlyBuild {
+  switch (kind) {
+    case 'bigwig':
+      return buildBigwig(
+        isBigwigData(data) ? data.values : undefined,
+        viewport,
+        title,
+        height,
+        mirror,
+      );
+    case 'bedGraph':
+      return buildBedGraph(
+        data as BedGraphRecord[] | undefined,
+        viewport,
+        title,
+        height,
+      );
+    case 'is':
+      return buildInsulationScore(
+        data as BedGraphRecord[] | undefined,
+        viewport,
+        title,
+        height,
+      );
+    case 'tadBar':
+      return buildTadBar(data as TadRecord[] | undefined, viewport, title, height);
+    case 'pei':
+      return buildPei(data as PeiRecord[] | undefined, viewport, title, height);
+    case 'gene':
+      return buildGene(data as GeneRecord[] | undefined, viewport, title, height);
+    case 'sv':
+      return buildSv(data as SVRecord[] | undefined, viewport, title, height);
+  }
+  // Unreachable — `LinearKind` is exhaustive above; kept for type safety.
+  const empty: PlotlyLayout = { title: { text: title }, height };
+  return { data: [], layout: empty };
 }
 
 export function Lane({
@@ -172,13 +243,18 @@ export function Lane({
     );
   }
 
-  const bigwigData = isBigwigData(query.data) ? query.data : undefined;
-  const data = kind === 'bigwig' ? bigwigData?.values : query.data;
+  const plot = buildLinearPlot(
+    kind,
+    query.data as LinearData | undefined,
+    viewport,
+    title,
+    laneHeight,
+    mirror,
+  );
 
   return (
     <div className="lane" style={{ height: `${laneHeight}px` }}>
       <div className="lane-label">
-        <span className="lane-title">{title}</span>
         <span className="lane-sample">{sampleId}</span>
       </div>
       <div
@@ -186,19 +262,18 @@ export function Lane({
         data-kind={kind}
         data-track-name={trackName}
       >
-        <LinearTrack
-          kind={kind}
-          sampleId={sampleId}
-          trackName={trackName ?? kind}
-          data={data}
-          vmin={bigwigData?.vmin}
-          vmax={bigwigData?.vmax}
-          loading={query.isLoading}
-          error={query.error}
-          height={laneHeight}
-          mirror={mirror}
-        />
+        <PlotlyTrack data={plot.data} layout={plot.layout} height={laneHeight} />
+        {query.isLoading && <span className="track-loading">…</span>}
+        {query.error && (
+          <span className="track-error" title={query.error.message}>
+            !
+          </span>
+        )}
       </div>
     </div>
   );
+}
+
+function isHicData(data: LaneData | undefined): data is HicData {
+  return data !== undefined && !Array.isArray(data) && 'matrix' in data;
 }
