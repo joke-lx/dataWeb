@@ -52,19 +52,19 @@ export function ThreeDChromatin({ height = 360 }: ThreeDChromatinProps) {
       );
     }
     const curve = new THREE.CatmullRomCurve3(points);
-    const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.08, 8, false);
+    const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.03, 8, false);
     const tubeMaterial = new THREE.MeshStandardMaterial({
-      color: 0x6e4ca0,
-      metalness: 0.2,
-      roughness: 0.5,
+      color: 0x4a4a4a,
+      metalness: 0,
+      roughness: 0.7,
     });
     const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
     scene.add(tube);
 
     // Anchor dots (green = promoter, grey = enhancer)
-    const anchorGeo = new THREE.SphereGeometry(0.12, 16, 16);
-    const anchorMatA = new THREE.MeshStandardMaterial({ color: 0x2e8b57 });
-    const anchorMatB = new THREE.MeshStandardMaterial({ color: 0x888888 });
+    const anchorGeo = new THREE.SphereGeometry(0.08, 16, 16);
+    const anchorMatA = new THREE.MeshStandardMaterial({ color: 0x2e8b57, transparent: true, opacity: 0.85 });
+    const anchorMatB = new THREE.MeshStandardMaterial({ color: 0x888888, transparent: true, opacity: 0.85 });
 
     const anchorA = new THREE.Mesh(anchorGeo, anchorMatA);
     anchorA.position.copy(points[0]);
