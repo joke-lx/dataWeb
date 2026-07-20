@@ -6,26 +6,21 @@ import { ROUTES } from '../../routes/registry';
 export function TopBar(): JSX.Element {
   return (
     <header className="topbar">
-      <div className="topbar-row topbar-nav-row">
-        <div className="topbar__brand">dataWeb</div>
-        <nav className="topbar-nav" aria-label="Model routes">
-          {ROUTES.map((r) => (
-            <NavLink
-              key={r.id}
-              to={r.path}
-              className={({ isActive }) =>
-                'topbar-btn' + (isActive ? ' topbar-btn-active' : '')
-              }
-              title={r.description}
-            >
-              {r.label}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
-
-      <div className="topbar-row topbar-controls-row">
-      </div>
+      <div className="topbar__brand">dataWeb</div>
+      <nav className="topbar-nav" aria-label="Model routes">
+        {ROUTES.map((r) => (
+          <NavLink
+            key={r.id}
+            to={r.path}
+            className={({ isActive }) =>
+              'topbar-btn' + (isActive ? ' topbar-btn-active' : '')
+            }
+            title={r.description}
+          >
+            {r.label}
+          </NavLink>
+        ))}
+      </nav>
     </header>
   );
 }
