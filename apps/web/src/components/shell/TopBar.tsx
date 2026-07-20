@@ -1,8 +1,10 @@
 import type { JSX } from 'react';
+import { NavLink } from 'react-router-dom';
 
 import { SecondarySamplePicker } from '../compare/SecondarySamplePicker';
 import { RegionInput } from '../nav/RegionInput';
 import { ZoomSlider } from '../nav/ZoomSlider';
+import { ROUTES } from '../../routes/registry';
 import { useComparison } from '../../store/comparison';
 import { useSamples } from '../../store/samples';
 
@@ -27,18 +29,24 @@ export function TopBar(): JSX.Element {
     <header className="topbar">
       <div className="topbar__brand">dataWeb</div>
 
-      <div className="topbar__center">
-        <label className="topbar__species">
-          <span className="topbar__species-label">Species</span>
-          <select className="topbar__species-select" defaultValue="pig">
-            <option value="pig">Pig</option>
-          </select>
-        </label>
-        <RegionInput />
-        <ZoomSlider />
-      </div>
+      <nav className="topbar-nav" aria-label="Model routes">
+        {ROUTES.map((r) => (
+          <NavLink
+            key={r.id}
+            to={r.path}
+            className={({ isActive }) =>
+              'topbar-btn' + (isActive ? ' topbar-btn-active' : '')
+            }
+            title={r.description}
+          >
+            {r.label}
+          </NavLink>
+        ))}
+      </nav>
 
       <div className="topbar__right">
+        <RegionInput />
+        <ZoomSlider />
         <SecondarySamplePicker />
         <button
           type="button"
