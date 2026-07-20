@@ -43,10 +43,28 @@ vec3 viridis(float t) {
   return mix(cs[i], cs[i+1], fract(f));
 }
 
+vec3 diffRdBu(float t) {
+  // White-centered diverging colormap for differential Hi-C (ΔIntensity)
+  // t in [0,1]: 0=blue(negative), 0.5=white, 1=red(positive)
+  vec3 neg2 = vec3(0.231, 0.298, 0.753);  // deep blue
+  vec3 neg1 = vec3(0.431, 0.498, 0.853);  // mid blue
+  vec3 white = vec3(0.969, 0.969, 0.969);
+  vec3 pos1 = vec3(0.961, 0.510, 0.188);  // mid orange
+  vec3 pos2 = vec3(0.804, 0.196, 0.196);  // deep red
+  if (t < 0.25) return mix(neg2, neg1, t * 4.0);
+  if (t < 0.5) return mix(neg1, white, (t - 0.25) * 4.0);
+  if (t < 0.75) return mix(white, pos1, (t - 0.5) * 4.0);
+  return mix(pos1, pos2, (t - 0.75) * 4.0);
+}
+
 void main() {
   // Note: Hi-C is upper-triangle (or symmetric); we render the full square
   float v = texture(u_matrix, v_uv).r;
   float t = clamp((v - u_vmin) / (u_vmax - u_vmin + 1e-9), 0.0, 1.0);
-  vec3 rgb = (u_colorMap == 1) ? viridis(t) : rdbu(t);
+  vec3 rgb;
+  if (u_colorMap == 0)      rgb = rdbu(t);
+  else if (u_colorMap == 1) rgb = viridis(t);
+  else if (u_colorMap == 2) rgb = diffRdBu(t);  // for differential Hi-C
+  else                       rgb = rdbu(t);
   outColor = vec4(rgb, 1.0);
 }

@@ -84,6 +84,23 @@ export async function fetchBed<K extends BedKind>(
   return response.records ?? [];
 }
 
+export async function fetchSV(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+): Promise<SVRecord[]> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+  });
+  const r = await fetch(`${API_BASE}/api/sv?${params}`);
+  if (!r.ok) throw new Error(`sv: ${r.status}`);
+  const response = (await r.json()) as { records?: SVRecord[] };
+  return response.records ?? [];
+}
 
 export interface HicMatrixResponse {
   matrix: Float32Array;
@@ -108,6 +125,34 @@ export async function fetchHicMatrix(
   });
   const r = await fetch(`${API_BASE}/api/hic/matrix?${params}`);
   if (!r.ok) throw new Error(`hic: ${r.status}`);
+  const buf = await r.arrayBuffer();
+  const dtype = r.headers.get('X-Genomics-Dtype') ?? 'float32';
+  if (dtype !== 'float32') throw new Error(`unexpected dtype: ${dtype}`);
+  const shapeStr = r.headers.get('X-Genomics-Shape') ?? '0,0';
+  const [h, w] = shapeStr.split(',').map(Number);
+  const vmin = parseFloat(r.headers.get('X-Genomics-Vmin') ?? '0');
+  const vmax = parseFloat(r.headers.get('X-Genomics-Vmax') ?? '1');
+  return { matrix: new Float32Array(buf), shape: [h, w], vmin, vmax };
+}
+
+export async function fetchDifferentialHic(
+  sampleA: string,
+  sampleB: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+): Promise<HicMatrixResponse> {
+  const params = new URLSearchParams({
+    sample_a: sampleA,
+    sample_b: sampleB,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+  });
+  const r = await fetch(`${API_BASE}/api/differential/matrix?${params}`);
+  if (!r.ok) throw new Error(`differential: ${r.status}`);
   const buf = await r.arrayBuffer();
   const dtype = r.headers.get('X-Genomics-Dtype') ?? 'float32';
   if (dtype !== 'float32') throw new Error(`unexpected dtype: ${dtype}`);

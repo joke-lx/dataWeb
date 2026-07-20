@@ -8,7 +8,8 @@ import { useViewport } from '../../store/viewport';
 import fragmentShader from '../../genomics/hic-shader/fragment.glsl?raw';
 import vertexShader from '../../genomics/hic-shader/vertex.glsl?raw';
 
-interface HiCMatrix2DProps {
+interface HiCMatrix2DStandardProps {
+  variant?: 'standard';
   sampleId: string;
   data?: HicMatrixResponse;
   loading?: boolean;
@@ -20,17 +21,68 @@ interface HiCMatrix2DProps {
   height?: number;
 }
 
-export function HiCMatrix2D({
-  sampleId,
-  data,
-  loading = false,
-  error = null,
-  colorMap,
-  vmin = data?.vmin ?? 0,
-  vmax = data?.vmax ?? 1,
-  bin,
-  height = 480,
-}: HiCMatrix2DProps): JSX.Element {
+interface HiCMatrix2DDifferentialProps {
+  variant: 'differential';
+  sampleA: string;
+  sampleB: string;
+  data?: HicMatrixResponse;
+  loading?: boolean;
+  error?: Error | null;
+  /** Differential colormap is fixed (diffRdBu); this prop is ignored but accepted for API symmetry. */
+  colorMap?: 'rdbu' | 'viridis';
+  vmin?: number;
+  vmax?: number;
+  bin: number;
+  height?: number;
+}
+
+type HiCMatrix2DProps = HiCMatrix2DStandardProps | HiCMatrix2DDifferentialProps;
+
+async function fetchDifferentialHic(
+  sampleA: string,
+  sampleB: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+): Promise<HicMatrixResponse> {
+  const params = new URLSearchParams({
+    sample_a: sampleA,
+    sample_b: sampleB,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+  });
+  const r = await fetch(`/api/differential/matrix?${params}`);
+  if (!r.ok) throw new Error(`differential: ${r.status}`);
+  const buf = await r.arrayBuffer();
+  const dtype = r.headers.get('X-Genomics-Dtype') ?? 'float32';
+  if (dtype !== 'float32') throw new Error(`unexpected dtype: ${dtype}`);
+  const shapeStr = r.headers.get('X-Genomics-Shape') ?? '0,0';
+  const [h, w] = shapeStr.split(',').map(Number);
+  const vmin = parseFloat(r.headers.get('X-Genomics-Vmin') ?? '0');
+  const vmax = parseFloat(r.headers.get('X-Genomics-Vmax') ?? '1');
+  return { matrix: new Float32Array(buf), shape: [h, w], vmin, vmax };
+}
+
+export { fetchDifferentialHic };
+
+export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
+  const {
+    variant = 'standard',
+    data,
+    loading = false,
+    error = null,
+    colorMap,
+    vmin = data?.vmin ?? 0,
+    vmax = data?.vmax ?? 1,
+    bin,
+    height = 480,
+  } = props;
+  // Differential mode forces the white-centered diverging colormap (shader index 2).
+  const effectiveColorMapIndex: 0 | 1 | 2 =
+    variant === 'differential' ? 2 : colorMap === 'viridis' ? 1 : 0;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewport = useViewport();
@@ -64,7 +116,7 @@ export function HiCMatrix2D({
     gl.uniform1f(gl.getUniformLocation(program, 'u_vmax'), vmax);
     gl.uniform1i(
       gl.getUniformLocation(program, 'u_colorMap'),
-      colorMap === 'viridis' ? 1 : 0,
+      effectiveColorMapIndex,
     );
     gl.uniform2f(
       gl.getUniformLocation(program, 'u_canvasSize'),
@@ -76,7 +128,7 @@ export function HiCMatrix2D({
       gl.bindTexture(gl.TEXTURE_2D, textureRef.current);
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }, [colorMap, data, glReady, height, vmax, vmin]);
+  }, [effectiveColorMapIndex, data, glReady, height, vmax, vmin]);
 
   const uploadTexture = useCallback((): void => {
     const gl = glRef.current;
@@ -186,11 +238,22 @@ export function HiCMatrix2D({
 
   const displayedError = error ?? glError;
 
+  const dataAttribute: Record<string, string> =
+    variant === 'differential'
+      ? {
+          'data-sample-a': (props as HiCMatrix2DDifferentialProps).sampleA,
+          'data-sample-b': (props as HiCMatrix2DDifferentialProps).sampleB,
+          'data-variant': 'differential',
+        }
+      : {
+          'data-sample-id': (props as HiCMatrix2DStandardProps).sampleId,
+        };
+
   return (
     <div
       className="hic-matrix"
       ref={containerRef}
-      data-sample-id={sampleId}
+      {...dataAttribute}
       style={{ height: `${height}px` }}
       onMouseMove={(event) => {
         const rect = event.currentTarget.getBoundingClientRect();

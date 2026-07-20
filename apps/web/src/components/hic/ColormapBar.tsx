@@ -7,6 +7,7 @@ interface ColormapBarProps {
   vmax: number;
   colorMap: ColormapName;
   onChange?: (cm: ColormapName) => void;
+  mode?: 'standard' | 'differential';
 }
 
 const GRADIENTS: Record<ColormapName, string> = {
@@ -15,13 +16,18 @@ const GRADIENTS: Record<ColormapName, string> = {
   rdbu: 'linear-gradient(to right, #2c5fa6, #f7f7f7, #c0392b)',
 };
 
+const DIFFERENTIAL_GRADIENT =
+  'linear-gradient(to right, #3b4cc0, #6b8cd9, #f7f7f7, #f5a04e, #cd3431)';
+
 export function ColormapBar({
   vmin,
   vmax,
   colorMap,
   onChange,
+  mode = 'standard',
 }: ColormapBarProps): JSX.Element {
-  const gradient = GRADIENTS[colorMap];
+  const gradient =
+    mode === 'differential' ? DIFFERENTIAL_GRADIENT : GRADIENTS[colorMap];
   const mid = (vmin + vmax) / 2;
   return (
     <div className="colormap-bar">
@@ -31,10 +37,13 @@ export function ColormapBar({
       />
       <div className="colormap-bar-labels">
         <span>{vmin.toFixed(2)}</span>
-        <span>{mid.toFixed(2)}</span>
+        <span>
+          {mode === 'differential' ? 'Δ ' : ''}
+          {mid.toFixed(2)}
+        </span>
         <span>{vmax.toFixed(2)}</span>
       </div>
-      {onChange && (
+      {onChange && mode === 'standard' && (
         <select
           className="colormap-bar-select"
           value={colorMap}
