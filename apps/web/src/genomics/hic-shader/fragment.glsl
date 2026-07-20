@@ -46,15 +46,15 @@ vec3 viridis(float t) {
 vec3 diffRdBu(float t) {
   // White-centered diverging colormap for differential Hi-C (ΔIntensity)
   // t in [0,1]: 0=blue(negative), 0.5=white, 1=red(positive)
-  vec3 neg2 = vec3(0.231, 0.298, 0.753);  // deep blue
-  vec3 neg1 = vec3(0.431, 0.498, 0.853);  // mid blue
+  vec3 neg2 = vec3(0.231, 0.298, 0.753);
+  vec3 neg1 = vec3(0.498, 0.580, 0.878);
   vec3 white = vec3(0.969, 0.969, 0.969);
-  vec3 pos1 = vec3(0.961, 0.510, 0.188);  // mid orange
-  vec3 pos2 = vec3(0.804, 0.196, 0.196);  // deep red
-  if (t < 0.25) return mix(neg2, neg1, t * 4.0);
-  if (t < 0.5) return mix(neg1, white, (t - 0.25) * 4.0);
-  if (t < 0.75) return mix(white, pos1, (t - 0.5) * 4.0);
-  return mix(pos1, pos2, (t - 0.75) * 4.0);
+  vec3 pos1 = vec3(0.957, 0.553, 0.247);
+  vec3 pos2 = vec3(0.804, 0.196, 0.196);
+  if (t < 0.4) return mix(neg2, neg1, t / 0.4);
+  if (t < 0.5) return mix(neg1, white, (t - 0.4) / 0.1);
+  if (t < 0.6) return mix(white, pos1, (t - 0.5) / 0.1);
+  return mix(pos1, pos2, (t - 0.6) / 0.4);
 }
 
 void main() {

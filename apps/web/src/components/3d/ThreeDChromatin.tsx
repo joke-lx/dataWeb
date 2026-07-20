@@ -52,7 +52,7 @@ export function ThreeDChromatin({ height = 360 }: ThreeDChromatinProps) {
       );
     }
     const curve = new THREE.CatmullRomCurve3(points);
-    const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.03, 8, false);
+    const tubeGeometry = new THREE.TubeGeometry(curve, 64, 0.012, 8, false);
     const tubeMaterial = new THREE.MeshStandardMaterial({
       color: 0x4a4a4a,
       metalness: 0,
@@ -61,17 +61,17 @@ export function ThreeDChromatin({ height = 360 }: ThreeDChromatinProps) {
     const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
     scene.add(tube);
 
-    // Anchor dots (green = promoter, grey = enhancer)
+    // Anchor dots (red = A compartment, blue = B compartment)
     const anchorGeo = new THREE.SphereGeometry(0.08, 16, 16);
-    const anchorMatA = new THREE.MeshStandardMaterial({ color: 0x2e8b57, transparent: true, opacity: 0.85 });
-    const anchorMatB = new THREE.MeshStandardMaterial({ color: 0x888888, transparent: true, opacity: 0.85 });
+    const anchorMatA = new THREE.MeshStandardMaterial({ color: 0xc0392b });
+    const anchorMatB = new THREE.MeshStandardMaterial({ color: 0x2c5fa6 });
 
     const anchorA = new THREE.Mesh(anchorGeo, anchorMatA);
-    anchorA.position.copy(points[0]);
+    anchorA.position.copy(points[0]).multiplyScalar(1.4);
     scene.add(anchorA);
 
     const anchorB = new THREE.Mesh(anchorGeo, anchorMatB);
-    anchorB.position.copy(points[points.length - 1]);
+    anchorB.position.copy(points[points.length - 1]).multiplyScalar(1.4);
     scene.add(anchorB);
 
     // Mouse orbit
