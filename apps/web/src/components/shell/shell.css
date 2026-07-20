@@ -1,25 +1,30 @@
-/* AppShell — grid layout: top | left | main | bottom */
+/* AppShell — single-column grid: top | main | bottom */
 
 .app-shell {
   display: grid;
-  grid-template-areas:
-    'top top top'
-    'left main main'
-    'status status status';
+  grid-template-columns: 1fr;
   grid-template-rows: 48px 1fr 24px;
-  grid-template-columns: 240px 1fr auto;
+  grid-template-areas:
+    'topbar'
+    'main'
+    'statusbar';
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-ui);
   font-size: var(--font-size-body);
 }
 
-.app-shell > header.topbar { grid-area: top; }
-.app-shell > aside.left-rail { grid-area: left; }
-.app-shell > .app-shell__main { grid-area: main; overflow: auto; }
-.app-shell > footer.statusbar { grid-area: status; }
+.app-shell__main {
+  grid-area: main;
+  overflow: auto;
+  position: relative;
+}
+
+.app-shell > header.topbar { grid-area: topbar; }
+.app-shell > footer.statusbar { grid-area: statusbar; }
 
 /* Right-rail inspector slot is reserved for Task H (comparison mode). For now,
    the main column simply consumes the remaining space. */
@@ -98,89 +103,6 @@
   background: var(--color-accent);
   color: var(--color-text-on-accent);
   border-color: var(--color-accent);
-}
-
-/* ---------- LeftRail ---------- */
-
-.left-rail {
-  background: var(--color-surface-1);
-  border-right: var(--track-separator) solid var(--color-border);
-  overflow-y: auto;
-  padding: var(--space-3) 0;
-}
-
-.left-rail__title {
-  font-size: var(--font-size-label);
-  font-weight: 600;
-  padding: 0 var(--space-3) var(--space-2);
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.left-rail__state {
-  padding: var(--space-3);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-small);
-}
-
-.left-rail__state--error {
-  color: var(--color-accent);
-}
-
-.left-rail__group {
-  margin-bottom: var(--space-3);
-}
-
-.left-rail__group-title {
-  font-size: var(--font-size-tiny);
-  font-weight: 600;
-  padding: var(--space-2) var(--space-3) var(--space-1);
-  margin: 0;
-  color: var(--color-text-tertiary);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.left-rail__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.sample-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  background: transparent;
-  border: 0;
-  border-left: 2px solid transparent;
-  cursor: pointer;
-  text-align: left;
-  color: var(--color-text-primary);
-  transition: background 0.1s ease;
-}
-
-.sample-item:hover {
-  background: var(--color-surface-2);
-}
-
-.sample-item--active {
-  background: var(--color-surface-2);
-  border-left-color: var(--color-accent);
-}
-
-.sample-item__id {
-  font-weight: 600;
-  font-size: var(--font-size-body);
-}
-
-.sample-item__meta {
-  font-size: var(--font-size-tiny);
-  color: var(--color-text-tertiary);
 }
 
 /* ---------- StatusBar ---------- */
