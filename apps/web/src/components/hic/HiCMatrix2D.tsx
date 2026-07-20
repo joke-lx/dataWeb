@@ -162,6 +162,13 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
       return;
     }
 
+    // R32F + LINEAR sampling requires OES_texture_float_linear to be *enabled*
+    // (not just supported). Without it, implementations silently return 0 for
+    // float-texture samples and the canvas renders as a uniform flat color.
+    // OES_texture_float is WebGL1-only; in WebGL2 R32F is core, but float
+    // filtering still needs the linear-filter extension activated.
+    gl.getExtension('OES_texture_float_linear');
+
     let vertex: WebGLShader | null = null;
     let fragment: WebGLShader | null = null;
     let program: WebGLProgram | null = null;
