@@ -6,6 +6,8 @@ export type CursorTrack =
   | 'tad'
   | 'pei'
   | 'gene'
+  | 'is'
+  | 'sv'
   | 'hic';
 
 interface CursorStore {

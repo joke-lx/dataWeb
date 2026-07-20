@@ -7,6 +7,14 @@ import type {
 
 const API_BASE = ''; // proxied via vite
 
+export interface SVRecord {
+  chrom: string;
+  start: number;
+  end: number;
+  kind: 'DEL' | 'DUP' | 'INV' | 'TRA';
+  score: number;
+}
+
 export async function fetchSpecies(): Promise<Species[]> {
   const r = await fetch(`${API_BASE}/api/species`);
   if (!r.ok) throw new Error(`species: ${r.status}`);
