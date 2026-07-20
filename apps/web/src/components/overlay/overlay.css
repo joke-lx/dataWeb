@@ -1,0 +1,4 @@
+.ctcf-loops-overlay {
+  display: block;
+  border-bottom: var(--track-separator) solid var(--color-border);
+}
