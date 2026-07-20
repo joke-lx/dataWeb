@@ -102,13 +102,15 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
 
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
-    const canvasWidth = Math.max(1, Math.round(rect.width * dpr));
-    const canvasHeight = Math.max(1, Math.round(height * dpr));
-    if (canvas.width !== canvasWidth) canvas.width = canvasWidth;
-    if (canvas.height !== canvasHeight) canvas.height = canvasHeight;
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${height}px`;
-    gl.viewport(0, 0, canvasWidth, canvasHeight);
+    // Hi-C matrices are intrinsically square — use min(width, height) so
+    // the rendered quad stays square regardless of lane width vs. height.
+    const side = Math.max(1, Math.min(rect.width, rect.height));
+    const drawingSide = Math.max(1, Math.round(side * dpr));
+    if (canvas.width !== drawingSide) canvas.width = drawingSide;
+    if (canvas.height !== drawingSide) canvas.height = drawingSide;
+    canvas.style.width = `${side}px`;
+    canvas.style.height = `${side}px`;
+    gl.viewport(0, 0, drawingSide, drawingSide);
 
     gl.useProgram(program);
     gl.uniform1i(gl.getUniformLocation(program, 'u_matrix'), 0);
@@ -120,15 +122,15 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
     );
     gl.uniform2f(
       gl.getUniformLocation(program, 'u_canvasSize'),
-      canvasWidth,
-      canvasHeight,
+      drawingSide,
+      drawingSide,
     );
     gl.activeTexture(gl.TEXTURE0);
     if (textureRef.current) {
       gl.bindTexture(gl.TEXTURE_2D, textureRef.current);
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }, [effectiveColorMapIndex, data, glReady, height, vmax, vmin]);
+  }, [effectiveColorMapIndex, data, glReady, vmax, vmin]);
 
   const uploadTexture = useCallback((): void => {
     const gl = glRef.current;
@@ -236,6 +238,21 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
   useEffect(() => {
     render();
   }, [render]);
+
+  // Re-render when viewport changes (zoom/pan). The Lane's query refetch handles
+  // texture updates, but we also need to redraw the quad with the current
+  // vmin/vmax and recompute the square side after the new data lands.
+  useEffect(() => {
+    render();
+  }, [
+    viewport.chr,
+    viewport.start,
+    viewport.end,
+    viewport.bin,
+    vmin,
+    vmax,
+    render,
+  ]);
 
   useEffect(() => {
     const observer = new ResizeObserver(render);

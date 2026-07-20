@@ -4,12 +4,13 @@
   height: 100%;
   background: var(--color-bg);
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hic-matrix canvas {
   display: block;
-  width: 100%;
-  height: 100%;
 }
 
 .hic-loading,
