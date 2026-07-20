@@ -103,9 +103,9 @@ export function Lane({
         );
       }
       if (kind === 'bigwig' && trackName) {
-        const bins = Math.min(
-          400,
-          Math.max(20, Math.ceil(viewportWidth / Math.max(1, viewport.bin))),
+        const bins = Math.max(
+          50,
+          Math.min(800, Math.ceil(viewportWidth / 1000)),
         );
         return fetchBigwig(
           sampleId,
