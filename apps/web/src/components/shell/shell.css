@@ -19,8 +19,9 @@
 
 .app-shell__main {
   grid-area: main;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
+  min-height: 0;
 }
 
 .app-shell > header.topbar { grid-area: topbar; }

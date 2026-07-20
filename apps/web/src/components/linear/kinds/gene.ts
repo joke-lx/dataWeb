@@ -22,8 +22,8 @@ export function renderGene(rc: RenderContext, records: GeneRecord[]): void {
     byGene.set(record.gene_name, geneRecords);
   }
 
-  const geneHeight = 18;
-  const gap = 4;
+  const geneHeight = 28;
+  const gap = 6;
   const usableHeight = height - 4;
   const maxGenes = Math.max(
     1,
@@ -74,14 +74,15 @@ export function renderGene(rc: RenderContext, records: GeneRecord[]): void {
       const x1 = bpToPx(exon.start, viewport, width);
       const x2 = bpToPx(exon.end, viewport, width);
       const exonWidth = Math.max(2, x2 - x1);
-      const exonHeight = 10;
+      const exonHeight = 16;
       ctx.fillRect(x1, yMid - exonHeight / 2, exonWidth, exonHeight);
     }
 
     if (lastX - firstX > 80) {
       ctx.fillStyle = '#1a1a1a';
       ctx.font = '11px sans-serif';
-      ctx.fillText(geneName, (firstX + lastX) / 2 - 20, yMid - 10);
+      // Place label above the gene row
+      ctx.fillText(geneName, (firstX + lastX) / 2 - 20, yMid - 14);
     }
   }
 }

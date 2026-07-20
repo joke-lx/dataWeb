@@ -24,6 +24,18 @@ export function useD3Zoom(ref: RefObject<HTMLElement | null>): {
     const selection = select(element);
     const zoomBehavior = d3Zoom<HTMLElement, unknown>()
       .scaleExtent([0.5, 200])
+      .filter((event) => {
+        // Wheel zoom only on Ctrl/Cmd (standard map convention)
+        if (event.type === 'wheel') {
+          return event.ctrlKey || event.metaKey;
+        }
+        // Touch zoom: two-finger pinch
+        if (event.type === 'touchstart' || event.type === 'touchmove') {
+          return (event as TouchEvent).touches.length >= 2;
+        }
+        // Drag pan: always allowed (left mouse / single touch)
+        return !event.ctrlKey && !event.button;
+      })
       .on('zoom', (event) => {
         const previous = previousTransformRef.current;
         const current = event.transform;
