@@ -262,4 +262,166 @@ def bed_records(
                 )
         return records
 
+    if kind == "is":
+        return insulation_score(sample_id, chrom, start, end, n_bins=100)
+
     return []
+
+
+# ---------------------------------------------------------------------------
+# Differential Hi-C (log2 ratio between two samples)
+# ---------------------------------------------------------------------------
+
+
+def differential_hic(
+    sample_a: str,
+    sample_b: str,
+    chrom: str,
+    start: int,
+    end: int,
+    bin_bp: int,
+) -> tuple[np.ndarray, float, float]:
+    """Compute log2((A + ε) / (B + ε)) between two Hi-C samples.
+
+    Returns ``(mat, vmin, vmax)`` where ``vmin``/``vmax`` are the symmetric
+    ±99th-percentile clip values used as the colour-map range.
+    """
+    mat_a, _, _ = hic_matrix(sample_a, chrom, start, end, bin_bp)
+    mat_b, _, _ = hic_matrix(sample_b, chrom, start, end, bin_bp)
+
+    # Inject per-sample multiplicative noise so the two matrices differ even
+    # when the deterministic hic_matrix skeleton happens to coincide (e.g.
+    # very small grids). The noise is bounded so the log2 ratio stays in a
+    # realistic range.
+    rng_a = seed_rng(sample_a, chrom, start, end, bin_bp, "hic_diff_a")
+    rng_b = seed_rng(sample_b, chrom, start, end, bin_bp, "hic_diff_b")
+    eps = 0.1
+    shape = mat_a.shape
+    mat_a = mat_a + eps + np.maximum(rng_a.normal(1.0, 0.3, size=shape), 0.05).astype(np.float32)
+    mat_b = mat_b + eps + np.maximum(rng_b.normal(1.0, 0.3, size=shape), 0.05).astype(np.float32)
+    diff = np.log2(mat_a / mat_b).astype(np.float32)
+    if diff.size == 0:
+        return diff, 0.0, 0.0
+    abs_max = float(np.percentile(np.abs(diff), 99))
+    if abs_max == 0.0:
+        # Fall back to a tiny symmetric range so headers remain valid floats.
+        abs_max = 1.0
+    return diff, -abs_max, abs_max
+
+
+# ---------------------------------------------------------------------------
+# Insulation score (bedGraph-style)
+# ---------------------------------------------------------------------------
+
+
+def insulation_score(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+    n_bins: int,
+) -> list[dict]:
+    """Return an insulation-score bedGraph for the requested region.
+
+    The signal oscillates around 0 in roughly ``[-1.5, +1.5]`` with local
+    minima at TAD-boundary positions (~every 200 kb / ~10 bins).
+    """
+    if n_bins <= 0 or end <= start:
+        return []
+    rng = seed_rng(sample_id, chrom, start, end, n_bins, "is")
+    width = end - start
+    bin_size = width // n_bins
+    records: list[dict] = []
+    for i in range(n_bins):
+        x = i / max(1, n_bins - 1)
+        # Base oscillating signal in roughly [-0.5, 0.5]
+        score = -0.5 * np.cos(x * 12 * np.pi)
+        # TAD-boundary dips every ~10 bins, narrow falloff.
+        for j in range(0, n_bins, 10):
+            d = abs(i - j)
+            if d < 3:
+                score -= (3 - d) * 0.4
+        score += float(rng.normal(0, 0.05))
+        records.append(
+            {
+                "chrom": chrom,
+                "start": start + i * bin_size,
+                "end": start + (i + 1) * bin_size,
+                "score": float(score),
+            }
+        )
+    return records
+
+
+# ---------------------------------------------------------------------------
+# CTCF loops (bedpe-style)
+# ---------------------------------------------------------------------------
+
+
+def ctcf_loops(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+) -> list[dict]:
+    """Return ~30 CTCF-loop bedpe records in the requested region."""
+    if end <= start:
+        return []
+    rng = seed_rng(sample_id, chrom, start, end, 0, "ctcf_loops")
+    n_loops = 30
+    loops: list[dict] = []
+    for _ in range(n_loops):
+        a = int(rng.integers(start, end))
+        b = int(rng.integers(start, end))
+        if abs(a - b) < 50_000:
+            continue
+        if a > b:
+            a, b = b, a
+        loops.append(
+            {
+                "chrom1": chrom,
+                "start1": a,
+                "end1": a + 5_000,
+                "chrom2": chrom,
+                "start2": b,
+                "end2": b + 5_000,
+                "score": float(rng.uniform(0.3, 1.0)),
+            }
+        )
+    loops.sort(key=lambda r: r["start1"])
+    return loops
+
+
+# ---------------------------------------------------------------------------
+# Structural variant records
+# ---------------------------------------------------------------------------
+
+
+def sv_records(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+) -> list[dict]:
+    """Return ~10 SV records mixing DEL / DUP / INV / TRA kinds."""
+    if end <= start + 10_000:
+        return []
+    rng = seed_rng(sample_id, chrom, start, end, 0, "sv")
+    kinds = ["DEL", "DUP", "INV", "TRA"]
+    n_sv = 10
+    svs: list[dict] = []
+    for _ in range(n_sv):
+        kind = kinds[int(rng.integers(0, len(kinds)))]
+        pos = int(rng.integers(start, max(start + 1, end - 10_000)))
+        length = int(rng.integers(100, 10_000))
+        svs.append(
+            {
+                "chrom": chrom,
+                "start": pos,
+                "end": pos + length,
+                "kind": kind,
+                "score": float(rng.uniform(0.5, 1.0)),
+            }
+        )
+    svs.sort(key=lambda r: r["start"])
+    return svs

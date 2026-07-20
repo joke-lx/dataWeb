@@ -4,7 +4,15 @@ Contains the deterministic sample/chromosome registry and the seed-keyed
 generators used by the FastAPI routes.
 """
 
-from .generators import bed_records, bigwig_track, hic_matrix
+from .generators import (
+    bed_records,
+    bigwig_track,
+    ctcf_loops,
+    differential_hic,
+    hic_matrix,
+    insulation_score,
+    sv_records,
+)
 from .registry import CHROMOSOMES, SAMPLES, SPECIES, find_sample
 from .samples import CHROMOSOMES as _CHROMOSOMES  # re-export
 
@@ -14,6 +22,10 @@ __all__ = [
     "SPECIES",
     "bed_records",
     "bigwig_track",
+    "ctcf_loops",
+    "differential_hic",
     "find_sample",
     "hic_matrix",
+    "insulation_score",
+    "sv_records",
 ]

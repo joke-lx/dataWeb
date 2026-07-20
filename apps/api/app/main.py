@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import bed, bigwig, hic, samples, species
+from app.routes import bed, bigwig, ctcf, differential, hic, samples, species, sv
 
 
 @asynccontextmanager
@@ -36,9 +36,12 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-# Mock data routes (Task B)
+# Mock data routes (Task B + Task J)
 app.include_router(species.router)
 app.include_router(samples.router)
 app.include_router(hic.router)
 app.include_router(bigwig.router)
 app.include_router(bed.router)
+app.include_router(differential.router)
+app.include_router(ctcf.router)
+app.include_router(sv.router)

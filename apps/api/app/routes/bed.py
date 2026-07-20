@@ -1,8 +1,8 @@
 """``GET /api/bed/overlap`` — synthetic bed-style records.
 
-Supported ``kind`` values: ``ab``, ``tad``, ``pei``, ``gene``. The response
-is JSON ``{"records": [...]}`` where each record contains the fields
-described in ``docx/plan/visualizable_features.md``.
+Supported ``kind`` values: ``ab``, ``tad``, ``pei``, ``gene``, ``is``. The
+response is JSON ``{"records": [...]}`` where each record contains the
+fields described in ``docx/plan/visualizable_features.md``.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from app.mock import bed_records
 
 router = APIRouter(prefix="/api", tags=["bed"])
 
-_VALID_KINDS = {"ab", "tad", "pei", "gene"}
+_VALID_KINDS = {"ab", "tad", "pei", "gene", "is"}
 
 
 @router.get("/bed/overlap")
@@ -23,7 +23,7 @@ async def bed_overlap_endpoint(
     chr: str = Query(..., alias="chr", description="Chromosome name"),
     start: int = Query(..., ge=0, description="Region start (bp, 0-based)"),
     end: int = Query(..., gt=0, description="Region end (bp, exclusive)"),
-    kind: str = Query(..., description="Track kind: ab|tad|pei|gene"),
+    kind: str = Query(..., description="Track kind: ab|tad|pei|gene|is"),
 ) -> dict:
     """Return bed-style records for the requested kind/region."""
     if kind not in _VALID_KINDS:
