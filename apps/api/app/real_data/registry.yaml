@@ -20,6 +20,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Brain_BF4
   tissue: Brain
   breed: Bama
@@ -38,6 +40,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Brain_BM4
   tissue: Brain
   breed: Bama
@@ -56,6 +60,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Brain_BM5
   tissue: Brain
   breed: Bama
@@ -74,6 +80,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Brain_TF4
   tissue: Brain
   breed: Tibetan
@@ -92,6 +100,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Brain_TF5
   tissue: Brain
   breed: Tibetan
@@ -110,6 +120,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Brain_TM3
   tissue: Brain
   breed: Tibetan
@@ -128,6 +140,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Brain_TM4
   tissue: Brain
   breed: Tibetan
@@ -146,6 +160,8 @@ samples:
     rna_parental: 05.RNA-signal/Brain/patrental/Brain.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Brain.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Brain.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
 - id: Liver_BF3_180d
   tissue: Liver
   breed: Bama
@@ -161,6 +177,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BF3_28d
   tissue: Liver
   breed: Bama
@@ -176,6 +195,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BF3
   tissue: Liver
   breed: Bama
@@ -194,6 +216,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BF4
   tissue: Liver
   breed: Bama
@@ -212,6 +237,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BF5
   tissue: Liver
   breed: Bama
@@ -229,6 +257,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BM2_28d
   tissue: Liver
   breed: Bama
@@ -244,6 +275,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BM2
   tissue: Liver
   breed: Bama
@@ -261,6 +295,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BM4
   tissue: Liver
   breed: Bama
@@ -279,6 +316,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BM5
   tissue: Liver
   breed: Bama
@@ -297,6 +337,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_BM8
   tissue: Liver
   breed: Bama
@@ -312,6 +355,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TF2_28d
   tissue: Liver
   breed: Tibetan
@@ -327,6 +373,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TF2
   tissue: Liver
   breed: Tibetan
@@ -344,6 +393,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TF4
   tissue: Liver
   breed: Tibetan
@@ -362,6 +414,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TF5
   tissue: Liver
   breed: Tibetan
@@ -380,6 +435,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TF8
   tissue: Liver
   breed: Tibetan
@@ -395,6 +453,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Maternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TM3_180d
   tissue: Liver
   breed: Tibetan
@@ -410,6 +471,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TM3_28d
   tissue: Liver
   breed: Tibetan
@@ -425,6 +489,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TM3
   tissue: Liver
   breed: Tibetan
@@ -443,6 +510,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TM4
   tissue: Liver
   breed: Tibetan
@@ -461,6 +531,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Liver_TM5
   tissue: Liver
   breed: Tibetan
@@ -478,6 +551,9 @@ samples:
     rna_parental: 05.RNA-signal/Liver/Patrental/Liver.Paternal.reads.bam.50bp.bw
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Liver.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Liver.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
 - id: Muscle_BF3
   tissue: Muscle
   breed: Bama
@@ -494,6 +570,9 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Berkshire.reads.bam.50bp.bw
 - id: Muscle_BF4
   tissue: Muscle
@@ -511,6 +590,9 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Berkshire.reads.bam.50bp.bw
 - id: Muscle_BM4
   tissue: Muscle
@@ -528,6 +610,9 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Berkshire.reads.bam.50bp.bw
 - id: Muscle_BM5
   tissue: Muscle
@@ -545,6 +630,9 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Berkshire.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Berkshire.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Berkshire.reads.bam.50bp.bw
 - id: Muscle_TF4
   tissue: Muscle
@@ -562,6 +650,9 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Muscle_TF5
   tissue: Muscle
@@ -579,6 +670,9 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Muscle_TM3
   tissue: Muscle
@@ -596,6 +690,9 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Muscle_TM4
   tissue: Muscle
@@ -613,4 +710,7 @@ samples:
     ab_tissue_mean: 01.AB_compartment/Tissue_mean/Muscle.mean_AB_index.bedgraph
     chip_breed_H3K4me3: 04.Chip-seq/Breed/Muscle.Tibetan.H3K4me3.200.bw
     chip_breed_H3K27ac: 04.Chip-seq/Breed/Muscle.Tibetan.H3K27ac.200.bw
+    chip_tissue_H3K4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    chip_tissue_H3K27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
     rna_breed: 05.RNA-signal/Muscle/Breed/Liver.Tibetan.reads.bam.50bp.bw
