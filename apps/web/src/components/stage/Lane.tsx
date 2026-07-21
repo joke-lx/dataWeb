@@ -70,10 +70,8 @@ interface LaneProps {
   trackName?: string;
   bedKind?: BedKind;
   height?: number;
-  /** Override the active sample (used by comparison mode). */
+  /** Override the active sample. */
   sampleId?: string;
-  /** Mirror bigwig fill direction (sample B in comparison mode). */
-  mirror?: boolean;
 }
 
 function isBigwigData(data: LinearData | undefined): data is BigwigData {
@@ -91,7 +89,6 @@ function buildLinearPlot(
   viewport: Viewport,
   title: string,
   height: number,
-  mirror: boolean,
 ): PlotlyBuild {
   switch (kind) {
     case 'bigwig':
@@ -100,7 +97,6 @@ function buildLinearPlot(
         viewport,
         title,
         height,
-        mirror,
       );
     case 'bedGraph':
       return buildBedGraph(
@@ -137,7 +133,6 @@ export function Lane({
   bedKind,
   height,
   sampleId: sampleIdOverride,
-  mirror = false,
 }: LaneProps): JSX.Element {
   const viewport = useViewport();
   const activeSample = useActiveSample();
@@ -249,7 +244,6 @@ export function Lane({
     viewport,
     title,
     laneHeight,
-    mirror,
   );
 
   return (

@@ -27,9 +27,6 @@
 .app-shell > header.topbar { grid-area: topbar; }
 .app-shell > footer.statusbar { grid-area: statusbar; }
 
-/* Right-rail inspector slot is reserved for Task H (comparison mode). For now,
-   the main column simply consumes the remaining space. */
-
 /* ---------- TopBar ---------- */
 
 .topbar {

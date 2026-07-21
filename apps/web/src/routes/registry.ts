@@ -112,12 +112,4 @@ export const ROUTES: RouteSpec[] = [
     description: 'Chromatin 3D ribbon',
     primaryTrack: 'threeD',
   },
-  {
-    id: 'comparison',
-    path: '/comparison',
-    label: 'Comparison',
-    icon: '',
-    description: 'All tracks stacked (A vs B)',
-    primaryTrack: 'comparison',
-  },
 ];

@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { AppShell } from './components/shell/AppShell';
 import { AbIndexRoute } from './routes/AbIndexRoute';
-import { ComparisonRoute } from './routes/ComparisonRoute';
 import { CtcfLoopsRoute } from './routes/CtcfLoopsRoute';
 import { DifferentialHicRoute } from './routes/DifferentialHicRoute';
 import { GeneRoute } from './routes/GeneRoute';
@@ -33,7 +32,6 @@ const ROUTE_COMPONENTS: Record<string, () => JSX.Element> = {
   sv: SvRoute,
   gene: GeneRoute,
   '3d': ThreeDChromatinRoute,
-  comparison: ComparisonRoute,
 };
 
 export function App(): JSX.Element {

@@ -78,24 +78,14 @@ function baseLayout(
   return layout;
 }
 
-/**
- * RNA-seq / histone mark signal track (filled area curve).
- *
- * `mirror` flips the y-axis so sample B in comparison mode descends from the
- * top (baseline at top) while sample A rises from the bottom — the two diverge
- * from a shared mid-line, matching the hand-written canvas behaviour.
- */
+/** RNA-seq / histone mark signal track (filled area curve, positive direction). */
 export function buildBigwig(
   values: Float32Array | undefined,
   viewport: Viewport,
   title: string,
   height: number,
-  mirror = false,
 ): PlotlyBuild {
-  const color = cssVar(
-    mirror ? '--sample-b' : '--sample-a',
-    mirror ? '#2c5fa6' : '#c0392b',
-  );
+  const color = cssVar('--sample-a', '#c0392b');
   const n = values?.length ?? 0;
   const binBp = n > 0 ? (viewport.end - viewport.start) / n : 1;
   const x: number[] = [];
@@ -119,10 +109,7 @@ export function buildBigwig(
   return {
     data,
     layout: baseLayout(viewport, title, height, {
-      yaxis: {
-        rangemode: 'nonnegative',
-        ...(mirror ? { autorange: 'reversed' } : {}),
-      },
+      yaxis: { rangemode: 'nonnegative' },
     }),
   };
 }
