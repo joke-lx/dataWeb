@@ -132,6 +132,104 @@ async def test_bigwig_returns_one_dim_float32() -> None:
 
 
 @pytest.mark.asyncio
+async def test_bigwig_real_rna() -> None:
+    """A registered RNA track is served from the real BigWig file."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/api/bigwig/values",
+            params={
+                "sample": "Brain_BF3",
+                "track": "rna_breed",
+                "chr": "chr1",
+                "start": 1_000_000,
+                "end": 2_000_000,
+                "bins": 100,
+            },
+        )
+    assert response.status_code == 200
+    arr = np.frombuffer(response.content, dtype=np.float32)
+    assert arr.shape == (100,)
+    assert np.isfinite(arr).all()
+    assert arr.max() > 0.0
+    assert float(response.headers["X-Genomics-Vmin"]) == pytest.approx(float(arr.min()))
+    assert float(response.headers["X-Genomics-Vmax"]) == pytest.approx(float(arr.max()))
+
+
+@pytest.mark.asyncio
+async def test_bigwig_real_chip_tissue() -> None:
+    """A tissue-level ChIP track is served from a binary BigWig file."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/api/bigwig/values",
+            params={
+                "sample": "Brain_BF3",
+                "track": "chip_tissue_H3K4me3",
+                "chr": "chr1",
+                "start": 1_000_000,
+                "end": 2_000_000,
+                "bins": 100,
+            },
+        )
+    assert response.status_code == 200
+    arr = np.frombuffer(response.content, dtype=np.float32)
+    assert arr.shape == (100,)
+    assert np.isfinite(arr).all()
+    assert arr.max() > 0.0
+    assert float(response.headers["X-Genomics-Vmax"]) == pytest.approx(float(arr.max()))
+
+
+@pytest.mark.asyncio
+async def test_bigwig_text_bedgraph() -> None:
+    """A breed-level ChIP track reads the text file hidden behind a .bw suffix."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/api/bigwig/values",
+            params={
+                "sample": "Brain_BF3",
+                "track": "chip_breed_H3K4me3",
+                "chr": "chr1",
+                "start": 1_000_000,
+                "end": 2_000_000,
+                "bins": 100,
+            },
+        )
+    assert response.status_code == 200
+    arr = np.frombuffer(response.content, dtype=np.float32)
+    assert arr.shape == (100,)
+    assert np.isfinite(arr).all()
+    assert arr.max() > 0.0
+    assert float(response.headers["X-Genomics-Vmin"]) == pytest.approx(float(arr.min()))
+    assert float(response.headers["X-Genomics-Vmax"]) == pytest.approx(float(arr.max()))
+
+
+@pytest.mark.asyncio
+async def test_bigwig_fallback() -> None:
+    """Unknown samples continue to receive a deterministic mock track."""
+    params = {
+        "sample": "Unknown_sample",
+        "track": "rna_breed",
+        "chr": "chr1",
+        "start": 1_000_000,
+        "end": 2_000_000,
+        "bins": 100,
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        first = await client.get("/api/bigwig/values", params=params)
+        second = await client.get("/api/bigwig/values", params=params)
+    assert first.status_code == 200
+    assert first.content == second.content
+    arr = np.frombuffer(first.content, dtype=np.float32)
+    assert arr.shape == (100,)
+    assert arr.max() > arr.min()
+    assert float(first.headers["X-Genomics-Vmin"]) == pytest.approx(float(arr.min()))
+    assert float(first.headers["X-Genomics-Vmax"]) == pytest.approx(float(arr.max()))
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("kind", ["ab", "tad", "pei", "gene"])
 async def test_bed_overlap_returns_records_for_each_kind(kind: str) -> None:
     transport = ASGITransport(app=app)
@@ -155,8 +253,10 @@ async def test_bed_overlap_returns_records_for_each_kind(kind: str) -> None:
     assert len(records) > 0
     first = records[0]
     assert first["chrom"] == "chr1"
-    assert first["start"] >= 1_000_000
-    assert first["end"] <= 2_000_000
+    # Real-data intervals can start before the query region (overlap, not
+    # containment); assert the interval actually intersects [start, end).
+    assert first["end"] > 1_000_000
+    assert first["start"] < 2_000_000
     assert first["end"] > first["start"]
 
 
@@ -357,3 +457,181 @@ async def test_new_endpoints_are_deterministic() -> None:
         s1 = await client.get("/api/sv", params=sv_params)
         s2 = await client.get("/api/sv", params=sv_params)
     assert s1.json() == s2.json()
+
+
+# ---------------------------------------------------------------------------
+# Task J-2: AB Index wired to real data
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_ab_real_data_returns_normalized_chr_records() -> None:
+    """``kind=ab`` reads the registered real ``.txt`` and returns chrN records."""
+    params = {
+        "sample": "Brain_BF3",
+        "track": "default",
+        "chr": "chr1",
+        "start": 1_000_000,
+        "end": 2_000_000,
+        "kind": "ab",
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/bed/overlap", params=params)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    # chr1 spans the queried 1Mb window with 20kb bins -> 50 records.
+    assert len(records) == 50
+    first = records[0]
+    assert first["chrom"] == "chr1"
+    assert first["start"] >= 1_000_000
+    assert first["end"] <= 2_000_000
+    assert first["end"] > first["start"]
+    assert isinstance(first["score"], float)
+    # Bin size is 20kb in the real data.
+    assert first["end"] - first["start"] == 20_000
+    # Records are ordered by start position.
+    starts = [r["start"] for r in records]
+    assert starts == sorted(starts)
+
+
+@pytest.mark.asyncio
+async def test_ab_real_data_filters_chr_window() -> None:
+    """A query for chr2 only returns chr2 records (chr1 records are filtered out)."""
+    params = {
+        "sample": "Liver_BF3",
+        "track": "default",
+        "chr": "chr2",
+        "start": 50_000_000,
+        "end": 50_500_000,
+        "kind": "ab",
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/bed/overlap", params=params)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    assert len(records) > 0
+    for record in records:
+        assert record["chrom"] == "chr2"
+        assert record["start"] < 50_500_000
+        assert record["end"] > 50_000_000
+
+
+@pytest.mark.asyncio
+async def test_ab_real_chr_normalization_via_query() -> None:
+    """The route normalizes incoming chromosome names and matches chr-prefixed records."""
+    # The real file uses numeric ``1``; the route should still match ``chr1``.
+    params = {
+        "sample": "Brain_BF3",
+        "track": "default",
+        "chr": "chr1",
+        "start": 0,
+        "end": 200_000,
+        "kind": "ab",
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/bed/overlap", params=params)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    assert len(records) == 10  # 200kb / 20kb bins
+    for record in records:
+        assert record["chrom"].startswith("chr")
+        assert record["chrom"] == "chr1"
+
+
+@pytest.mark.asyncio
+async def test_ab_mean_track_via_explicit_query_params() -> None:
+    """Mean tracks are reachable through ``mean``/``tissue``/``group`` parameters."""
+    params = {
+        "sample": "ignored",  # mean tracks ignore the base sample id
+        "track": "default",
+        "chr": "chr1",
+        "start": 1_000_000,
+        "end": 1_200_000,
+        "kind": "ab",
+        "mean": "breed",
+        "tissue": "Brain",
+        "group": "Berkshire",
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/bed/overlap", params=params)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    # 200kb / 20kb bins == 10 records.
+    assert len(records) == 10
+    for record in records:
+        assert record["chrom"] == "chr1"
+        assert record["start"] >= 1_000_000
+        assert record["end"] <= 1_200_000
+
+
+@pytest.mark.asyncio
+async def test_ab_mean_track_via_synthesised_id() -> None:
+    """A ``<Tissue>_<Group>_mean`` ID is parsed and routed to the right bedgraph."""
+    params = {
+        "sample": "Liver_mean",
+        "track": "default",
+        "chr": "chr1",
+        "start": 0,
+        "end": 200_000,
+        "kind": "ab",
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/bed/overlap", params=params)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    assert len(records) == 10
+    for record in records:
+        assert record["chrom"] == "chr1"
+        assert record["start"] >= 0
+        assert record["end"] <= 200_000
+
+
+@pytest.mark.asyncio
+async def test_ab_mean_tissue_track() -> None:
+    """Tissue-mean bedgraph is reachable via mean=tissue (group ignored)."""
+    params = {
+        "sample": "x",
+        "track": "default",
+        "chr": "chr1",
+        "start": 0,
+        "end": 100_000,
+        "kind": "ab",
+        "mean": "tissue",
+        "tissue": "Brain",
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/bed/overlap", params=params)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    assert len(records) == 5  # 100kb / 20kb bins
+    for record in records:
+        assert record["chrom"] == "chr1"
+
+
+@pytest.mark.asyncio
+async def test_ab_falls_back_to_mock_for_unknown_sample() -> None:
+    """Unknown samples without AB files fall back to the deterministic mock."""
+    params = {
+        "sample": "UnknownSample",
+        "track": "default",
+        "chr": "chr1",
+        "start": 1_000_000,
+        "end": 2_000_000,
+        "kind": "ab",
+    }
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/bed/overlap", params=params)
+    assert response.status_code == 200
+    records = response.json()["records"]
+    # The mock generator emits a synthetic sinusoid; the route should still
+    # respond with at least one record for the requested chr/window.
+    assert len(records) > 0
+    for record in records:
+        assert record["chrom"] == "chr1"
