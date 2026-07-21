@@ -73,7 +73,7 @@ export interface PlotlyBuild {
 // callers always receive the engine object regardless of how plotly.js is
 // exposed at runtime.
 export async function loadPlotly(): Promise<PlotlyApi> {
-  const mod = (await import('plotly.js')) as unknown as {
+  const mod = (await import('plotly.js-dist-min')) as unknown as {
     default?: PlotlyApi;
   } & Partial<PlotlyApi>;
   return (mod.default ?? (mod as unknown as PlotlyApi)) as PlotlyApi;
