@@ -5,6 +5,7 @@ from .ab_reader import (
     read_ab_sample,
     resolve_mean_track_path,
 )
+from .bigwig_reader import read_bigwig_track
 from .chr_utils import normalize_chr
 from .pei_reader import read_pei_sample
 from .sample_resolver import (
@@ -22,6 +23,7 @@ __all__ = [
     "normalize_chr",
     "read_ab_mean_track",
     "read_ab_sample",
+    "read_bigwig_track",
     "read_pei_sample",
     "read_tad_sample",
     "resolve_ab_path",

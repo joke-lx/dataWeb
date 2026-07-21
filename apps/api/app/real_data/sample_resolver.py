@@ -1,11 +1,12 @@
 """Resolve sample IDs to actual file paths and normalize chromosome names."""
 
+import os
 from pathlib import Path
 from typing import Optional
 
 import yaml
 
-DATA_ROOT = Path(r"D:\qq\猪多组学数据\猪多组学数据")
+DATA_ROOT = Path(os.environ.get("DATAWEB_DATA_ROOT", r"D:\qq\猪多组学数据\猪多组学数据"))
 REGISTRY_PATH = Path(__file__).parent / "registry.yaml"
 
 _cache: Optional[dict] = None
