@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>3D Genome Multi-omics Browser (Mock)</title>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<style>
+
+body{
+    margin:0;
+    background:#f3f4f6;
+    font-family:Arial,sans-serif;
+}
+
+.header{
+    background:#111827;
+    color:white;
+    padding:12px 20px;
+}
+
+.toolbar{
+    background:white;
+    padding:10px;
+    display:flex;
+    gap:10px;
+    border-bottom:1px solid #ddd;
+}
+
+.track{
+    background:white;
+    margin:6px;
+    border-radius:6px;
+    box-shadow:0 1px 3px rgba(0,0,0,.1);
+}
+
+.row{
+    display:flex;
+}
+
+.half{
+    width:50%;
+}
+
+.title{
+    font-size:12px;
+    color:#666;
+    padding:5px 10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+3D Genome Multi-omics Browser
+</div>
+
+<div class="toolbar">
+
+<select>
+<option>Liver</option>
+<option>Brain</option>
+<option>Muscle</option>
+</select>
+
+<select>
+<option>Muscle</option>
+<option>Brain</option>
+<option>Liver</option>
+</select>
+
+<input
+style="width:300px"
+value="chr1:141000000-144000000">
+
+<button>Compare</button>
+
+</div>
+
+<!-- Hi-C -->
+
+<div class="row">
+
+<div class="half">
+<div id="hicA" class="track"></div>
+</div>
+
+<div class="half">
+<div id="hicB" class="track"></div>
+</div>
+
+</div>
+
+<!-- Differential -->
+
+<div id="diffHic" class="track"></div>
+
+<!-- AB -->
+
+<div id="ab" class="track"></div>
+
+<!-- IS -->
+
+<div id="is" class="track"></div>
+
+<!-- TAD -->
+
+<div id="tad" class="track"></div>
+
+<!-- PEI -->
+
+<div id="pei" class="track"></div>
+
+<!-- CTCF -->
+
+<div id="ctcf" class="track"></div>
+
+<!-- RNA -->
+
+<div class="row">
+
+<div class="half">
+<div id="rnaA" class="track"></div>
+</div>
+
+<div class="half">
+<div id="rnaB" class="track"></div>
+</div>
+
+</div>
+
+<!-- H3K4 -->
+
+<div class="row">
+
+<div class="half">
+<div id="h3k4A" class="track"></div>
+</div>
+
+<div class="half">
+<div id="h3k4B" class="track"></div>
+</div>
+
+</div>
+
+<!-- H3K27 -->
+
+<div class="row">
+
+<div class="half">
+<div id="h3k27A" class="track"></div>
+</div>
+
+<div class="half">
+<div id="h3k27B" class="track"></div>
+</div>
+
+</div>
+
+<!-- SV -->
+
+<div id="sv" class="track"></div>
+
+<!-- Gene -->
+
+<div id="gene" class="track"></div>
+
+<!-- 3D -->
+
+<div id="chrom3d" class="track"></div>
+
+<script>
+
+function gaussian(x,m,s,h){
+return h*Math.exp(-(x-m)*(x-m)/(2*s*s))
+}
+
+let x=[];
+
+for(let i=0;i<1000;i++) x.push(i);
+
+// ------------------------------------
+// HiC
+// ------------------------------------
+
+function buildMatrix(){
+
+let z=[];
+
+for(let i=0;i<80;i++){
+
+let row=[];
+
+for(let j=0;j<80;j++){
+
+let d=Math.abs(i-j);
+
+row.push(
+Math.exp(-d/8)
++
+Math.random()*0.1
+);
+
+}
+
+z.push(row);
+}
+
+return z;
+}
+
+Plotly.newPlot(
+'hicA',
+[{
+z:buildMatrix(),
+type:'heatmap',
+colorscale:'YlOrRd'
+}],
+{
+title:'Hi-C (Liver)',
+height:450
+}
+);
+
+Plotly.newPlot(
+'hicB',
+[{
+z:buildMatrix(),
+type:'heatmap',
+colorscale:'YlOrRd'
+}],
+{
+title:'Hi-C (Muscle)',
+height:450
+}
+);
+
+// ------------------------------------
+// Differential HiC
+// ------------------------------------
+
+let diff=[];
+
+for(let i=0;i<50;i++){
+
+let r=[];
+
+for(let j=0;j<50;j++){
+
+r.push(
+(Math.random()-0.5)*100
+);
+
+}
+
+diff.push(r);
+}
+
+Plotly.newPlot(
+'diffHic',
+[{
+z:diff,
+type:'heatmap',
+colorscale:'RdBu'
+}],
+{
+title:'Δ Hi-C',
+height:300
+}
+);
+
+// ------------------------------------
+// AB
+// ------------------------------------
+
+let ab=x.map(v=>
+Math.sin(v/80)
+);
+
+Plotly.newPlot(
+'ab',
+[{
+x:x,
+y:ab,
+mode:'lines'
+}],
+{
+title:'AB Compartment Index',
+height:150
+}
+);
+
+// ------------------------------------
+// IS
+// ------------------------------------
+
+let is=x.map(v=>
+1+
+Math.sin(v/50)+
+0.3*Math.cos(v/10)
+);
+
+Plotly.newPlot(
+'is',
+[{
+x:x,
+y:is,
+mode:'lines'
+}],
+{
+title:'Insulation Score',
+height:150
+}
+);
+
+// ------------------------------------
+// TAD
+// ------------------------------------
+
+Plotly.newPlot(
+'tad',
+[],
+{
+title:'TAD Domains',
+height:120,
+xaxis:{range:[0,1000]},
+yaxis:{visible:false},
+shapes:[
+{
+type:'rect',
+x0:0,x1:200,y0:0,y1:1
+},
+{
+type:'rect',
+x0:200,x1:450,y0:0,y1:1
+},
+{
+type:'rect',
+x0:450,x1:700,y0:0,y1:1
+},
+{
+type:'rect',
+x0:700,x1:1000,y0:0,y1:1
+}
+]
+}
+);
+
+// ------------------------------------
+// PEI
+// ------------------------------------
+
+Plotly.newPlot(
+'pei',
+[],
+{
+title:'PEI Anchors',
+height:180,
+xaxis:{range:[0,1000]},
+yaxis:{visible:false},
+shapes:[
+{
+type:'path',
+path:'M 100 0 Q 200 1 300 0'
+},
+{
+type:'path',
+path:'M 350 0 Q 500 1 650 0'
+}
+]
+}
+);
+
+// ------------------------------------
+// CTCF
+// ------------------------------------
+
+Plotly.newPlot(
+'ctcf',
+[],
+{
+title:'CTCF Loops',
+height:180,
+xaxis:{range:[0,1000]},
+yaxis:{visible:false},
+shapes:[
+{
+type:'path',
+path:'M 150 0 Q 350 1 550 0'
+},
+{
+type:'path',
+path:'M 600 0 Q 750 1 900 0'
+}
+]
+}
+);
+
+// ------------------------------------
+// RNA
+// ------------------------------------
+
+function expression(){
+
+return x.map(v=>
+
+gaussian(v,200,40,60)+
+gaussian(v,550,60,80)+
+gaussian(v,820,30,40)
+
+);
+}
+
+Plotly.newPlot(
+'rnaA',
+[{
+x:x,
+y:expression(),
+fill:'tozeroy'
+}],
+{
+title:'RNA-seq Liver',
+height:180
+}
+);
+
+Plotly.newPlot(
+'rnaB',
+[{
+x:x,
+y:expression().map(v=>v*0.6)
+,
+fill:'tozeroy'
+}],
+{
+title:'RNA-seq Muscle',
+height:180
+}
+);
+
+// ------------------------------------
+// H3K4
+// ------------------------------------
+
+Plotly.newPlot(
+'h3k4A',
+[{
+x:x,
+y:x.map(v=>gaussian(v,200,20,70)),
+fill:'tozeroy'
+}],
+{
+title:'H3K4me3 Liver',
+height:150
+}
+);
+
+Plotly.newPlot(
+'h3k4B',
+[{
+x:x,
+y:x.map(v=>gaussian(v,500,25,70)),
+fill:'tozeroy'
+}],
+{
+title:'H3K4me3 Muscle',
+height:150
+}
+);
+
+// ------------------------------------
+// H3K27
+// ------------------------------------
+
+Plotly.newPlot(
+'h3k27A',
+[{
+x:x,
+y:x.map(v=>
+gaussian(v,150,50,40)+
+gaussian(v,650,60,50)
+),
+fill:'tozeroy'
+}],
+{
+title:'H3K27ac Liver',
+height:150
+}
+);
+
+Plotly.newPlot(
+'h3k27B',
+[{
+x:x,
+y:x.map(v=>
+gaussian(v,300,60,50)+
+gaussian(v,800,50,50)
+),
+fill:'tozeroy'
+}],
+{
+title:'H3K27ac Muscle',
+height:150
+}
+);
+
+// ------------------------------------
+// SV
+// ------------------------------------
+
+Plotly.newPlot(
+'sv',
+[{
+x:[120,300,550,850],
+y:[1,1,1,1],
+mode:'markers+text',
+text:['DEL','DUP','INV','TRA']
+}],
+{
+title:'Structural Variants',
+height:120,
+yaxis:{visible:false}
+}
+);
+
+// ------------------------------------
+// Gene
+// ------------------------------------
+
+Plotly.newPlot(
+'gene',
+[],
+{
+title:'Gene Annotation',
+height:120,
+xaxis:{range:[0,1000]},
+yaxis:{visible:false},
+shapes:[
+{
+type:'rect',
+x0:100,x1:220,y0:0.4,y1:0.6
+},
+{
+type:'rect',
+x0:450,x1:650,y0:0.4,y1:0.6
+},
+{
+type:'rect',
+x0:800,x1:920,y0:0.4,y1:0.6
+}
+]
+}
+);
+
+// ------------------------------------
+// 3D genome mock
+// ------------------------------------
+
+let tx=[];
+let ty=[];
+let tz=[];
+
+for(let i=0;i<200;i++){
+
+tx.push(
+Math.sin(i/8)*10
+);
+
+ty.push(
+Math.cos(i/10)*10
+);
+
+tz.push(i/5);
+
+}
+
+Plotly.newPlot(
+'chrom3d',
+[{
+type:'scatter3d',
+mode:'lines+markers',
+x:tx,
+y:ty,
+z:tz
+}],
+{
+title:'3D Chromatin Structure',
+height:500
+}
+);
+
+</script>
+
+</body>
+</html>

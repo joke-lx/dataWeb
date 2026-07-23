@@ -5,3 +5,25 @@
   border-radius: 4px;
   overflow: hidden;
 }
+
+.three-d-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.three-d-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.three-d-cell__title {
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}

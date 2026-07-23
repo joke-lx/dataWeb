@@ -397,6 +397,138 @@ def ctcf_loops(
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# CTCF motif PWM (position weight matrix)
+# ---------------------------------------------------------------------------
+
+
+def ctcf_motif_matrix(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+) -> dict:
+    """Generate a synthetic CTCF motif PWM for the requested region.
+
+    Returns a ``dict`` with:
+      * ``"matrix"`` — list of 19 columns × 4 rows (A/C/G/T log-odds),
+        centred on a synthetic CTCF core motif site within the region.
+      * ``"consensus"`` — the consensus base at each column.
+      * ``"anchor_pos"`` — the genomic coordinate of the motif centre.
+
+    The core motif is modelled after the canonical CCCTC-binding factor
+    (JASPAR MA0139.1-like): 19 bp with a GC-rich centre.
+    """
+    width = end - start
+    if width <= 0:
+        return {"matrix": [], "consensus": "", "anchor_pos": 0}
+
+    rng = seed_rng(sample_id, chrom, start, end, 0, "ctcf_motif")
+    # Place a pseudo-random anchor in the region
+    anchor = int(rng.integers(start + 100, max(start + 100, end - 100)))
+    half = 9  # 19 bp → ±9 around anchor
+    n_cols = 19
+
+    # Canonical seed: PWM columns (A,C,G,T) loosely based on MA0139.1
+    # Each column is a distribution that sums roughly to 0 in log2 space
+    raw = [
+        #      A      C      G      T
+        [0.10,  0.30,  0.40,  0.20],  # 1
+        [0.15,  0.35,  0.35,  0.15],  # 2
+        [0.08,  0.45,  0.40,  0.07],  # 3
+        [0.05,  0.50,  0.40,  0.05],  # 4  — C rich
+        [0.05,  0.45,  0.45,  0.05],  # 5
+        [0.20,  0.30,  0.30,  0.20],  # 6
+        [0.25,  0.25,  0.25,  0.25],  # 7  — uniform
+        [0.10,  0.40,  0.40,  0.10],  # 8
+        [0.05,  0.55,  0.35,  0.05],  # 9  — C peak
+        [0.05,  0.40,  0.50,  0.05],  # 10 — G peak (core)
+        [0.05,  0.35,  0.55,  0.05],  # 11 — G peak
+        [0.10,  0.40,  0.40,  0.10],  # 12
+        [0.25,  0.25,  0.25,  0.25],  # 13 — uniform
+        [0.20,  0.30,  0.30,  0.20],  # 14
+        [0.07,  0.40,  0.45,  0.08],  # 15
+        [0.05,  0.45,  0.45,  0.05],  # 16
+        [0.10,  0.40,  0.40,  0.10],  # 17
+        [0.15,  0.35,  0.35,  0.15],  # 18
+        [0.20,  0.30,  0.30,  0.20],  # 19
+    ]
+
+    # Convert to log-odds ratio: log2(p / 0.25)
+    log_matrix: list[list[float]] = []
+    for col in raw:
+        log_col = [round(float(np.log2(max(p, 1e-10) / 0.25)), 4) for p in col]
+        log_matrix.append(log_col)
+
+    # Add per-sample noise so different samples give slightly different logos
+    rng = seed_rng(sample_id, chrom, start, end, 0, "ctcf_motif_noise")
+    noise_scale = 0.05
+    for col in log_matrix:
+        for i in range(4):
+            col[i] = round(col[i] + float(rng.normal(0, noise_scale)), 4)
+
+    # Transpose to (4 × 19) — rows A,C,G,T; columns positions
+    pwm: list[list[float]] = [
+        [round(col[0], 4) for col in log_matrix],  # A
+        [round(col[1], 4) for col in log_matrix],  # C
+        [round(col[2], 4) for col in log_matrix],  # G
+        [round(col[3], 4) for col in log_matrix],  # T
+    ]
+
+    bases = ["A", "C", "G", "T"]
+    consensus = "".join(
+        bases[max(range(4), key=lambda i: log_matrix[col_idx][i])]
+        for col_idx in range(n_cols)
+    )
+
+    return {
+        "matrix": pwm,
+        "consensus": consensus,
+        "anchor_pos": anchor,
+    }
+
+
+# ---------------------------------------------------------------------------
+# CTCF genotype distribution (3 mock SNPs)
+# ---------------------------------------------------------------------------
+
+
+def ctcf_genotype_distribution(population: str = "global") -> dict:
+    """Return a synthetic genotype distribution at CTCF anchor SNP sites.
+
+    ``population`` acts as a seed key so different populations yield
+    different distributions.
+    """
+    snps = [
+        {"snp_id": "rs1323_CTCF", "chrom": "chr1", "pos": 1_050_000},
+        {"snp_id": "rs9876_CTCF", "chrom": "chr1", "pos": 1_250_000},
+        {"snp_id": "rs5543_CTCF", "chrom": "chr1", "pos": 1_420_000},
+    ]
+    rng = seed_rng(population, "ctcf_genotype")
+    records: list[dict] = []
+    for snp in snps:
+        ref_hom = round(float(rng.uniform(0.3, 0.7)), 4)
+        alt_hom = round(float(rng.uniform(0.05, 0.25)), 4)
+        het = round(float(1.0 - ref_hom - alt_hom), 4)
+        # Clamp rounding errors
+        total = ref_hom + alt_hom + het
+        if abs(total - 1.0) > 0.01:
+            ref_hom = round(ref_hom / total, 4)
+            het = round(het / total, 4)
+            alt_hom = round(1.0 - ref_hom - het, 4)
+        records.append({
+            **snp,
+            "ref_allele": "C" if snp["snp_id"] == "rs1323_CTCF" else "G",
+            "alt_allele": "T" if snp["snp_id"] == "rs1323_CTCF" else "A",
+            "distribution": {
+                "ref_hom": ref_hom,
+                "het": het,
+                "alt_hom": alt_hom,
+            },
+        })
+    return {"records": records}
+
+
 def sv_records(
     sample_id: str,
     chrom: str,

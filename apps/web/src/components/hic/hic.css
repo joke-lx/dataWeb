@@ -1,6 +1,7 @@
 .hic-matrix {
   position: relative;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   height: 100%;
   background: var(--color-bg);
   overflow: hidden;
@@ -11,6 +12,8 @@
 
 .hic-matrix canvas {
   display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
 .hic-loading,
@@ -40,34 +43,96 @@
 
 .colormap-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
+  gap: 3px;
+  padding: 6px 4px;
   background: var(--color-surface-1);
-  border-bottom: var(--track-separator) solid var(--color-border);
-  font-size: var(--font-size-tiny);
+  flex: 0 0 auto;
+}
+
+.colormap-bar-title {
+  font-size: 9px;
+  color: var(--color-text-secondary);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 0.05em;
+}
+
+.colormap-bar-gradient-outer {
+  flex: 1 1 auto;
+  min-height: 40px;
+  display: flex;
 }
 
 .colormap-bar-gradient {
-  flex: 0 0 200px;
-  height: 12px;
+  width: 12px;
+  min-height: 100%;
   border: 1px solid var(--color-border);
+  border-radius: 2px;
 }
 
 .colormap-bar-labels {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  flex: 0 0 200px;
   font-family: var(--font-mono);
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
+  font-size: 9px;
+  align-items: center;
+  gap: 2px;
 }
 
 .colormap-bar-select {
-  margin-left: auto;
-  font-size: var(--font-size-tiny);
+  font-size: 8px;
   border: 1px solid var(--color-border);
   background: var(--color-bg);
   color: var(--color-text-primary);
-  padding: 2px 4px;
+  padding: 1px;
+  width: 100%;
+  text-align: center;
+  cursor: pointer;
+}
+
+/* Horizontal colorbar for differential mode (diff.html style) */
+.diff-colorbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+}
+
+.diff-colorbar-title {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.2px;
+}
+
+.diff-colorbar-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.diff-colorbar-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.diff-colorbar-gradient {
+  width: 150px;
+  height: 13px;
+  border: 1px solid var(--color-border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.diff-colorbar-fill {
+  width: 100%;
+  height: 100%;
 }

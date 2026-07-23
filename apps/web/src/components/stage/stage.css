@@ -34,7 +34,7 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .lane {
@@ -87,8 +87,26 @@
   color: var(--color-text-tertiary);
 }
 
-.lane-content > .plotly-track,
-.hic-lane-content {
+/* Hi-C lane: colormap + heatmap side by side */
+.hic-lane {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.hic-lane > .colormap-bar {
+  flex: 0 0 auto;
+}
+
+.hic-lane > .hic-matrix {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lane-content > .plotly-track {
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -108,11 +126,6 @@
   font-size: 11px;
   color: var(--color-sv-del);
   font-weight: bold;
-}
-
-.hic-lane-content {
-  width: 100%;
-  min-height: 0;
 }
 
 .placeholder {

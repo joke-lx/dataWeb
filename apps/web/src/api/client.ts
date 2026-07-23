@@ -1,6 +1,8 @@
 import type {
   BedKind,
   BedRecordByKind,
+  CtcfGenotypeResponse,
+  CtcfMotifResponse,
   Sample,
   Species,
 } from './types';
@@ -141,6 +143,32 @@ export async function fetchHicMatrix(
   const vmin = parseFloat(r.headers.get('X-Genomics-Vmin') ?? '0');
   const vmax = parseFloat(r.headers.get('X-Genomics-Vmax') ?? '1');
   return { matrix: new Float32Array(buf), shape: [h, w], vmin, vmax };
+}
+
+export async function fetchCtcfMotif(
+  chr: string,
+  start: number,
+  end: number,
+  sample: string = 'default',
+): Promise<CtcfMotifResponse> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+  });
+  const r = await fetch(`${API_BASE}/api/ctcf/motif?${params}`);
+  if (!r.ok) throw new Error(`ctcf/motif: ${r.status}`);
+  return r.json() as Promise<CtcfMotifResponse>;
+}
+
+export async function fetchCtcfGenotype(
+  population: string = 'global',
+): Promise<CtcfGenotypeResponse> {
+  const params = new URLSearchParams({ population });
+  const r = await fetch(`${API_BASE}/api/ctcf/genotype?${params}`);
+  if (!r.ok) throw new Error(`ctcf/genotype: ${r.status}`);
+  return r.json() as Promise<CtcfGenotypeResponse>;
 }
 
 export async function fetchDifferentialHic(

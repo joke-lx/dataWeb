@@ -1,10 +1,11 @@
+export type RouteCategory = 'main' | 'trigger';
+
 export interface RouteSpec {
   id: string;
   path: string;
-  label: string; // button text
-  icon: string; // emoji or short text, optional
-  description: string; // short description
-  primaryTrack: string; // which renderer is the focus
+  label: string;
+  description: string;
+  category: RouteCategory;
 }
 
 export const ROUTES: RouteSpec[] = [
@@ -12,104 +13,55 @@ export const ROUTES: RouteSpec[] = [
     id: 'hic',
     path: '/hic',
     label: 'Hi-C',
-    icon: '',
-    description: 'Contact matrix (double sample)',
-    primaryTrack: 'hic',
+    description: 'Contact matrix (single sample)',
+    category: 'main',
   },
   {
-    id: 'differential-hic',
-    path: '/differential-hic',
-    label: 'Differential Hi-C',
-    icon: '',
+    id: 'differential',
+    path: '/differential',
+    label: 'Δ Hi-C',
     description: 'log2(A/B) split heatmap',
-    primaryTrack: 'differentialHic',
+    category: 'main',
   },
   {
-    id: 'ab-index',
-    path: '/ab-index',
-    label: 'AB Index',
-    icon: '',
-    description: 'A/B compartment bar',
-    primaryTrack: 'bedGraph',
-  },
-  {
-    id: 'insulation-score',
-    path: '/insulation-score',
-    label: 'Insulation Score',
-    icon: '',
-    description: 'TAD boundary strength',
-    primaryTrack: 'is',
-  },
-  {
-    id: 'tad',
-    path: '/tad',
-    label: 'TAD',
-    icon: '',
-    description: 'Topologically associating domains',
-    primaryTrack: 'tadBar',
-  },
-  {
-    id: 'pei',
-    path: '/pei',
-    label: 'PEI Anchors',
-    icon: '',
-    description: 'Promoter-enhancer interactions',
-    primaryTrack: 'pei',
-  },
-  {
-    id: 'ctcf-loops',
-    path: '/ctcf-loops',
-    label: 'CTCF Loops',
-    icon: '',
-    description: 'CTCF-CTCF chromatin loops',
-    primaryTrack: 'ctcfLoop',
-  },
-  {
-    id: 'rna-seq',
-    path: '/rna-seq',
-    label: 'RNA-seq',
-    icon: '',
-    description: 'Gene expression bigwig',
-    primaryTrack: 'bigwig',
-  },
-  {
-    id: 'h3k4me3',
-    path: '/h3k4me3',
-    label: 'H3K4me3',
-    icon: '',
-    description: 'Active promoter ChIP-seq',
-    primaryTrack: 'bigwig',
-  },
-  {
-    id: 'h3k27ac',
-    path: '/h3k27ac',
-    label: 'H3K27ac',
-    icon: '',
-    description: 'Active enhancer ChIP-seq',
-    primaryTrack: 'bigwig',
-  },
-  {
-    id: 'sv',
-    path: '/sv',
-    label: 'SV',
-    icon: '',
-    description: 'Structural variants',
-    primaryTrack: 'sv',
-  },
-  {
-    id: 'gene',
-    path: '/gene',
-    label: 'Gene Annotation',
-    icon: '',
-    description: 'Gene model + exons',
-    primaryTrack: 'gene',
+    id: 'tracks',
+    path: '/tracks',
+    label: 'Tracks',
+    description: 'Multi-omics track views',
+    category: 'main',
   },
   {
     id: '3d',
     path: '/3d',
-    label: '3D Structure',
-    icon: '',
+    label: '3D',
     description: 'Chromatin 3D ribbon',
-    primaryTrack: 'threeD',
+    category: 'main',
+  },
+  {
+    id: 'ctcf-motif',
+    path: '/ctcf-motif',
+    label: 'CTCF Motif',
+    description: 'Motif logo + genotype distribution',
+    category: 'trigger',
   },
 ];
+
+/**
+ * Old 13-route URLs → new URL targets.
+ * Used by ``App.tsx`` to emit ``<Navigate replace>`` routes so
+ * bookmarks and external links continue to work.
+ */
+export const LEGACY_REDIRECTS: Record<string, string> = {
+  '/differential-hic': '/differential',
+  '/ab-index': '/tracks?type=ab',
+  '/insulation-score': '/tracks?type=is',
+  '/tad': '/tracks?type=tad',
+  '/pei': '/tracks?type=pei',
+  '/ctcf-loops': '/tracks?type=loop',
+  '/rna-seq': '/tracks?type=rna_seq',
+  '/h3k4me3': '/tracks?type=h3k4me3',
+  '/h3k27ac': '/tracks?type=h3k27ac',
+  '/sv': '/tracks?type=sv',
+  '/gene': '/tracks?type=gene',
+  // '/hic' and '/3d' are unchanged — no redirect needed.
+};

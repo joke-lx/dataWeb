@@ -25,10 +25,14 @@ export function useD3Zoom(ref: RefObject<HTMLElement | null>): {
     const zoomBehavior = d3Zoom<HTMLElement, unknown>()
       .scaleExtent([0.5, 200])
       .filter((event) => {
-        // Wheel zoom only on Ctrl/Cmd (standard map convention)
-        if (event.type === 'wheel') {
-          return event.ctrlKey || event.metaKey;
+        // Ignore events originating inside a UI overlay (sample picker, etc.)
+        // so scroll/click on those widgets don't pan/zoom the genome.
+        const target = event.target as Element | null;
+        if (target && typeof target.closest === 'function' && target.closest('[data-ui-overlay]')) {
+          return false;
         }
+        // Wheel zoom: scroll = zoom, no Ctrl/Cmd needed
+        if (event.type === 'wheel') return true;
         // Touch zoom: two-finger pinch
         if (event.type === 'touchstart' || event.type === 'touchmove') {
           return (event as TouchEvent).touches.length >= 2;
