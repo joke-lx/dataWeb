@@ -60,17 +60,18 @@ function baseLayout(
     xaxis: {
       range: [viewport.start, viewport.end],
       tickformat: '.2s',
-      showgrid: true,
-      gridcolor: 'rgba(0,0,0,0.06)',
+      showgrid: false,
       zeroline: false,
       tickfont: { size: 9 },
       ...xaxis,
     },
     yaxis: {
-      showgrid: true,
-      gridcolor: 'rgba(0,0,0,0.06)',
+      showgrid: false,
       zeroline: false,
       tickfont: { size: 9 },
+      linecolor: '#D9D9D7',
+      linewidth: 1,
+      showline: true,
       ...yaxis,
     },
   };
@@ -100,9 +101,9 @@ export function buildBigwig(
       y,
       type: 'scatter',
       mode: 'lines',
-      line: { color, width: 1.2 },
+      line: { color, width: 0.8 },
       fill: 'tozeroy',
-      fillcolor: withAlpha(color, 0.35),
+      fillcolor: withAlpha(color, 0.60),
       hoverinfo: 'skip',
     },
   ];
@@ -112,6 +113,91 @@ export function buildBigwig(
       yaxis: { rangemode: 'nonnegative' },
     }),
   };
+}
+
+/**
+ * Multi-sample overlay: N traces share one y-axis and one set of layout
+ * settings. Each series contributes its own x/y from the viewport-aware
+ * `Float32Array` returned by `fetchBigwig` for one sample id.
+ *
+ * Notes:
+ * - The y-axis uses `rangemode: 'nonnegative'` + Plotly autorange. We do
+ *   NOT negotiate a shared `[vmin, vmax]` from the per-request headers
+ *   because the header vmin/vmax semantics are not consistent across
+ *   samples (e.g. mock vs real data); autorange is the safest behaviour.
+ * - The original `buildBigwig` is kept for single-sample use cases.
+ */
+export interface BigwigSeries {
+  /** Sample id, surfaced as the trace name for the right-side legend. */
+  id: string;
+  values: Float32Array | undefined;
+  line: string;
+  fill: string;
+}
+
+export function buildBigwigOverlay(
+  series: BigwigSeries[],
+  viewport: Viewport,
+  title: string,
+  height: number,
+): PlotlyBuild {
+  const data: PlotlyData[] = [];
+  const binBp =
+    series.length > 0 && series[0].values && series[0].values.length > 0
+      ? (viewport.end - viewport.start) / series[0].values.length
+      : 1;
+
+  for (const s of series) {
+    const n = s.values?.length ?? 0;
+    if (n === 0) continue;
+    const x: number[] = [];
+    const y: number[] = [];
+    for (let i = 0; i < n; i += 1) {
+      x.push(viewport.start + (i + 0.5) * binBp);
+      y.push(s.values![i]);
+    }
+    data.push({
+      x,
+      y,
+      type: 'scatter',
+      mode: 'lines',
+      name: s.id,
+      line: { color: s.line, width: 0.8 },
+      fill: 'tozeroy',
+      fillcolor: s.fill,
+      hoverinfo: 'skip',
+    });
+  }
+
+  // Right-side sample labels (xref:'paper' x=1.005) — one annotation per
+  // visible trace, color-matched to its stroke.
+  const annotations: Array<{ [key: string]: unknown }> = [];
+  for (let i = 0; i < series.length; i += 1) {
+    const s = series[i];
+    if (!s.values || s.values.length === 0) continue;
+    annotations.push({
+      xref: 'paper',
+      yref: 'y',
+      x: 1.005,
+      // Stagger labels vertically so they don't overlap.
+      y: 1 - (i + 1) / (series.length + 1),
+      xanchor: 'left',
+      yanchor: 'middle',
+      text: s.id,
+      showarrow: false,
+      font: { size: 9, color: s.line },
+    });
+  }
+
+  const layout = baseLayout(viewport, title, height, {
+    yaxis: { rangemode: 'nonnegative' },
+    marginTop: 22,
+    marginBottom: 24,
+  });
+  if (annotations.length > 0) {
+    layout.annotations = annotations as unknown as PlotlyLayout['annotations'];
+  }
+  return { data, layout };
 }
 
 /** AB compartment index: signed curve with red (A) above zero, blue (B) below. */
@@ -133,7 +219,7 @@ export function buildBedGraph(
       mode: 'lines',
       line: { width: 0 },
       fill: 'tozeroy',
-      fillcolor: withAlpha(colorA, 0.4),
+      fillcolor: withAlpha(colorA, 0.60),
       hoverinfo: 'skip',
     },
     {
@@ -143,7 +229,7 @@ export function buildBedGraph(
       mode: 'lines',
       line: { width: 0 },
       fill: 'tozeroy',
-      fillcolor: withAlpha(colorB, 0.4),
+      fillcolor: withAlpha(colorB, 0.60),
       hoverinfo: 'skip',
     },
     {
@@ -326,8 +412,8 @@ export function buildGene(
   title: string,
   height: number,
 ): PlotlyBuild {
-  const exonColor = cssVar('--color-gene-exon', '#4a7dc9');
-  const intronColor = cssVar('--color-gene-intron', '#b8c8d8');
+  const exonColor = cssVar('--color-gene-exon', '#26417f');
+  const intronColor = cssVar('--color-gene-intron', '#26417f');
 
   interface GeneAccum {
     start: number;

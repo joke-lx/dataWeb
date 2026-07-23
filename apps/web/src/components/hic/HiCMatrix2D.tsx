@@ -14,7 +14,7 @@ interface HiCMatrix2DStandardProps {
   data?: HicMatrixResponse;
   loading?: boolean;
   error?: Error | null;
-  colorMap: 'rdbu' | 'viridis';
+  colorMap: 'rdbu' | 'viridis' | 'ref';
   vmin?: number;
   vmax?: number;
   bin: number;
@@ -81,8 +81,8 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
     height = 480,
   } = props;
   // Differential mode forces the white-centered diverging colormap (shader index 2).
-  const effectiveColorMapIndex: 0 | 1 | 2 =
-    variant === 'differential' ? 2 : colorMap === 'viridis' ? 1 : 0;
+  const effectiveColorMapIndex: 0 | 1 | 2 | 3 =
+    variant === 'differential' ? 2 : colorMap === 'viridis' ? 1 : colorMap === 'ref' ? 3 : 0;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewport = useViewport();
@@ -164,11 +164,10 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
       return;
     }
 
-    // R32F + LINEAR sampling requires OES_texture_float_linear to be *enabled*
-    // (not just supported). Without it, implementations silently return 0 for
-    // float-texture samples and the canvas renders as a uniform flat color.
-    // OES_texture_float is WebGL1-only; in WebGL2 R32F is core, but float
-    // filtering still needs the linear-filter extension activated.
+    // Use NEAREST filtering for the data texture to preserve crisp bin-level
+    // pixels. LINEAR would blur adjacent bins, making the matrix look muddy.
+    // The reference hic.html uses the same NEAREST approach for the matrix
+    // texture (only the LUT gets LINEAR interpolation).
     gl.getExtension('OES_texture_float_linear');
 
     let vertex: WebGLShader | null = null;
@@ -210,8 +209,8 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
 
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     textureRef.current = texture;

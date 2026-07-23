@@ -57,6 +57,35 @@
   border-color: var(--color-accent);
 }
 
+/* ---------- Track-bound sample header (sibling of Lane) ---------- */
+
+.track-sample-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: 6px var(--space-3);
+  background: var(--color-surface-1);
+  border: var(--track-separator) solid var(--color-border);
+  border-radius: 3px;
+  position: relative;
+  /* Sit at the top of the lane's 1fr column inside `.route-content`. */
+  width: 100%;
+}
+
+.track-sample-header__title {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.track-sample-header .sample-picker-row {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* ---------- Sample picker for multi-sample bigwig overlay ---------- */
 
 .sample-picker-row {

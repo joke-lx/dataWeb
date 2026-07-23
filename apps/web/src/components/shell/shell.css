@@ -53,10 +53,24 @@
 .topbar-nav {
   display: flex;
   gap: 2px;
-  flex: 1 1 auto;
   overflow-x: auto;
   overflow-y: hidden;
   min-width: 0;
+}
+
+.topbar-nav--main {
+  flex: 1 1 auto;
+}
+
+.topbar-nav--trigger {
+  flex: 0 0 auto;
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: var(--track-separator) solid var(--color-border);
+}
+
+.topbar-nav--trigger .topbar-btn {
+  background: var(--color-surface-2);
 }
 
 .topbar-btn {
