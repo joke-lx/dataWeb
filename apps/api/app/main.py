@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import bed, bigwig, ctcf, differential, hic, samples, species, sv
+from app.routes import bed, bigwig, ctcf, ctcf_motif, differential, hic, samples, species, sv
 
 
 @asynccontextmanager
@@ -44,4 +44,5 @@ app.include_router(bigwig.router)
 app.include_router(bed.router)
 app.include_router(differential.router)
 app.include_router(ctcf.router)
+app.include_router(ctcf_motif.router)
 app.include_router(sv.router)
