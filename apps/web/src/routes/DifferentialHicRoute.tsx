@@ -54,30 +54,33 @@ export function DifferentialHicRoute(): JSX.Element {
       <header className="route-header">
         <h2>Differential Hi-C</h2>
         <p>
-          log2(<code>{sampleA}</code> / <code>{sampleB}</code>) ·{' '}
+          log<sub>2</sub>(<code>{sampleA}</code> / <code>{sampleB}</code>) ·{' '}
           {viewport.chr}:{viewport.start.toLocaleString()}-
           {viewport.end.toLocaleString()}
         </p>
       </header>
       <div className="route-content">
-        <div className="diff-hic-pair">
-          <HiCMatrix2D
-            sampleA={sampleA}
-            sampleB={sampleB}
-            variant="differential"
-            data={matrix ?? undefined}
-            loading={loading}
-            error={error}
-            bin={viewport.bin}
-            height={420}
+        <div className="diff-heatmap-wrapper">
+          <ColormapBar
+            vmin={matrix?.vmin ?? -1}
+            vmax={matrix?.vmax ?? 1}
+            mode="differential"
+            colorMap="rdbu"
+            horizontal
           />
+          <div className="diff-heatmap-container">
+            <HiCMatrix2D
+              sampleA={sampleA}
+              sampleB={sampleB}
+              variant="differential"
+              data={matrix ?? undefined}
+              loading={loading}
+              error={error}
+              bin={viewport.bin}
+              height={420}
+            />
+          </div>
         </div>
-        <ColormapBar
-          vmin={matrix?.vmin ?? -1}
-          vmax={matrix?.vmax ?? 1}
-          mode="differential"
-          colorMap="rdbu"
-        />
         <Lane kind="gene" title="Gene model" trackName="gene" bedKind="gene" sampleId={sampleA} />
       </div>
     </main>

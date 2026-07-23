@@ -50,3 +50,28 @@ export interface BedRecordByKind {
   gene: GeneRecord;
   is: BedGraphRecord;
 }
+
+/** CTCF motif PWM returned by ``/api/ctcf/motif``. */
+export interface CtcfMotifResponse {
+  matrix: number[][];
+  consensus: string;
+  anchor_pos: number;
+}
+
+/** Single SNP entry in the ``/api/ctcf/genotype`` response. */
+export interface CtcfGenotypeRecord {
+  snp_id: string;
+  chrom: string;
+  pos: number;
+  ref_allele: string;
+  alt_allele: string;
+  distribution: {
+    ref_hom: number;
+    het: number;
+    alt_hom: number;
+  };
+}
+
+export interface CtcfGenotypeResponse {
+  records: CtcfGenotypeRecord[];
+}

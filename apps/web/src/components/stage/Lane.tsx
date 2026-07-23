@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { JSX } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 
 import {
   fetchBed,
@@ -19,6 +19,7 @@ import type {
 import type { SVRecord } from '../../api/client';
 import { useActiveSample } from '../../hooks/useActiveSample';
 import { useViewport, type Viewport } from '../../store/viewport';
+import type { SampleColor } from '../tracks/sampleColors';
 import { ColormapBar, type ColormapName } from '../hic/ColormapBar';
 import { HiCMatrix2D } from '../hic/HiCMatrix2D';
 import '../hic/hic.css';
@@ -27,6 +28,8 @@ import type { PlotlyBuild, PlotlyLayout } from '../linear/plotlyTypes';
 import {
   buildBedGraph,
   buildBigwig,
+  buildBigwigOverlay,
+  type BigwigSeries,
   buildGene,
   buildInsulationScore,
   buildPei,
@@ -72,6 +75,17 @@ interface LaneProps {
   height?: number;
   /** Override the active sample. */
   sampleId?: string;
+  /**
+   * Multi-sample overlay (only honoured for `kind === 'bigwig'`). When set,
+   * the lane fans out one `fetchBigwig` per id and renders them as stacked
+   * traces with the provided line/fill colors. Ignored for other kinds.
+   */
+  sampleIds?: string[];
+  /**
+   * Per-sample colors aligned with `sampleIds` (only used with multi-sample).
+   * When omitted, falls back to the default `--sample-a` token for all series.
+   */
+  sampleColors?: SampleColor[];
 }
 
 function isBigwigData(data: LinearData | undefined): data is BigwigData {
@@ -133,12 +147,14 @@ export function Lane({
   bedKind,
   height,
   sampleId: sampleIdOverride,
+  sampleIds,
+  sampleColors,
 }: LaneProps): JSX.Element {
   const viewport = useViewport();
   const activeSample = useActiveSample();
   const sampleId = sampleIdOverride ?? activeSample ?? 'Brain_BF3';
   const laneHeight = height ?? HEIGHTS[kind];
-  const [colorMap, setColorMap] = useState<ColormapName>('rdbu');
+  const [colorMap, setColorMap] = useState<ColormapName>('ref');
   const viewportWidth = viewport.end - viewport.start;
   const targetBin = Math.ceil(viewportWidth / MAX_MATRIX_DIM);
   const hicBin = Math.max(
@@ -146,10 +162,17 @@ export function Lane({
     Math.ceil(targetBin / 1000) * 1000,
   );
 
-  const query = useQuery<LaneData>({
+  // Multi-sample path: only for bigwig. Each sample becomes its own query.
+  const isOverlay = kind === 'bigwig' && sampleIds !== undefined && sampleIds.length > 0;
+  const singleId = isOverlay ? sampleIds![0] : sampleId;
+  const bins = isOverlay
+    ? Math.max(50, Math.min(800, Math.ceil(viewportWidth / 1000)))
+    : 0;
+
+  const singleQuery = useQuery<LaneData>({
     queryKey: [
       kind,
-      sampleId,
+      singleId,
       trackName,
       bedKind,
       viewport.chr,
@@ -161,7 +184,7 @@ export function Lane({
     queryFn: async () => {
       if (kind === 'hic') {
         return fetchHicMatrix(
-          sampleId,
+          singleId,
           viewport.chr,
           viewport.start,
           viewport.end,
@@ -169,12 +192,8 @@ export function Lane({
         );
       }
       if (kind === 'bigwig' && trackName) {
-        const bins = Math.max(
-          50,
-          Math.min(800, Math.ceil(viewportWidth / 1000)),
-        );
         return fetchBigwig(
-          sampleId,
+          singleId,
           trackName,
           viewport.chr,
           viewport.start,
@@ -184,7 +203,7 @@ export function Lane({
       }
       if (kind === 'sv') {
         return fetchSV(
-          sampleId,
+          singleId,
           viewport.chr,
           viewport.start,
           viewport.end,
@@ -193,7 +212,7 @@ export function Lane({
       const resolvedBedKind = kind === 'is' ? 'is' : bedKind;
       if (resolvedBedKind) {
         return fetchBed(
-          sampleId,
+          singleId,
           resolvedBedKind,
           viewport.chr,
           viewport.start,
@@ -202,45 +221,117 @@ export function Lane({
       }
       throw new Error(`unsupported kind: ${kind}`);
     },
+    enabled: !isOverlay, // single query suppressed when overlay is in play
     staleTime: 30_000,
   });
 
+  const overlayQueries = useQueries({
+    queries: isOverlay
+      ? sampleIds!.map((id) => ({
+          queryKey: [
+            kind,
+            id,
+            trackName,
+            bedKind,
+            viewport.chr,
+            viewport.start,
+            viewport.end,
+            viewport.bin,
+            bins,
+          ],
+          queryFn: () =>
+            fetchBigwig(
+              id,
+              trackName!,
+              viewport.chr,
+              viewport.start,
+              viewport.end,
+              bins,
+            ),
+          enabled: !!trackName,
+          staleTime: 30_000,
+        }))
+      : [],
+  });
+
   if (kind === 'hic') {
-    const hicData = isHicData(query.data) ? query.data : undefined;
+    const hicData = isHicData(singleQuery.data) ? singleQuery.data : undefined;
     return (
       <div className="lane" style={{ height: `${laneHeight}px` }}>
         <div className="lane-label">
           <span className="lane-title">{title}</span>
           <span className="lane-sample">{sampleId}</span>
         </div>
-        <div className="lane-content" data-kind={kind}>
-          <div className="hic-lane-content">
-            <HiCMatrix2D
-              sampleId={sampleId}
-              data={hicData}
-              loading={query.isLoading}
-              error={query.error}
-              colorMap={colorMap}
-              vmin={hicData?.vmin}
-              vmax={hicData?.vmax}
-              bin={hicBin}
-              height={laneHeight - 32}
-            />
-            <ColormapBar
-              vmin={hicData?.vmin ?? 0}
-              vmax={hicData?.vmax ?? 1}
-              colorMap={colorMap}
-              onChange={setColorMap}
-            />
-          </div>
+        <div className="hic-lane" style={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch', flex: '1 1 auto', minWidth: 0 }}>
+          <ColormapBar
+            vmin={hicData?.vmin ?? 0}
+            vmax={hicData?.vmax ?? 1}
+            colorMap={colorMap}
+            onChange={setColorMap}
+          />
+          <HiCMatrix2D
+            sampleId={sampleId}
+            data={hicData}
+            loading={singleQuery.isLoading}
+            error={singleQuery.error}
+            colorMap={colorMap}
+            vmin={hicData?.vmin}
+            vmax={hicData?.vmax}
+            bin={hicBin}
+            height={laneHeight - 32}
+          />
         </div>
       </div>
     );
   }
 
+  // ---- Multi-sample bigwig overlay path ----
+  if (isOverlay) {
+    const overlayError = overlayQueries.find((q) => q.error)?.error ?? null;
+    const overlayLoading = overlayQueries.some((q) => q.isLoading);
+    const fallbackColor = { line: '#c0392b', fill: 'rgba(192, 57, 43, 0.60)' };
+    const series: BigwigSeries[] = sampleIds!.map((id, i) => ({
+      id,
+      values: overlayQueries[i]?.data?.values,
+      line: sampleColors?.[i]?.line ?? fallbackColor.line,
+      fill: sampleColors?.[i]?.fill ?? fallbackColor.fill,
+    }));
+    const plot = buildBigwigOverlay(series, viewport, title, laneHeight);
+
+    return (
+      <div className="lane" style={{ height: `${laneHeight}px` }}>
+        <div className="lane-label">
+          <span className="lane-sample">
+            {sampleIds!.length > 2
+              ? `${sampleIds!.slice(0, 2).join(', ')} +${sampleIds!.length - 2}`
+              : sampleIds!.join(', ')}
+          </span>
+        </div>
+        <div
+          className="lane-content"
+          data-kind={kind}
+          data-track-name={trackName}
+        >
+          {series.every((s) => !s.values) ? (
+            <span className="placeholder">No samples selected</span>
+          ) : (
+            <PlotlyTrack data={plot.data} layout={plot.layout} height={laneHeight} />
+          )}
+          {overlayLoading && <span className="track-loading">…</span>}
+          {overlayError && (
+            <span className="track-error" title={overlayError.message}>
+              !
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Standard single-sample linear track path ----
   const plot = buildLinearPlot(
     kind,
-    query.data as LinearData | undefined,
+    singleQuery.data as LinearData | undefined,
     viewport,
     title,
     laneHeight,
@@ -257,9 +348,9 @@ export function Lane({
         data-track-name={trackName}
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={laneHeight} />
-        {query.isLoading && <span className="track-loading">…</span>}
-        {query.error && (
-          <span className="track-error" title={query.error.message}>
+        {singleQuery.isLoading && <span className="track-loading">…</span>}
+        {singleQuery.error && (
+          <span className="track-error" title={singleQuery.error.message}>
             !
           </span>
         )}
