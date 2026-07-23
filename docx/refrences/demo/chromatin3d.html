@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Chromatin Structures (WebGL / three.js-style)</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#fff;
+    font-family:Georgia,'Times New Roman',serif;color:#2C2C2B;}
+  .wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:100vh;gap:6px;padding:24px;}
+  .row{display:flex;align-items:center;gap:8px;}
+  canvas{display:block;cursor:grab;background:#fff;}
+  canvas:active{cursor:grabbing;}
+  .label{font-size:20px;letter-spacing:.3px;min-width:90px;}
+  .hint{margin-top:10px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:11px;color:#9a978f;}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="row"><canvas data-organ="liver"  width="1" height="1"></canvas><span class="label">Liver</span></div>
+  <div class="row"><canvas data-organ="muscle" width="1" height="1"></canvas><span class="label">Muscle</span></div>
+  <div class="row"><canvas data-organ="brain"  width="1" height="1"></canvas><span class="label">Brain</span></div>
+  <div class="hint">drag to rotate · auto-rotates when idle</div>
+</div>
+<script>
+// ================= small vec3 / mat4 math =================
+const V={
+  sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],
+  add:(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],
+  scale:(a,s)=>[a[0]*s,a[1]*s,a[2]*s],
+  dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
+  cross:(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],
+  len:a=>Math.hypot(a[0],a[1],a[2]),
+  norm:a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/l,a[1]/l,a[2]/l];},
+};
+const M={
+  mul:(a,b)=>{const o=new Array(16);for(let r=0;r<4;r++)for(let c=0;c<4;c++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+r]*b[c*4+k];o[c*4+r]=s;}return o;},
+  persp:(f,a,n,fa)=>{const t=1/Math.tan(f/2);return [t/a,0,0,0, 0,t,0,0, 0,0,(fa+n)/(n-fa),-1, 0,0,(2*fa*n)/(n-fa),0];},
+  rotY:g=>{const c=Math.cos(g),s=Math.sin(g);return [c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1];},
+  rotX:g=>{const c=Math.cos(g),s=Math.sin(g);return [1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1];},
+  lookAt:(e,c,u)=>{const z=V.norm(V.sub(e,c)),x=V.norm(V.cross(u,z)),y=V.cross(z,x);
+    return [x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0, -V.dot(x,e),-V.dot(y,e),-V.dot(z,e),1];},
+};
+// ================= color helpers =================
+function hsl2rgb(h,s,l){h/=360;const f=(n)=>{const k=(n+h*12)%12;return l-s*Math.min(l,1-l)*Math.max(-1,Math.min(k-3,9-k,1));};return [f(0),f(8),f(4)];}
+function rainbow(t){return hsl2rgb(240*(1-t),0.72,0.52);}   // blue->cyan->green->yellow->red
+// ================= curve + geometry =================
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+function catmull(pts,seg){
+  const out=[];const n=pts.length;
+  for(let i=0;i<n-1;i++){
+    const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(n-1,i+2)];
+    for(let s=0;s<seg;s++){const t=s/seg,t2=t*t,t3=t2*t;
+      out.push([0,1,2].map(k=>0.5*((2*p1[k])+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3)));}
+  }
+  out.push(pts[n-1]);return out;
+}
+function normalizePts(pts){
+  const c=[0,0,0];for(const p of pts){c[0]+=p[0];c[1]+=p[1];c[2]+=p[2];}
+  c[0]/=pts.length;c[1]/=pts.length;c[2]/=pts.length;
+  let R=0;const o=pts.map(p=>{const q=V.sub(p,c);R=Math.max(R,V.len(q));return q;});
+  const s=1.25/(R||1);return o.map(q=>V.scale(q,s));
+}
+function makePath(seed,steps){
+  const rng=mulberry32(seed);
+  let d=V.norm([rng()-.5,rng()-.5,rng()-.5]);let p=[0,0,0];const pts=[[0,0,0]];
+  for(let i=0;i<steps;i++){
+    d=V.norm(V.add(d,V.scale([rng()-.5,rng()-.5,rng()-.5],1.85)));
+    p=V.add(p,V.scale(d,0.42));pts.push(p.slice());
+  }
+  return normalizePts(catmull(pts,10));
+}
+// parallel-transport tube
+function buildTube(P,radius,radial,colorFn,out){
+  const n=P.length,T=[];
+  for(let i=0;i<n;i++){const a=P[Math.max(0,i-1)],b=P[Math.min(n-1,i+1)];T[i]=V.norm(V.sub(b,a));}
+  let up=Math.abs(V.dot([0,1,0],T[0]))>0.9?[1,0,0]:[0,1,0];
+  let N=V.norm(V.cross(up,T[0]));
+  const base=out.pos.length/3;
+  for(let i=0;i<n;i++){
+    if(i>0){const proj=V.sub(N,V.scale(T[i],V.dot(N,T[i])));N=V.norm(proj);}
+    const B=V.norm(V.cross(T[i],N));
+    const col=colorFn(i/(n-1));
+    for(let j=0;j<radial;j++){
+      const a=2*Math.PI*j/radial;
+      const dir=V.add(V.scale(N,Math.cos(a)),V.scale(B,Math.sin(a)));
+      const pos=V.add(P[i],V.scale(dir,radius));
+      out.pos.push(pos[0],pos[1],pos[2]);
+      out.nrm.push(dir[0],dir[1],dir[2]);
+      out.col.push(col[0],col[1],col[2]);
+    }
+  }
+  for(let i=0;i<n-1;i++)for(let j=0;j<radial;j++){
+    const a=base+i*radial+j,b=base+i*radial+(j+1)%radial,c=base+(i+1)*radial+j,d=base+(i+1)*radial+(j+1)%radial;
+    out.idx.push(a,c,b, b,c,d);
+  }
+}
+function buildSphere(center,radius,lat,lon,color,out){
+  const base=out.pos.length/3;
+  for(let i=0;i<=lat;i++){const th=Math.PI*i/lat,st=Math.sin(th),ct=Math.cos(th);
+    for(let j=0;j<=lon;j++){const ph=2*Math.PI*j/lon,sp=Math.sin(ph),cp=Math.cos(ph);
+      const nx=st*cp,ny=ct,nz=st*sp;
+      out.pos.push(center[0]+radius*nx,center[1]+radius*ny,center[2]+radius*nz);
+      out.nrm.push(nx,ny,nz);out.col.push(color[0],color[1],color[2]);
+    }}
+  for(let i=0;i<lat;i++)for(let j=0;j<lon;j++){
+    const a=base+i*(lon+1)+j,b=a+lon+1;out.idx.push(a,b,a+1, a+1,b,b+1);
+  }
+}
+// ================= scene build per organ =================
+function organGeometry(organ){
+  const out={pos:[],nrm:[],col:[],idx:[]};
+  let P,markers=[];
+  if(organ==='liver'){P=makePath(7,80);
+    markers=[{t:0.16,c:[0.27,0.62,0.32]},{t:0.26,c:[0.27,0.62,0.32]},{t:0.37,c:[0.27,0.62,0.32]},
+             {t:0.52,c:[0.5,0.5,0.5]},{t:0.72,c:[0.5,0.5,0.5]}];}
+  else if(organ==='muscle'){P=makePath(23,72);markers=[{t:0.55,c:[0.5,0.5,0.5]}];}
+  else {P=makePath(41,74);markers=[{t:0.5,c:[0.5,0.5,0.5]}];}
+  buildTube(P,0.034,10,rainbow,out);
+  for(const m of markers){const idx=Math.round(m.t*(P.length-1));buildSphere(P[idx],0.11,16,20,m.c,out);}
+  return out;
+}
+// ================= WebGL renderer =================
+const VS=`attribute vec3 aPos;attribute vec3 aNormal;attribute vec3 aColor;
+uniform mat4 uMVP;uniform mat4 uModel;varying vec3 vN;varying vec3 vColor;
+void main(){gl_Position=uMVP*vec4(aPos,1.0);vN=mat3(uModel)*aNormal;vColor=aColor;}`;
+const FS=`precision mediump float;varying vec3 vN;varying vec3 vColor;uniform vec3 uLight;
+void main(){vec3 N=normalize(vN);float d=max(dot(N,normalize(uLight)),0.0);
+float I=0.5+0.65*d;vec3 c=clamp(vColor*I,0.0,1.0);gl_FragColor=vec4(c,1.0);}`;
+function compile(gl,type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s;}
+function makeScene(canvas){
+  const organ=canvas.dataset.organ;
+  const g=organGeometry(organ);
+  const gl=canvas.getContext('webgl',{antialias:true});
+  const prog=gl.createProgram();
+  gl.attachShader(prog,compile(gl,gl.VERTEX_SHADER,VS));
+  gl.attachShader(prog,compile(gl,gl.FRAGMENT_SHADER,FS));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  function buf(data,size,name){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
+    const loc=gl.getAttribLocation(prog,name);gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc,size,gl.FLOAT,false,0,0);}
+  buf(g.pos,3,'aPos');buf(g.nrm,3,'aNormal');buf(g.col,3,'aColor');
+  const ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(g.idx),gl.STATIC_DRAW);
+  gl.enable(gl.DEPTH_TEST);gl.clearColor(1,1,1,1);
+  return {gl,prog,count:g.idx.length,canvas,rot:Math.random()*6,drag:0,dragging:false,lastX:0,vel:0};
+}
+function draw(s,dt){
+  const {gl,prog,canvas}=s;
+  const dpr=Math.max(2,window.devicePixelRatio||1);
+  const W=Math.round(canvas.clientWidth*dpr),H=Math.round(canvas.clientHeight*dpr);
+  if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;}
+  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  if(!s.dragging){s.rot+=dt*0.00045+s.vel;s.vel*=0.94;}
+  const model=M.mul(M.rotY(s.rot+s.drag),M.rotX(-0.32));
+  const view=M.lookAt([0,0,3.5],[0,0,0],[0,1,0]);
+  const proj=M.persp(42*Math.PI/180,canvas.width/canvas.height,0.1,100);
+  const mvp=M.mul(proj,M.mul(view,model));
+  gl.useProgram(prog);
+  gl.uniformMatrix4fv(gl.getUniformLocation(prog,'uMVP'),false,new Float32Array(mvp));
+  gl.uniformMatrix4fv(gl.getUniformLocation(prog,'uModel'),false,new Float32Array(model));
+  gl.uniform3f(gl.getUniformLocation(prog,'uLight'),0.45,0.7,0.8);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING)||null);
+  gl.drawElements(gl.TRIANGLES,s.count,gl.UNSIGNED_SHORT,0);
+}
+// ================= init =================
+const scenes=[];
+document.querySelectorAll('canvas').forEach(cv=>{
+  cv.style.width='230px';cv.style.height='150px';
+  const s=makeScene(cv);scenes.push(s);
+  cv.addEventListener('pointerdown',e=>{s.dragging=true;s.lastX=e.clientX;cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener('pointermove',e=>{if(!s.dragging)return;const dx=(e.clientX-s.lastX)*0.01;s.drag+=dx;s.vel=dx*0.25;s.lastX=e.clientX;});
+  cv.addEventListener('pointerup',e=>{s.dragging=false;});
+  cv.addEventListener('pointercancel',()=>{s.dragging=false;});
+});
+let last=performance.now();
+function loop(t){const dt=t-last;last=t;for(const s of scenes)draw(s,dt);requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
