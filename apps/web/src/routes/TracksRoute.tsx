@@ -10,7 +10,6 @@ import { Lane } from '../components/stage/Lane';
 import { SubTabBar } from '../components/tracks/SubTabBar';
 import { LoopTrack } from '../components/tracks/LoopTrack';
 import { TrackSampleHeader } from '../components/tracks/TrackSampleHeader';
-import { colorForTissue } from '../components/tracks/sampleColors';
 import { SUB_TABS, TRACK_CATALOG } from './trackSpec';
 import type { Sample } from '../api/types';
 import type { TrackId } from './trackSpec';
@@ -40,9 +39,11 @@ export function TracksRoute(): JSX.Element {
     );
   };
 
-  // Build a sample-id → Sample lookup for color resolution. When the
-  // catalog is still loading, raw IDs still flow through (resolved to
-  // fallback gray) so the overlay renders without waiting for the catalog.
+  // Build a sample-id → Sample lookup for the metadata passed to Lane. When
+  // the catalog is still loading, ids still flow through (Lane falls back to
+  // a uniform gray palette) so the overlay renders without waiting for the
+  // catalog. Unknown ids also get the fallback palette — they remain visible
+  // but uncolored rather than being silently dropped.
   const sampleById = useMemo(() => {
     const map = new Map<string, Sample>();
     (allSamples ?? []).forEach((s) => map.set(s.id, s));
@@ -50,11 +51,15 @@ export function TracksRoute(): JSX.Element {
   }, [allSamples]);
 
   const overlaySampleIds = mainSpec.kind === 'bigwig' ? sampleIds : undefined;
-  const overlayColors =
+  // sampleMeta aligns with sampleIds by index; undefined entries are replaced
+  // with a minimal stub so colorForTissue receives a valid tissue field.
+  const overlayMeta =
     overlaySampleIds === undefined
       ? undefined
-      : overlaySampleIds.map((id) =>
-          colorForTissue(sampleById.get(id)?.tissue),
+      : overlaySampleIds.map(
+          (id) =>
+            sampleById.get(id) ??
+            ({ id, species: '', tissue: '', breed: '', sex: '', individual: 0, dev_stage: '' } as Sample),
         );
 
   return (
@@ -97,7 +102,7 @@ export function TracksRoute(): JSX.Element {
               bedKind={mainSpec.bedKind}
               sampleId={sampleId}
               sampleIds={overlaySampleIds}
-              sampleColors={overlayColors}
+              sampleMeta={overlayMeta}
               height={mainSpec.defaultHeight}
             />
             {tab.aux.map((auxId) => {

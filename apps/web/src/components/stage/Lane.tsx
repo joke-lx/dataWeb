@@ -19,7 +19,8 @@ import type {
 import type { SVRecord } from '../../api/client';
 import { useActiveSample } from '../../hooks/useActiveSample';
 import { useViewport, type Viewport } from '../../store/viewport';
-import type { SampleColor } from '../tracks/sampleColors';
+import type { Sample } from '../../api/types';
+import { colorForTissue, type SampleColor } from '../tracks/sampleColors';
 import { ColormapBar, type ColormapName } from '../hic/ColormapBar';
 import { HiCMatrix2D } from '../hic/HiCMatrix2D';
 import '../hic/hic.css';
@@ -78,14 +79,17 @@ interface LaneProps {
   /**
    * Multi-sample overlay (only honoured for `kind === 'bigwig'`). When set,
    * the lane fans out one `fetchBigwig` per id and renders them as stacked
-   * traces with the provided line/fill colors. Ignored for other kinds.
+   * traces. The companion `sampleMeta` array carries the matching `Sample`
+   * metadata in the same order; without it a fallback gray palette is used.
+   * Ignored for other kinds.
    */
   sampleIds?: string[];
   /**
-   * Per-sample colors aligned with `sampleIds` (only used with multi-sample).
-   * When omitted, falls back to the default `--sample-a` token for all series.
+   * Per-sample metadata aligned with `sampleIds` (only used with multi-sample).
+   * When omitted, the lane falls back to a uniform gray palette (useful for
+   * tests and the legacy single-sample path).
    */
-  sampleColors?: SampleColor[];
+  sampleMeta?: Sample[];
 }
 
 function isBigwigData(data: LinearData | undefined): data is BigwigData {
@@ -148,7 +152,7 @@ export function Lane({
   height,
   sampleId: sampleIdOverride,
   sampleIds,
-  sampleColors,
+  sampleMeta,
 }: LaneProps): JSX.Element {
   const viewport = useViewport();
   const activeSample = useActiveSample();
@@ -289,13 +293,20 @@ export function Lane({
   if (isOverlay) {
     const overlayError = overlayQueries.find((q) => q.error)?.error ?? null;
     const overlayLoading = overlayQueries.some((q) => q.isLoading);
-    const fallbackColor = { line: '#c0392b', fill: 'rgba(192, 57, 43, 0.60)' };
-    const series: BigwigSeries[] = sampleIds!.map((id, i) => ({
-      id,
-      values: overlayQueries[i]?.data?.values,
-      line: sampleColors?.[i]?.line ?? fallbackColor.line,
-      fill: sampleColors?.[i]?.fill ?? fallbackColor.fill,
-    }));
+    const fallback: SampleColor = {
+      line: '#c0392b',
+      fill: 'rgba(192, 57, 43, 0.60)',
+    };
+    const series: BigwigSeries[] = sampleIds!.map((id, i) => {
+      const meta = sampleMeta?.[i];
+      const c = meta ? colorForTissue(meta.tissue) : fallback;
+      return {
+        id,
+        values: overlayQueries[i]?.data?.values,
+        line: c.line,
+        fill: c.fill,
+      };
+    });
     const plot = buildBigwigOverlay(series, viewport, title, laneHeight);
 
     return (
