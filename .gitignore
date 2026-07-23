@@ -8,3 +8,5 @@ __pycache__
 *.tsbuildinfo
 .vite/
 .gstack/
+.idea/
+apps/web/vite.config.js
