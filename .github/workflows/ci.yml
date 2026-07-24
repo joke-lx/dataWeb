@@ -37,6 +37,11 @@ jobs:
   api:
     name: API — pytest
     runs-on: ubuntu-latest
+    env:
+      # Force the real-data readers to fail and fall back to deterministic mock.
+      # No real omics data is needed for unit tests; this matches production
+      # behaviour when the server's data volume is empty.
+      DATAWEB_DATA_ROOT: ${{ github.workspace }}/.empty-data
     defaults:
       run:
         working-directory: apps/api
