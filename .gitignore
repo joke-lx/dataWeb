@@ -10,3 +10,10 @@ __pycache__
 .gstack/
 .idea/
 apps/web/vite.config.js
+
+# Local env & runtime data (never commit secrets or mounted data)
+.env
+.env.*
+!.env.example
+/data
+apps/*/data

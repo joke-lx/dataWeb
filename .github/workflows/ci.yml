@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main   # main pushes are covered by deploy.yml (which also builds)
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  web:
+    name: Web — typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @dataweb/web typecheck
+
+      - name: Build
+        run: pnpm --filter @dataweb/web build
+
+  api:
+    name: API — pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pyBigWig build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc libcurl4-openssl-dev zlib1g-dev
+
+      - name: Install package (with dev extras)
+        run: pip install ".[dev]"
+
+      - name: Run tests
+        run: pytest -q
+
+  docker-build:
+    name: Docker — build both images (no push)
+    runs-on: ubuntu-latest
+    needs: [ web, api ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          tags: dataweb-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: dataweb-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
