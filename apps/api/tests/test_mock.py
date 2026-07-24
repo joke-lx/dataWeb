@@ -464,6 +464,7 @@ async def test_new_endpoints_are_deterministic() -> None:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.requires_real_data
 @pytest.mark.asyncio
 async def test_ab_real_data_returns_normalized_chr_records() -> None:
     """``kind=ab`` reads the registered real ``.txt`` and returns chrN records."""
@@ -518,6 +519,7 @@ async def test_ab_real_data_filters_chr_window() -> None:
         assert record["end"] > 50_000_000
 
 
+@pytest.mark.requires_real_data
 @pytest.mark.asyncio
 async def test_ab_real_chr_normalization_via_query() -> None:
     """The route normalizes incoming chromosome names and matches chr-prefixed records."""
@@ -541,6 +543,7 @@ async def test_ab_real_chr_normalization_via_query() -> None:
         assert record["chrom"] == "chr1"
 
 
+@pytest.mark.requires_real_data
 @pytest.mark.asyncio
 async def test_ab_mean_track_via_explicit_query_params() -> None:
     """Mean tracks are reachable through ``mean``/``tissue``/``group`` parameters."""
@@ -568,6 +571,7 @@ async def test_ab_mean_track_via_explicit_query_params() -> None:
         assert record["end"] <= 1_200_000
 
 
+@pytest.mark.requires_real_data
 @pytest.mark.asyncio
 async def test_ab_mean_track_via_synthesised_id() -> None:
     """A ``<Tissue>_<Group>_mean`` ID is parsed and routed to the right bedgraph."""
@@ -591,6 +595,7 @@ async def test_ab_mean_track_via_synthesised_id() -> None:
         assert record["end"] <= 200_000
 
 
+@pytest.mark.requires_real_data
 @pytest.mark.asyncio
 async def test_ab_mean_tissue_track() -> None:
     """Tissue-mean bedgraph is reachable via mean=tissue (group ignored)."""

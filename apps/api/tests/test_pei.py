@@ -80,6 +80,7 @@ async def test_pei_chr_prefix_is_preserved() -> None:
     assert {record["chrom"] for record in records} == {"chr1"}
 
 
+@pytest.mark.requires_real_data
 @pytest.mark.asyncio
 async def test_pei_filter_returns_only_overlapping_records() -> None:
     """Narrowing the region yields a subset of the wider query."""

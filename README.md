@@ -42,6 +42,24 @@ make typecheck
 pnpm --filter @dataweb/web build
 ```
 
+## Docker 部署
+
+CI/CD 通过 GitHub Actions：push 到 `main` 自动构建镜像 → 推送 GHCR → SSH 部署到云服务器。
+
+```bash
+# 本地容器编排（前+后端，nginx 反代 /api）
+docker compose up --build
+# → http://localhost:8080
+
+# 云端由 .github/workflows/deploy.yml 自动完成：
+#   build → ghcr.io/joke-lx/dataweb-{api,web} → 服务器 docker compose pull + up -d
+#   web 暴露 :80，nginx 反代 /api 到内网后端
+```
+
+需要在 GitHub 仓库配置的 Secrets（`HOST` / `USERNAME` / `SSH_KEY` / `PORT`）、服务器准备、
+排障等完整说明见 **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**。
+
+
 启动后访问 http://localhost:5173 ，默认路由 `/hic`。
 
 ## 路由结构（5）

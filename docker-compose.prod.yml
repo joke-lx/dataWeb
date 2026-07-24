@@ -1,0 +1,28 @@
+# Production orchestration for the cloud server.
+# Pulls prebuilt images from GHCR (pushed by .github/workflows/deploy.yml).
+# The deploy workflow SCPs this file to ~/dataweb/ and runs:
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# TAG defaults to `latest`; the workflow may pass a specific commit SHA.
+
+services:
+  api:
+    image: ghcr.io/joke-lx/dataweb-api:${TAG:-latest}
+    environment:
+      # Empty/optional data dir -> app falls back to deterministic mock data.
+      DATAWEB_DATA_ROOT: /data
+    volumes:
+      - ./data:/data:ro
+    restart: unless-stopped
+    # No published port: only reachable on the internal network via web's /api.
+    expose:
+      - "8000"
+
+  web:
+    image: ghcr.io/joke-lx/dataweb-web:${TAG:-latest}
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped

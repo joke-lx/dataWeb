@@ -1,0 +1,49 @@
+# Local development / build orchestration.
+# Builds both images from source. Front + back only — the "database" service
+# is a documented placeholder for the future omics-data-ingestion phase.
+#
+#   docker compose up --build
+#   web  -> http://localhost:8080   (nginx, proxies /api to the api service)
+#   api  -> internal only (reachable via web's /api, or map a port if needed)
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: dataweb-api:local
+    environment:
+      # Point at an empty dir so real-data reads fail and fall back to mock.
+      DATAWEB_DATA_ROOT: /data
+    volumes:
+      - ./data:/data:ro
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: dataweb-web:local
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Future: relational store for distilled omics data (post-MVP). Uncomment and
+  # wire DATAWEB_DATABASE_URL into the api service when the ingestion phase lands.
+  #
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_USER: dataweb
+  #     POSTGRES_PASSWORD: change-me
+  #     POSTGRES_DB: dataweb
+  #   volumes:
+  #     - dbdata:/var/lib/postgresql/data
+  #   restart: unless-stopped
+  # ---------------------------------------------------------------------------
+
+# volumes:
+#   dbdata:

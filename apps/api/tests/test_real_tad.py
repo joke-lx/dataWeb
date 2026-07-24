@@ -9,6 +9,7 @@ from app.main import app
 from app.real_data.tad_reader import read_tad_sample
 
 
+@pytest.mark.requires_real_data
 @pytest.mark.asyncio
 async def test_tad_real_data_brain_bf3() -> None:
     """`kind=tad` for ``Brain_BF3`` returns real records from the .TAD file.
@@ -123,6 +124,7 @@ async def test_tad_unknown_sample_falls_back_to_mock() -> None:
         assert "score" in record
 
 
+@pytest.mark.requires_real_data
 def test_read_tad_sample_normalizes_chromosome_names() -> None:
     """Direct reader returns ``chrN`` even when the source file uses numeric IDs."""
     records = read_tad_sample("Brain_BF3")
