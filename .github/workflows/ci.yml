@@ -37,11 +37,6 @@ jobs:
   api:
     name: API — pytest
     runs-on: ubuntu-latest
-    env:
-      # Force the real-data readers to fail and fall back to deterministic mock.
-      # No real omics data is needed for unit tests; this matches production
-      # behaviour when the server's data volume is empty.
-      DATAWEB_DATA_ROOT: ${{ github.workspace }}/.empty-data
     defaults:
       run:
         working-directory: apps/api
@@ -61,8 +56,12 @@ jobs:
       - name: Install package (with dev extras)
         run: pip install ".[dev]"
 
-      - name: Run tests
-        run: pytest -q
+      # The ``requires_real_data`` marker is auto-skipped when the configured
+      # DATAWEB_DATA_ROOT does not exist on the runner (CI has no omics data).
+      # Those tests are kept green on the developer's Windows machine, which
+      # mounts the real D:\qq\猪多组学数据\ dataset.
+      - name: Run tests (skip real-data-only cases)
+        run: pytest -q -m "not requires_real_data"
 
   docker-build:
     name: Docker — build both images (no push)

@@ -25,6 +25,9 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "requires_real_data: tests that need the real omics dataset on disk (skipped in CI)",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
