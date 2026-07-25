@@ -87,11 +87,12 @@ jobs:
             set -e
             cd ~/dataweb
 
-            # Authenticate to GHCR before pulling. Despite the UI showing
-            # "Public", anonymous pulls of user-namespace packages on ghcr.io
-            # can return 401 (known GHCR quirk). A fine-grained PAT with
-            # read:packages is the reliable fix.
-            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            # Authenticate to GHCR by writing the Docker config directly.
+            # `docker login --password-stdin` on Docker 29.x requires a TTY
+            # and fails under appleboy/ssh-action (non-interactive). Writing
+            # the config file avoids that.
+            mkdir -p ~/.docker
+            echo "{\"auths\":{\"ghcr.io\":{\"auth\":\"$(echo -n "${{ github.actor }}:${GHCR_TOKEN}" | base64 -w0)\"}}}" > ~/.docker/config.json
 
             # Pin this deploy to the exact commit images.
             echo "TAG=${GITHUB_SHA}" > .env
