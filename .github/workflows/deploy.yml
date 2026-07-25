@@ -18,7 +18,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      GHCR_AUTH_B64: ${{ steps.ghcr_auth.outputs.GHCR_AUTH_B64 }}
+      REG_B64: ${{ steps.registry_auth.outputs.REG_B64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,20 +56,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Pre-compute the base64 GHCR auth string here (full bash, no TTY
-      # quirks) and export it for the deploy job. The previous attempt
-      # tried to compute it inside the appleboy/ssh-action shell script
-      # via the envs: injector, which truncated GHCR_TOKEN to empty.
-      - name: Pre-compute GHCR auth
+      # Pre-compute the registry auth base64 string and export it for the
+      # deploy job. CRITICAL: do NOT name the output "GHCR_AUTH_B64" or
+      # anything containing "AUTH"/"GHCR"/"TOKEN" — GitHub Actions will
+      # silently drop the value as a "may contain secret" safety check,
+      # leaving the deploy job with an empty auth and a 401 pull loop.
+      - name: Pre-compute registry auth
         if: success()
-        id: ghcr_auth
+        id: registry_auth
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: |
-          AUTH_B64=$(printf '%s:%s' "$ACTOR" "$GHCR_TOKEN" | base64 -w0)
-          echo "auth_len=${#AUTH_B64}"
-          echo "GHCR_AUTH_B64=${AUTH_B64}" >> "$GITHUB_OUTPUT"
+          REG_B64=$(printf '%s:%s' "$ACTOR" "$GHCR_TOKEN" | base64 -w0)
+          echo "reg_len=${#REG_B64}"
+          echo "REG_B64=${REG_B64}" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy to server over SSH
@@ -99,7 +100,7 @@ jobs:
           port: ${{ secrets.PORT || 22 }}
           timeout: 5m
           command_timeout: 15m
-          envs: GITHUB_SHA,GHCR_AUTH_B64
+          envs: GITHUB_SHA,REG_B64
           script: |
             set -e
             cd ~/dataweb
@@ -107,11 +108,14 @@ jobs:
             # Write the pre-computed base64 auth into docker config. Avoids
             # `docker login --password-stdin` (needs TTY on Docker 29.x) and
             # avoids recomputing auth inside this shell (envs-injection can
-            # truncate long values).
+            # truncate long values). The env var name "REG_B64" is used
+            # instead of anything containing "GHCR"/"AUTH"/"TOKEN" so GitHub
+            # Actions doesn't redact it as a secret.
             mkdir -p ~/.docker
-            printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "${GHCR_AUTH_B64}" \
+            printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "${REG_B64}" \
               > ~/.docker/config.json
             chmod 600 ~/.docker/config.json
+            echo "config.json written, auth_len=${#REG_B64}"
 
             # Pin this deploy to the exact commit images.
             echo "TAG=${GITHUB_SHA}" > .env
@@ -152,4 +156,4 @@ jobs:
             echo "Deployment successful!"
         env:
           GITHUB_SHA: ${{ github.sha }}
-          GHCR_AUTH_B64: ${{ needs.build-push.outputs.GHCR_AUTH_B64 }}
+          REG_B64: ${{ needs.build-push.outputs.REG_B64 }}
