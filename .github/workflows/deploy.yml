@@ -17,6 +17,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      GHCR_AUTH_B64: ${{ steps.ghcr_auth.outputs.GHCR_AUTH_B64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +56,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Pre-compute the base64 GHCR auth string here (full bash, no TTY
+      # quirks) and export it for the deploy job. The previous attempt
+      # tried to compute it inside the appleboy/ssh-action shell script
+      # via the envs: injector, which truncated GHCR_TOKEN to empty.
+      - name: Pre-compute GHCR auth
+        if: success()
+        id: ghcr_auth
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          AUTH_B64=$(printf '%s:%s' "$ACTOR" "$GHCR_TOKEN" | base64 -w0)
+          echo "auth_len=${#AUTH_B64}"
+          echo "GHCR_AUTH_B64=${AUTH_B64}" >> "$GITHUB_OUTPUT"
+
   deploy:
     name: Deploy to server over SSH
     runs-on: ubuntu-latest
@@ -82,23 +99,25 @@ jobs:
           port: ${{ secrets.PORT || 22 }}
           timeout: 5m
           command_timeout: 15m
-          envs: GITHUB_SHA,GHCR_TOKEN
+          envs: GITHUB_SHA,GHCR_AUTH_B64
           script: |
             set -e
             cd ~/dataweb
 
-            # Authenticate to GHCR by writing the Docker config directly.
-            # `docker login --password-stdin` on Docker 29.x requires a TTY
-            # and fails under appleboy/ssh-action (non-interactive). Writing
-            # the config file avoids that.
+            # Write the pre-computed base64 auth into docker config. Avoids
+            # `docker login --password-stdin` (needs TTY on Docker 29.x) and
+            # avoids recomputing auth inside this shell (envs-injection can
+            # truncate long values).
             mkdir -p ~/.docker
-            echo "{\"auths\":{\"ghcr.io\":{\"auth\":\"$(echo -n "${{ github.actor }}:${GHCR_TOKEN}" | base64 -w0)\"}}}" > ~/.docker/config.json
+            printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "${GHCR_AUTH_B64}" \
+              > ~/.docker/config.json
+            chmod 600 ~/.docker/config.json
 
             # Pin this deploy to the exact commit images.
             echo "TAG=${GITHUB_SHA}" > .env
             mkdir -p data
 
-            echo "Pulling images (authenticated as GHCR_TOKEN owner)..."
+            echo "Pulling images (authenticated)..."
             docker compose -f docker-compose.prod.yml pull
 
             echo "Starting stack..."
@@ -133,3 +152,4 @@ jobs:
             echo "Deployment successful!"
         env:
           GITHUB_SHA: ${{ github.sha }}
+          GHCR_AUTH_B64: ${{ needs.build-push.outputs.GHCR_AUTH_B64 }}
