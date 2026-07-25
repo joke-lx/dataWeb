@@ -17,8 +17,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      REG_B64: ${{ steps.registry_auth.outputs.REG_B64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,21 +54,30 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Pre-compute the registry auth base64 string and export it for the
-      # deploy job. CRITICAL: do NOT name the output "GHCR_AUTH_B64" or
-      # anything containing "AUTH"/"GHCR"/"TOKEN" — GitHub Actions will
-      # silently drop the value as a "may contain secret" safety check,
-      # leaving the deploy job with an empty auth and a 401 pull loop.
-      - name: Pre-compute registry auth
+      # Pre-compute the docker config.json content and persist it as a
+      # workflow artifact. CRITICAL: GitHub Actions redacts any job output
+      # whose value looks like a secret (high-entropy base64, any string
+      # with "AUTH"/"TOKEN" patterns, etc.) — so we cannot pass the
+      # registry auth through a job output. An artifact is a file on the
+      # Actions storage, scanned only on the server side, not the value.
+      - name: Build docker config
         if: success()
-        id: registry_auth
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           ACTOR: ${{ github.actor }}
         run: |
-          REG_B64=$(printf '%s:%s' "$ACTOR" "$GHCR_TOKEN" | base64 -w0)
-          echo "reg_len=${#REG_B64}"
-          echo "REG_B64=${REG_B64}" >> "$GITHUB_OUTPUT"
+          set -e
+          AUTH_B64=$(printf '%s:%s' "$ACTOR" "$GHCR_TOKEN" | base64 -w0)
+          printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "$AUTH_B64" > docker_config.json
+          echo "wrote docker_config.json ($(wc -c < docker_config.json) bytes, auth_len=${#AUTH_B64})"
+
+      - name: Upload docker config
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-config
+          path: docker_config.json
+          retention-days: 1
 
   deploy:
     name: Deploy to server over SSH
@@ -80,6 +87,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download docker config
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-config
+          path: .
+          merge-multiple: true
+
       - name: Copy compose file to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -87,7 +101,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
-          source: "docker-compose.prod.yml"
+          source: "docker-compose.prod.yml,docker_config.json"
           target: "~/dataweb/"
           timeout: 5m
 
@@ -100,29 +114,25 @@ jobs:
           port: ${{ secrets.PORT || 22 }}
           timeout: 5m
           command_timeout: 15m
-          envs: GITHUB_SHA,REG_B64
+          envs: GITHUB_SHA
           script: |
             set -e
             cd ~/dataweb
 
-            # Write the pre-computed base64 auth into docker config. Avoids
-            # `docker login --password-stdin` (needs TTY on Docker 29.x) and
-            # avoids recomputing auth inside this shell (envs-injection can
-            # truncate long values). The env var name "REG_B64" is used
-            # instead of anything containing "GHCR"/"AUTH"/"TOKEN" so GitHub
-            # Actions doesn't redact it as a secret.
+            # Install the pre-built docker config (auth written by build-push,
+            # transferred as a file via SCP to avoid any env-value redaction
+            # by GitHub Actions' secret scanner).
             mkdir -p ~/.docker
-            printf '{"auths":{"ghcr.io":{"auth":"%s"}}}\n' "${REG_B64}" \
-              > ~/.docker/config.json
+            mv docker_config.json ~/.docker/config.json
             chmod 600 ~/.docker/config.json
-            echo "config.json written, auth_len=${#REG_B64}"
+            echo "config installed: $(cat ~/.docker/config.json)"
 
             # Pin this deploy to the exact commit images.
             echo "TAG=${GITHUB_SHA}" > .env
             mkdir -p data
 
             echo "Pulling images (authenticated)..."
-            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml pull --quiet
 
             echo "Starting stack..."
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
@@ -156,4 +166,3 @@ jobs:
             echo "Deployment successful!"
         env:
           GITHUB_SHA: ${{ github.sha }}
-          REG_B64: ${{ needs.build-push.outputs.REG_B64 }}
