@@ -127,12 +127,41 @@ jobs:
             chmod 600 ~/.docker/config.json
             echo "config installed: $(cat ~/.docker/config.json)"
 
-            # Pin this deploy to the exact commit images.
-            echo "TAG=${GITHUB_SHA}" > .env
             mkdir -p data
 
             echo "Pulling images (authenticated)..."
-            docker compose -f docker-compose.prod.yml pull --quiet
+            # The link between this server and ghcr.io is very slow (~1 MB/s,
+            # 437 MB api image would take hours). Strategy:
+            # 1. If the exact SHA tag is already cached locally, skip pull.
+            # 2. Otherwise, try a pull with a hard 8-minute timeout per
+            #    image. On timeout, fall back to the locally-cached :latest
+            #    tag so `up -d` can still start the stack.
+            pull_one() {
+              local img="$1"
+              if docker image inspect "$img" >/dev/null 2>&1; then
+                echo "  $img: cached locally"
+                return 0
+              fi
+              echo "  $img: pulling (8 min budget)..."
+              if timeout 480 docker pull "$img" >/dev/null 2>&1; then
+                echo "  $img: pulled"
+                return 0
+              fi
+              echo "  $img: pull timed out, will fall back to :latest"
+              return 1
+            }
+            pull_one "ghcr.io/joke-lx/dataweb-api:${GITHUB_SHA}" || true
+            pull_one "ghcr.io/joke-lx/dataweb-web:${GITHUB_SHA}" || true
+
+            # Pin to the SHA tag if we have it, otherwise fall back to
+            # :latest which the build-push job just refreshed.
+            if docker image inspect "ghcr.io/joke-lx/dataweb-api:${GITHUB_SHA}" >/dev/null 2>&1 \
+               && docker image inspect "ghcr.io/joke-lx/dataweb-web:${GITHUB_SHA}" >/dev/null 2>&1; then
+              echo "TAG=${GITHUB_SHA}" > .env
+            else
+              echo "Falling back to :latest tag"
+              echo "TAG=latest" > .env
+            fi
 
             echo "Starting stack..."
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
