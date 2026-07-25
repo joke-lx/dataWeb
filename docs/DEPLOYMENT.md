@@ -32,8 +32,9 @@ GitHub push main
 | `USERNAME` | ✅ | SSH 登录用户名 | `root` / `ubuntu` |
 | `SSH_KEY` | ✅ | SSH **私钥全文**（含 `-----BEGIN ... KEY-----`） | 见下方安全提示 |
 | `PORT` | ⬜ | SSH 端口，默认 22 | `22` |
+| `GHCR_TOKEN` | ✅ | GitHub **fine-grained PAT**,scope=**Public Repositories (read-only)** + **Packages: Read**。见下方"为什么需要"。 | `github_pat_xxxx...` |
 
-> GHCR 镜像设为 **public**，服务器拉取无需登录，因此**不需要**额外的 registry token。
+> **为什么需要 GHCR_TOKEN**:尽管 UI 上镜像显示 "Public",对 user-namespace 的 GHCR 镜像做匿名 `docker pull` 经常返回 401(GHCR 已知怪现象,取决于 visibility 同步状态)。一个 fine-grained PAT 是最稳的解,且 read-only 权限,泄漏损失最小。
 
 ### 安全地设置 SSH_KEY（不经聊天/明文粘贴）
 

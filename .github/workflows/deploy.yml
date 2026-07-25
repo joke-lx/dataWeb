@@ -82,16 +82,22 @@ jobs:
           port: ${{ secrets.PORT || 22 }}
           timeout: 5m
           command_timeout: 15m
-          envs: GITHUB_SHA
+          envs: GITHUB_SHA,GHCR_TOKEN
           script: |
             set -e
             cd ~/dataweb
 
-            # Pin this deploy to the exact commit images (public GHCR = no login).
+            # Authenticate to GHCR before pulling. Despite the UI showing
+            # "Public", anonymous pulls of user-namespace packages on ghcr.io
+            # can return 401 (known GHCR quirk). A fine-grained PAT with
+            # read:packages is the reliable fix.
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Pin this deploy to the exact commit images.
             echo "TAG=${GITHUB_SHA}" > .env
             mkdir -p data
 
-            echo "Pulling images..."
+            echo "Pulling images (authenticated as GHCR_TOKEN owner)..."
             docker compose -f docker-compose.prod.yml pull
 
             echo "Starting stack..."
