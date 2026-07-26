@@ -1,16 +1,66 @@
+/* 3D chromatin panel — mirrors `docx/refrences/demo/chromatin3d.html`:
+ * three independent canvases (Liver / Muscle / Brain) stacked vertically,
+ * each 230×150 px with a right-side tissue label in a serif font.
+ */
+
+.three-d-panel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.three-d-panel__canvas {
+  width: 360px;
+  height: 220px;
+  background: #fff;
+  border: 1px solid #d9d9d7;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.three-d-panel__canvas .three-d-chromatin {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.three-d-panel__label {
+  font-size: 20px;
+  letter-spacing: 0.3px;
+  min-width: 90px;
+  color: var(--color-text-primary);
+  font-family: inherit;
+}
+
+.three-d-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+}
+
+.three-d-hint {
+  margin-top: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 11px;
+  color: #9a978f;
+  text-align: center;
+}
+
+/* Backwards-compat — the previous grid (auto-fit columns) and cell label
+ * are kept so any external consumer still styles correctly. */
 .three-d-chromatin {
   width: 100%;
   background: var(--color-surface-1);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   overflow: hidden;
-}
-
-.three-d-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: var(--space-3);
-  padding: var(--space-3);
 }
 
 .three-d-cell {

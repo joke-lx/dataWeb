@@ -1,55 +1,54 @@
-import { useMemo } from 'react';
-import type { JSX } from 'react';
+import { JSX } from 'react';
 
 import { ThreeDChromatin } from '../components/3d/ThreeDChromatin';
 import { useActiveSample } from '../hooks/useActiveSample';
-import { useSamples } from '../store/samples';
 
-const PANEL_LIMIT = 3;
+const TISSUE_LABEL: Record<'liver' | 'muscle' | 'brain', string> = {
+  liver: 'Liver',
+  muscle: 'Muscle',
+  brain: 'Brain',
+};
 
+/**
+ * 3D chromatin route — mirrors `docx/refrences/demo/chromatin3d.html`:
+ * three independent rainbow-tube chromatin panels (Liver / Muscle / Brain)
+ * stacked vertically, each 360×220 px with a right-side tissue label.
+ * PEI enhancer / loop geometry is attached to the Brain panel using the
+ * active sample's PEI records for the current viewport. Each panel owns
+ * its own orbit state — drag/scroll events on one canvas never affect
+ * the others.
+ */
 export function ThreeDChromatinRoute(): JSX.Element {
   const activeSample = useActiveSample() ?? 'Brain_BF3';
-  const allSamples = useSamples((s) => s.samples);
-
-  // Show the active sample plus up to (PANEL_LIMIT - 1) others so the
-  // viewer mirrors the side-by-side 3D panels in docx/refrences/demo7.png
-  // (one panel per sample). Falls back to just the active sample when no
-  // other samples are loaded.
-  const sampleIds = useMemo<string[]>(() => {
-    const seen = new Set<string>();
-    const ordered: string[] = [];
-    if (activeSample) {
-      ordered.push(activeSample);
-      seen.add(activeSample);
-    }
-    for (const s of allSamples) {
-      if (ordered.length >= PANEL_LIMIT) break;
-      if (seen.has(s.id)) continue;
-      ordered.push(s.id);
-      seen.add(s.id);
-    }
-    return ordered;
-  }, [activeSample, allSamples]);
+  const organs: Array<'liver' | 'muscle' | 'brain'> = ['liver', 'muscle', 'brain'];
 
   return (
     <main className="route-page">
       <header className="route-header">
         <h2>3D Chromatin Structure</h2>
         <p>
-          Chromatin folding model · drag to orbit, scroll to zoom ·{' '}
-          {sampleIds.length === 1
-            ? `sample ${sampleIds[0]}`
-            : `${sampleIds.length} samples side-by-side`}
+          Chromatin folding model · drag to orbit, scroll to zoom · sample{' '}
+          <code>{activeSample}</code>
         </p>
       </header>
       <div className="route-content">
         <div className="three-d-grid">
-          {sampleIds.map((id) => (
-            <div key={id} className="three-d-cell">
-              <h4 className="three-d-cell__title">{id}</h4>
-              <ThreeDChromatin sampleId={id} height={320} />
+          {organs.map((organ) => (
+            <div key={organ} className="three-d-panel">
+              <div className="three-d-panel__canvas">
+                <ThreeDChromatin
+                  organ={organ}
+                  sampleId={organ === 'brain' ? activeSample : undefined}
+                />
+              </div>
+              <span className="three-d-panel__label">
+                {TISSUE_LABEL[organ]}
+              </span>
             </div>
           ))}
+          <div className="three-d-hint">
+            drag to rotate · scroll to zoom · per-panel · auto-rotates when idle
+          </div>
         </div>
       </div>
     </main>

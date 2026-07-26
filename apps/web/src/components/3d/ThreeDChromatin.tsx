@@ -10,33 +10,145 @@ import './three-d-chromatin.css';
 
 interface ThreeDChromatinProps {
   height?: number;
-  /**
-   * Active sample id. When provided, the geometry is anchored to the
-   * promoter's mock PEI records for the current viewport so enhancer
-   * positions reflect the same `(sample, chr, start, end)` window. When
-   * omitted, a generic decorative ribbon is rendered.
-   */
+  /** Which organ panel this instance renders. Drives the path seed & marker set. */
+  organ: 'liver' | 'muscle' | 'brain';
   sampleId?: string;
 }
 
-// Visual DNA (matches docx/refrences/demo7.png): a grey chromatin
-// backbone, grey promoter beads along it, green enhancer beads pulled off
-// the curve, and light-grey interaction arcs linking each promoter to its
-// paired enhancer.
-const COLOR_BACKBONE = 0x6b6b6b;
-const COLOR_PROMOTER = 0x6b6b6b;
-const COLOR_ENHANCER = 0x5ba854;
-const COLOR_LOOP = 0xb8b8b8;
+// ─────── per-organ geometry params (mirrors chromatin3d.html:114-124) ────────
+const ORGAN_PARAMS: Record<
+  ThreeDChromatinProps['organ'],
+  { seed: number; steps: number; markers: Array<{ t: number; color: number }> }
+> = {
+  liver: {
+    seed: 7,
+    steps: 80,
+    markers: [
+      { t: 0.16, color: 0x459f52 },  // green (enhancer)
+      { t: 0.26, color: 0x459f52 },
+      { t: 0.37, color: 0x459f52 },
+      { t: 0.52, color: 0x808080 },  // grey (promoter)
+      { t: 0.72, color: 0x808080 },
+    ],
+  },
+  muscle: {
+    seed: 23,
+    steps: 72,
+    markers: [{ t: 0.55, color: 0x808080 }],
+  },
+  brain: {
+    seed: 41,
+    steps: 74,
+    markers: [{ t: 0.5, color: 0x808080 }],
+  },
+};
 
-const PROMOTER_BEAD_COUNT = 10;
 const ENHANCER_LIMIT = 6;
-const BACKBONE_TUBE_RADIUS = 0.018;
-const PROMOTER_BEAD_RADIUS = 0.06;
-const ENHANCER_BEAD_RADIUS = 0.08;
 const LOOP_TUBE_RADIUS = 0.008;
 
+// ─────── deterministic PRNG / math (mirrors chromatin3d.html:29-51) ─────────
+function mulberry32(seed: number) {
+  let a = seed | 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function rainbow(t: number): THREE.Color {
+  // hsl2rgb(240 * (1-t), 0.72, 0.52)  → blue→cyan→green→yellow→red
+  return new THREE.Color().setHSL(240 * (1 - t) / 360, 0.72, 0.52);
+}
+
+/** 3D random-walk path + Catmull-Rom + normalise → mirrors makePath() */
+function makePath(seed: number, steps: number): THREE.Vector3[] {
+  const rng = mulberry32(seed);
+  let d = new THREE.Vector3(rng() - 0.5, rng() - 0.5, rng() - 0.5).normalize();
+  let p = new THREE.Vector3(0, 0, 0);
+  const raw: THREE.Vector3[] = [p.clone()];
+  for (let i = 0; i < steps; i += 1) {
+    d = new THREE.Vector3(
+      d.x + (rng() - 0.5) * 1.85,
+      d.y + (rng() - 0.5) * 1.85,
+      d.z + (rng() - 0.5) * 1.85,
+    ).normalize();
+    p = p.clone().add(d.clone().multiplyScalar(0.42));
+    raw.push(p.clone());
+  }
+
+  // Catmull-Rom spline
+  const curve = new THREE.CatmullRomCurve3(raw, false, 'catmullrom', 0.5);
+  const totalLen = raw.length - 1;
+  // The demo uses 10 segments between each pair of control points
+  // We sample enough to smooth the tube.
+  const ptsPerSeg = 10;
+  const smooth: THREE.Vector3[] = [];
+  for (let i = 0; i < totalLen; i += 1) {
+    for (let s = 0; s < ptsPerSeg; s += 1) {
+      const t = (i + s / ptsPerSeg) / totalLen;
+      smooth.push(curve.getPoint(t));
+    }
+  }
+  smooth.push(raw[raw.length - 1]);
+
+  // Normalise to radius 1.25 (mirrors normalizePts)
+  const center = new THREE.Vector3(0, 0, 0);
+  for (const pt of smooth) center.add(pt);
+  center.divideScalar(smooth.length);
+  let R = 0;
+  const centred = smooth.map((pt) => {
+    const q = pt.clone().sub(center);
+    R = Math.max(R, q.length());
+    return q;
+  });
+  const scale = 1.25 / (R || 1);
+  return centred.map((q) => q.multiplyScalar(scale));
+}
+
+/** Build a rainbow-coloured tube geometry and add it to the scene. */
+function addTube(path: THREE.Vector3[], scene: THREE.Scene): void {
+  const curve = new THREE.CatmullRomCurve3(path, false, 'catmullrom', 0);
+  const tubeGeo = new THREE.TubeGeometry(curve, 200, 0.034, 10, false);
+  const colors = new Float32Array(tubeGeo.attributes.position.count * 3);
+  const pos = tubeGeo.attributes.position;
+  const tmp = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i += 1) {
+    tmp.fromBufferAttribute(pos, i);
+    const t = Math.min(1, Math.max(0, (tmp.length() + 1.25) / 2.5));
+    const c = rainbow(1 - t);
+    colors[i * 3] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+  }
+  tubeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    metalness: 0,
+    roughness: 0.7,
+  });
+  scene.add(new THREE.Mesh(tubeGeo, mat));
+}
+
+/** Build a sphere at a position along the path. */
+function addSphere(
+  pos: THREE.Vector3,
+  radius: number,
+  color: number,
+  scene: THREE.Scene,
+): THREE.Mesh {
+  const geo = new THREE.SphereGeometry(radius, 16, 20);
+  const mat = new THREE.MeshStandardMaterial({ color });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(pos);
+  scene.add(mesh);
+  return mesh;
+}
+
 export function ThreeDChromatin({
-  height = 360,
+  organ,
+  height = 150,
   sampleId,
 }: ThreeDChromatinProps): JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -45,6 +157,7 @@ export function ThreeDChromatin({
   const peiQuery = useQuery<PeiRecord[]>({
     queryKey: [
       'pei-3d',
+      organ,
       sampleId ?? 'default',
       viewport.chr,
       viewport.start,
@@ -58,125 +171,81 @@ export function ThreeDChromatin({
     staleTime: 30_000,
   });
 
-  // Mutable handle into the live scene so the PEI effect can attach
-  // enhancers / loops without rebuilding the rest of the scene. Set on
-  // mount, cleared on unmount or when the structural deps change.
   const sceneHandleRef = useRef<{
-    promoterPositions: THREE.Vector3[];
     attachEnhancers: (records: PeiRecord[]) => void;
   } | null>(null);
 
-  // -----------------------------------------------------------------
-  // Structural effect: builds the renderer, camera, lights, backbone,
-  // promoter beads and pointer controls. Re-runs only when the
-  // structural identity of the view changes (height / sample / viewport
-  // window). PEI data does NOT trigger this effect — that lives in the
-  // effect below and mutates the existing scene in place.
-  // -----------------------------------------------------------------
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return undefined;
 
-    const width = Math.max(mount.clientWidth, 1);
+    const { seed, steps, markers } = ORGAN_PARAMS[organ];
+    const path = makePath(seed, steps);
+    const panelW = Math.max(mount.clientWidth, 1);
+    const panelH = Math.max(mount.clientHeight, 1);
 
-    // Scene
+    // ── Scene / Camera / Renderer ──────────────────────────────────────
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xffffff);
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.set(3, 2, 5);
+    const camera = new THREE.PerspectiveCamera(42, panelW / panelH, 0.1, 100);
+    camera.position.set(0, 0, 3.5);
+    camera.lookAt(0, 0, 0);
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
+    renderer.setSize(panelW, panelH);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mount.appendChild(renderer.domElement);
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const directional = new THREE.DirectionalLight(0xffffff, 0.6);
-    directional.position.set(5, 5, 5);
-    scene.add(directional);
+    // Lights — matches the demo shader's uLight (0.45, 0.7, 0.8)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.7);
+    dl.position.set(5, 7, 8);
+    scene.add(dl);
 
-    // Backbone
-    const backbonePoints: THREE.Vector3[] = [];
-    const backboneN = 20;
-    for (let i = 0; i < backboneN; i += 1) {
-      const t = i / (backboneN - 1);
-      const angle = t * Math.PI * 2.5;
-      const radius = 1.4 + 0.4 * Math.sin(angle * 2);
-      backbonePoints.push(
-        new THREE.Vector3(
-          radius * Math.cos(angle),
-          Math.sin(angle * 1.7) * 0.6,
-          radius * Math.sin(angle),
-        ),
+    // ── Rainbow tube ───────────────────────────────────────────────────
+    addTube(path, scene);
+
+    // ── Path markers (sphere beads) ────────────────────────────────────
+    // Store all spheres so PEI enhancers can attach near their positions.
+    const sphereMeshes: THREE.Mesh[] = [];
+    const spherePositions: THREE.Vector3[] = [];
+    for (const m of markers) {
+      const idx = Math.round(m.t * (path.length - 1));
+      spherePositions.push(path[idx].clone());
+      sphereMeshes.push(
+        addSphere(path[idx], 0.11, m.color, scene),
       );
     }
-    const backboneCurve = new THREE.CatmullRomCurve3(backbonePoints, false, 'catmullrom', 0.5);
-    const backboneGeometry = new THREE.TubeGeometry(
-      backboneCurve,
-      200,
-      BACKBONE_TUBE_RADIUS,
-      8,
-      false,
-    );
-    const backboneMaterial = new THREE.MeshStandardMaterial({
-      color: COLOR_BACKBONE,
-      metalness: 0,
-      roughness: 0.7,
-    });
-    const backbone = new THREE.Mesh(backboneGeometry, backboneMaterial);
-    scene.add(backbone);
 
-    // Promoter beads
-    const promoterGeo = new THREE.SphereGeometry(PROMOTER_BEAD_RADIUS, 16, 16);
-    const promoterMat = new THREE.MeshStandardMaterial({ color: COLOR_PROMOTER });
-    const promoterMeshes: THREE.Mesh[] = [];
-    const promoterPositions: THREE.Vector3[] = [];
-    for (let i = 0; i < PROMOTER_BEAD_COUNT; i += 1) {
-      const t = (i + 1) / (PROMOTER_BEAD_COUNT + 1);
-      const point = backboneCurve.getPoint(t);
-      const mesh = new THREE.Mesh(promoterGeo, promoterMat);
-      mesh.position.copy(point);
-      scene.add(mesh);
-      promoterMeshes.push(mesh);
-      promoterPositions.push(point.clone());
-    }
-
-    // Container group for enhancer beads + interaction arcs. Replaced
-    // wholesale whenever PEI data changes, without touching the rest of
-    // the scene.
+    // ── Interaction group (PEI enhancer spheres + loop arcs) ───────────
     const interactionGroup = new THREE.Group();
     scene.add(interactionGroup);
 
-    const enhancerGeo = new THREE.SphereGeometry(ENHANCER_BEAD_RADIUS, 16, 16);
-    const enhancerMat = new THREE.MeshStandardMaterial({ color: COLOR_ENHANCER });
+    const enhancerRad = 0.09;
+    const enhancerGeo = new THREE.SphereGeometry(enhancerRad, 16, 16);
+    const enhancerMat = new THREE.MeshStandardMaterial({ color: 0x5ba854 });
 
     const attachEnhancers = (records: PeiRecord[]): void => {
-      // Dispose previous group contents.
       while (interactionGroup.children.length > 0) {
         const child = interactionGroup.children[0];
         interactionGroup.remove(child);
-        if (child instanceof THREE.Mesh) {
-          child.geometry.dispose();
-        }
+        if (child instanceof THREE.Mesh) child.geometry.dispose();
       }
       const enhancers = records.slice(0, ENHANCER_LIMIT);
       if (enhancers.length === 0) return;
 
       enhancers.forEach((record, index) => {
         const promoterPos =
-          promoterPositions[index % promoterPositions.length];
+          spherePositions[index % spherePositions.length];
 
         const distNorm = Math.min(1, record.distance_kb / 1000);
-        const enhancerRadius = 0.6 + 1.4 * distNorm;
+        const raid = 0.6 + 1.4 * distNorm;
         const phi = (index / Math.max(1, enhancers.length)) * Math.PI * 2;
         const enhancerPos = new THREE.Vector3(
-          enhancerRadius * Math.cos(phi),
+          raid * Math.cos(phi),
           0.4 * Math.sin(phi * 1.5),
-          enhancerRadius * Math.sin(phi),
+          raid * Math.sin(phi),
         );
 
         const enhancer = new THREE.Mesh(enhancerGeo, enhancerMat);
@@ -190,43 +259,37 @@ export function ThreeDChromatin({
           (promoterPos.y + enhancerPos.y) / 2 + arcHeight,
           (promoterPos.z + enhancerPos.z) / 2,
         );
-        const loopCurve = new THREE.CatmullRomCurve3(
+        const arcCurve = new THREE.CatmullRomCurve3(
           [promoterPos.clone(), mid, enhancerPos.clone()],
           false,
           'catmullrom',
           0.5,
         );
-        const loopGeometry = new THREE.TubeGeometry(
-          loopCurve,
-          32,
-          LOOP_TUBE_RADIUS,
-          6,
-          false,
-        );
-        const loopMaterial = new THREE.MeshStandardMaterial({
-          color: COLOR_LOOP,
+        const arcGeo = new THREE.TubeGeometry(arcCurve, 32, LOOP_TUBE_RADIUS, 6, false);
+        const arcMat = new THREE.MeshStandardMaterial({
+          color: 0xb8b8b8,
           metalness: 0,
           roughness: 0.8,
           transparent: true,
           opacity: 0.45,
         });
-        const loopMesh = new THREE.Mesh(loopGeometry, loopMaterial);
-        interactionGroup.add(loopMesh);
+        interactionGroup.add(new THREE.Mesh(arcGeo, arcMat));
       });
     };
 
-    // Camera orbit using pointer capture — only the canvas that
-    // captured the pointer receives move/up events, so adjacent panels
-    // in the /3d grid can't steal the drag.
+    // ── Orbit controls (drag + auto-rotate) ────────────────────────────
     const orbit = {
       isDragging: false,
       lastX: 0,
       lastY: 0,
       pointerId: -1,
-      theta: 0.5,
-      phi: 0.5,
-      dist: 6,
+      theta: Math.random() * Math.PI * 2,
+      phi: Math.PI / 2 - 0.32,
+      dist: 3.5,
+      rot: 0,
+      vel: 0,
     };
+
     const updateCamera = () => {
       camera.position.x = orbit.dist * Math.sin(orbit.phi) * Math.cos(orbit.theta);
       camera.position.y = orbit.dist * Math.cos(orbit.phi);
@@ -237,15 +300,19 @@ export function ThreeDChromatin({
 
     const canvas = renderer.domElement;
     canvas.style.touchAction = 'none';
+    canvas.style.cursor = 'grab';
+    canvas.style.display = 'block';
 
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return; // primary button only
+      if (event.button !== 0) return;
       event.preventDefault();
+      event.stopPropagation();
       orbit.isDragging = true;
       orbit.pointerId = event.pointerId;
       orbit.lastX = event.clientX;
       orbit.lastY = event.clientY;
       canvas.setPointerCapture(event.pointerId);
+      canvas.style.cursor = 'grabbing';
     };
     const onPointerMove = (event: PointerEvent) => {
       if (!orbit.isDragging || event.pointerId !== orbit.pointerId) return;
@@ -255,23 +322,26 @@ export function ThreeDChromatin({
       orbit.phi = Math.max(0.1, Math.min(Math.PI - 0.1, orbit.phi + dy * 0.01));
       orbit.lastX = event.clientX;
       orbit.lastY = event.clientY;
+      orbit.vel = dx * 0.25;
       updateCamera();
     };
     const onPointerUp = (event: PointerEvent) => {
       if (event.pointerId !== orbit.pointerId) return;
       orbit.isDragging = false;
-      if (canvas.hasPointerCapture(event.pointerId)) {
+      if (canvas.hasPointerCapture(event.pointerId))
         canvas.releasePointerCapture(event.pointerId);
-      }
+      canvas.style.cursor = 'grab';
     };
     const onWheel = (event: WheelEvent) => {
+      // Prevent default to stop the surrounding `.route-content` from
+      // scrolling while the user zooms this canvas. Stop propagation so
+      // sibling canvases that share a parent don't see the event.
       event.preventDefault();
+      event.stopPropagation();
       orbit.dist = Math.max(2, Math.min(15, orbit.dist + event.deltaY * 0.01));
       updateCamera();
     };
-    const onContextMenu = (event: MouseEvent) => {
-      event.preventDefault();
-    };
+    const onContextMenu = (event: MouseEvent) => { event.preventDefault(); };
 
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointermove', onPointerMove);
@@ -280,72 +350,64 @@ export function ThreeDChromatin({
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('contextmenu', onContextMenu);
 
-    // Animate
+    // ── Animate ──────────────────────────────────────────────────────
     let frameId = 0;
-    const animate = () => {
+    let lastTime = performance.now();
+    const animate = (now: number) => {
       frameId = requestAnimationFrame(animate);
+      const dt = now - lastTime;
+      lastTime = now;
+      if (!orbit.isDragging) {
+        orbit.theta += dt * 0.00045 + orbit.vel;
+        orbit.vel *= 0.94;
+      }
+      updateCamera();
       renderer.render(scene, camera);
     };
-    animate();
+    animate(performance.now());
 
-    // Resize handler
-    const onResize = () => {
-      const resizedWidth = Math.max(mount.clientWidth, 1);
-      camera.aspect = resizedWidth / height;
+    // ResizeObserver — Three.js renderer's canvas size must match the host
+    // container's CSS dimensions. Without this, the first frame paints at
+    // 0×0 (mount.clientHeight is 0 before layout settles) and a hard
+    // layout reflow after mount never triggers a renderer resize.
+    const resize = () => {
+      const w = Math.max(mount.clientWidth, 1);
+      const h = Math.max(mount.clientHeight, 1);
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(resizedWidth, height);
     };
-    const resizeObserver = new ResizeObserver(onResize);
+    const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(mount);
+    // Run once after the next paint so layout has settled.
+    requestAnimationFrame(() => resize());
 
-    // Expose handle for the PEI effect to attach data.
-    sceneHandleRef.current = { promoterPositions, attachEnhancers };
-
-    // Paint any PEI records that were already fetched before this effect
-    // ran (e.g. from a previous sample / window). Without this the
-    // panels would render empty until the next PEI refetch.
+    sceneHandleRef.current = { attachEnhancers };
     if (peiQuery.data) attachEnhancers(peiQuery.data);
 
     return () => {
       cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
       canvas.removeEventListener('pointerdown', onPointerDown);
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerup', onPointerUp);
       canvas.removeEventListener('pointercancel', onPointerUp);
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('contextmenu', onContextMenu);
-      resizeObserver.disconnect();
       mount.removeChild(renderer.domElement);
       renderer.dispose();
       renderer.forceContextLoss();
-      backboneGeometry.dispose();
-      backboneMaterial.dispose();
-      promoterGeo.dispose();
-      promoterMat.dispose();
-      enhancerGeo.dispose();
-      enhancerMat.dispose();
       interactionGroup.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.geometry.dispose();
-        }
+        if (child instanceof THREE.Mesh) child.geometry.dispose();
       });
       sceneHandleRef.current = null;
-      void promoterMeshes;
     };
-    // peiQuery.data intentionally omitted — handled in the effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [height, sampleId, viewport.chr, viewport.start, viewport.end]);
+  }, [organ, height, sampleId, viewport.chr, viewport.start, viewport.end]);
 
-  // -----------------------------------------------------------------
-  // PEI effect: when PEI data arrives (or changes), ask the live scene
-  // to attach enhancers/loops in place. The backbone, promoter beads
-  // and orbit controls are NOT torn down, so there is no flash and the
-  // user's drag state is preserved.
-  // -----------------------------------------------------------------
+  // PEI effect
   useEffect(() => {
-    const handle = sceneHandleRef.current;
-    if (!handle) return;
-    handle.attachEnhancers(peiQuery.data ?? []);
+    sceneHandleRef.current?.attachEnhancers(peiQuery.data ?? []);
   }, [peiQuery.data]);
 
   return (
@@ -353,12 +415,7 @@ export function ThreeDChromatin({
       className="three-d-chromatin"
       ref={mountRef}
       role="img"
-      aria-label={
-        sampleId
-          ? `3D chromatin folding model for sample ${sampleId}, showing promoter backbone with enhancer anchors and interaction loops`
-          : '3D chromatin folding model with promoter backbone and enhancer anchors'
-      }
-      style={{ height: `${height}px` }}
+      aria-label={`3D chromatin folding model for ${organ}`}
     />
   );
 }
