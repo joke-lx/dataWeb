@@ -113,7 +113,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
           timeout: 5m
-          command_timeout: 15m
+          command_timeout: 30m
           envs: GITHUB_SHA
           script: |
             set -e
@@ -169,8 +169,15 @@ jobs:
             # digest. The cached container keeps running the OLD bundle
             # even after GHCR's :latest advances. `compose pull` forces
             # the daemon to fetch the new digest before we re-create.
-            docker compose -f docker-compose.prod.yml pull \
-              || echo "WARN: pull failed (continuing with whatever cache has)"
+            #
+            # However the GHCR link is very slow (~1 MB/s); a 437 MB web
+            # image easily exceeds the SSH command_timeout. Wrap pull in
+            # a 12-minute budget so a slow pull doesn't kill the deploy.
+            # On pull timeout we fall back to the locally-cached image
+            # (still better than abandoning the deploy entirely).
+            timeout 720 docker compose -f docker-compose.prod.yml pull \
+              && echo "compose pull: ok" \
+              || echo "WARN: compose pull failed/timeout (continuing with cache)"
 
             echo "Recreating stack..."
             docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate
