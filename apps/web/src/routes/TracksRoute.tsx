@@ -103,6 +103,7 @@ export function TracksRoute(): JSX.Element {
               sampleId={sampleId}
               sampleIds={overlaySampleIds}
               sampleMeta={overlayMeta}
+              groupLabel={mainSpec.title}
               height={mainSpec.defaultHeight}
             />
             {tab.aux.map((auxId) => {

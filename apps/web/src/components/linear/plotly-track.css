@@ -3,7 +3,12 @@
   width: 100%;
   background: var(--color-surface-1);
   border-bottom: var(--track-separator) solid var(--color-border);
-  overflow: hidden;
+  /* `overflow: visible` so per-figure annotations at the paper edges
+   * (e.g. demo-style stacked bigwig sample labels on the right and the
+   * rotated group label on the left) are not clipped at the figure
+   * bounding box. The lane-level `border-bottom` still defines the
+   * visual track separator. */
+  overflow: visible;
 }
 
 /* Plotly injects a top-level <div> with inline width/height; let it follow the

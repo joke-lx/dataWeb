@@ -29,7 +29,7 @@ import type { PlotlyBuild, PlotlyLayout } from '../linear/plotlyTypes';
 import {
   buildBedGraph,
   buildBigwig,
-  buildBigwigOverlay,
+  buildBigwigStacked,
   type BigwigSeries,
   buildGene,
   buildInsulationScore,
@@ -77,11 +77,13 @@ interface LaneProps {
   /** Override the active sample. */
   sampleId?: string;
   /**
-   * Multi-sample overlay (only honoured for `kind === 'bigwig'`). When set,
-   * the lane fans out one `fetchBigwig` per id and renders them as stacked
-   * traces. The companion `sampleMeta` array carries the matching `Sample`
-   * metadata in the same order; without it a fallback gray palette is used.
-   * Ignored for other kinds.
+   * Multi-sample path (only honoured for `kind === 'bigwig'`). When set,
+   * the lane fans out one `fetchBigwig` per id. For ≥2 samples the lane
+   * renders the demo-style horizontal-slices figure (independent y-axis
+   * per sample, shared x-axis); for 1 sample it falls back to the single
+   * bigwig layout. The companion `sampleMeta` array carries the matching
+   * `Sample` metadata in the same order; without it a fallback gray
+   * palette is used. Ignored for other kinds.
    */
   sampleIds?: string[];
   /**
@@ -90,6 +92,11 @@ interface LaneProps {
    * tests and the legacy single-sample path).
    */
   sampleMeta?: Sample[];
+  /**
+   * Group label rendered on the left of the lane (rotated −90° in Plotly
+   * annotations). Only used for the multi-sample bigwig stack.
+   */
+  groupLabel?: string;
 }
 
 function isBigwigData(data: LinearData | undefined): data is BigwigData {
@@ -153,6 +160,7 @@ export function Lane({
   sampleId: sampleIdOverride,
   sampleIds,
   sampleMeta,
+  groupLabel,
 }: LaneProps): JSX.Element {
   const viewport = useViewport();
   const activeSample = useActiveSample();
@@ -289,13 +297,13 @@ export function Lane({
     );
   }
 
-  // ---- Multi-sample bigwig overlay path ----
+  // ---- Multi-sample bigwig path ----
   if (isOverlay) {
     const overlayError = overlayQueries.find((q) => q.error)?.error ?? null;
     const overlayLoading = overlayQueries.some((q) => q.isLoading);
     const fallback: SampleColor = {
-      line: '#c0392b',
-      fill: 'rgba(192, 57, 43, 0.60)',
+      line: '#666666',
+      fill: 'rgba(102, 102, 102, 0.60)',
     };
     const series: BigwigSeries[] = sampleIds!.map((id, i) => {
       const meta = sampleMeta?.[i];
@@ -307,11 +315,30 @@ export function Lane({
         fill: c.fill,
       };
     });
-    const plot = buildBigwigOverlay(series, viewport, title, laneHeight);
+
+    // Single-sample → keep the original one-axis bigwig layout (no
+    // horizontal slicing, no group label). ≥2 samples → demo-style
+    // stacked slices, height grows with sample count so each slice has
+    // breathing room.
+    const stackedLaneHeight =
+      series.length === 1
+        ? laneHeight
+        : Math.max(laneHeight, 70 * series.length + 30);
+    const plot =
+      series.length === 1
+        ? buildBigwig(series[0].values, viewport, title, stackedLaneHeight)
+        : buildBigwigStacked(
+            series,
+            viewport,
+            title,
+            stackedLaneHeight,
+            groupLabel ?? title,
+          );
 
     return (
-      <div className="lane" style={{ height: `${laneHeight}px` }}>
-        <div className="lane-label">
+      <div className="lane lane--stacked" style={{ height: `${stackedLaneHeight}px` }}>
+        <div className="lane-label lane-label--stacked">
+          <span className="lane-title">{title}</span>
           <span className="lane-sample">
             {sampleIds!.length > 2
               ? `${sampleIds!.slice(0, 2).join(', ')} +${sampleIds!.length - 2}`
@@ -326,7 +353,7 @@ export function Lane({
           {series.every((s) => !s.values) ? (
             <span className="placeholder">No samples selected</span>
           ) : (
-            <PlotlyTrack data={plot.data} layout={plot.layout} height={laneHeight} />
+            <PlotlyTrack data={plot.data} layout={plot.layout} height={stackedLaneHeight} />
           )}
           {overlayLoading && <span className="track-loading">…</span>}
           {overlayError && (
