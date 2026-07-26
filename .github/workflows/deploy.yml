@@ -163,8 +163,17 @@ jobs:
               echo "TAG=latest" > .env
             fi
 
-            echo "Starting stack..."
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            echo "Pulling images via docker compose (forces refresh of :latest cache)..."
+            # CRITICAL: `docker compose up -d` alone does NOT re-pull a
+            # refreshed :latest tag — it reuses the locally-cached image
+            # digest. The cached container keeps running the OLD bundle
+            # even after GHCR's :latest advances. `compose pull` forces
+            # the daemon to fetch the new digest before we re-create.
+            docker compose -f docker-compose.prod.yml pull \
+              || echo "WARN: pull failed (continuing with whatever cache has)"
+
+            echo "Recreating stack..."
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate
 
             echo "Pruning old images..."
             docker image prune -f || true
