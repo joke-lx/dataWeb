@@ -1,7 +1,6 @@
 import { type JSX } from 'react';
 
 import { useAppIntl } from '../../i18n';
-import { ROUTES } from '../registry';
 import '../route.css';
 import '../home.css';
 
@@ -9,9 +8,6 @@ const COMPARISON_MODES = ['tissue', 'breed', 'cross', 'developmental'] as const;
 
 export function HomeRoute(): JSX.Element {
   const { t } = useAppIntl();
-
-  const mainRoutes = ROUTES.filter((r) => r.category === 'main');
-  const triggerRoutes = ROUTES.filter((r) => r.category === 'trigger');
 
   return (
     <main className="home-page">
@@ -22,7 +18,6 @@ export function HomeRoute(): JSX.Element {
           <h1 className="home-hero__title">{t('home.hero.title')}</h1>
           <p className="home-hero__lede">{t('home.hero.lede')}</p>
 
-          {/* Search shell */}
           <form className="home-search" onSubmit={(e) => e.preventDefault()}>
             <label className="home-search__input-wrap">
               <span className="home-search__icon" aria-hidden="true" />
@@ -37,25 +32,17 @@ export function HomeRoute(): JSX.Element {
             </button>
           </form>
 
-          {/* Quick entry links */}
           <nav className="home-quick-links" aria-label="Quick entry points">
-            {mainRoutes.map((r) => (
-              <a key={r.id} className="home-quick-link" href={r.path} title={r.description}>
-                <span className="home-quick-link__glyph">{getGlyph(r.id)}</span>
-                {t('nav.' + r.id, r.label)}
-              </a>
-            ))}
-            {triggerRoutes.map((r) => (
-              <a key={r.id} className="home-quick-link home-quick-link--secondary" href={r.path} title={r.description}>
-                <span className="home-quick-link__glyph">{getGlyph(r.id)}</span>
-                {t('nav.' + r.id, r.label)}
-              </a>
-            ))}
+            <a className="home-quick-link" href="/sample/Brain_BF3" title="Browse a sample">
+              <span className="home-quick-link__glyph">▦</span>{t('nav.hic')}
+            </a>
+            <a className="home-quick-link" href="/compare/Brain_BF3/Liver_BF3" title="Compare two samples">
+              <span className="home-quick-link__glyph">Δ</span>{t('nav.differential')}
+            </a>
           </nav>
         </div>
       </section>
 
-      {/* ── Browse by species ── */}
       <section className="home-section">
         <div className="home-section__head">
           <h2>{t('home.species.title')}</h2>
@@ -69,21 +56,12 @@ export function HomeRoute(): JSX.Element {
                 <h3>Pig</h3>
                 <p className="home-species-card__desc">{t('home.species.pig.description')}</p>
               </div>
-              <a className="home-btn" href="/hic">{t('home.species.browse')}</a>
+              <a className="home-btn" href="/sample/Brain_BF3">{t('home.species.browse')}</a>
             </div>
             <div className="home-species-card__stats">
-              <div className="home-species-card__stat">
-                <b>6</b>
-                <span>{t('home.species.pig.sampleCount')}</span>
-              </div>
-              <div className="home-species-card__stat">
-                <b>4</b>
-                <span>{t('home.species.pig.tissueCount')}</span>
-              </div>
-              <div className="home-species-card__stat">
-                <b>2</b>
-                <span>{t('home.species.pig.breedCount')}</span>
-              </div>
+              <div className="home-species-card__stat"><b>6</b><span>{t('home.species.pig.sampleCount')}</span></div>
+              <div className="home-species-card__stat"><b>4</b><span>{t('home.species.pig.tissueCount')}</span></div>
+              <div className="home-species-card__stat"><b>2</b><span>{t('home.species.pig.breedCount')}</span></div>
             </div>
           </article>
           <article className="home-species-card">
@@ -93,27 +71,17 @@ export function HomeRoute(): JSX.Element {
                 <h3>Chicken</h3>
                 <p className="home-species-card__desc">{t('home.species.chicken.description')}</p>
               </div>
-              <a className="home-btn" href="/hic">{t('home.species.browse')}</a>
+              <a className="home-btn" href="/sample/Brain_BF3">{t('home.species.browse')}</a>
             </div>
             <div className="home-species-card__stats">
-              <div className="home-species-card__stat">
-                <b>TBD</b>
-                <span>{t('home.species.pig.sampleCount')}</span>
-              </div>
-              <div className="home-species-card__stat">
-                <b>—</b>
-                <span>{t('home.species.pig.tissueCount')}</span>
-              </div>
-              <div className="home-species-card__stat">
-                <b>—</b>
-                <span>{t('home.species.pig.breedCount')}</span>
-              </div>
+              <div className="home-species-card__stat"><b>TBD</b><span>{t('home.species.pig.sampleCount')}</span></div>
+              <div className="home-species-card__stat"><b>—</b><span>{t('home.species.pig.tissueCount')}</span></div>
+              <div className="home-species-card__stat"><b>—</b><span>{t('home.species.pig.breedCount')}</span></div>
             </div>
           </article>
         </div>
       </section>
 
-      {/* ── Comparison modes ── */}
       <section className="home-section" id="comparison">
         <div className="home-section__head">
           <h2>{t('home.comparison.title')}</h2>
@@ -132,22 +100,10 @@ export function HomeRoute(): JSX.Element {
         </div>
       </section>
 
-      {/* ── Footer ── */}
       <footer className="home-footer">
         <span>{t('site.footer.disclaimer')}</span>
         <span>{t('site.footer.noUpload')}</span>
       </footer>
     </main>
   );
-}
-
-function getGlyph(id: string): string {
-  const glyphs: Record<string, string> = {
-    hic: '▦',
-    differential: 'Δ',
-    tracks: '≋',
-    '3d': '◇',
-    'ctcf-motif': '⌁',
-  };
-  return glyphs[id] ?? '•';
 }

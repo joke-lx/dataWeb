@@ -9,59 +9,31 @@ export interface RouteSpec {
 }
 
 export const ROUTES: RouteSpec[] = [
-  {
-    id: 'hic',
-    path: '/hic',
-    label: 'Hi-C',
-    description: 'Contact matrix (single sample)',
-    category: 'main',
-  },
-  {
-    id: 'differential',
-    path: '/differential',
-    label: 'Δ Hi-C',
-    description: 'log2(A/B) split heatmap',
-    category: 'main',
-  },
-  {
-    id: 'tracks',
-    path: '/tracks',
-    label: 'Tracks',
-    description: 'Multi-omics track views',
-    category: 'main',
-  },
-  {
-    id: '3d',
-    path: '/3d',
-    label: '3D',
-    description: 'Chromatin 3D ribbon',
-    category: 'main',
-  },
-  {
-    id: 'ctcf-motif',
-    path: '/ctcf-motif',
-    label: 'CTCF Motif',
-    description: 'Motif logo + genotype distribution',
-    category: 'trigger',
-  },
+  { id: 'home', path: '/', label: 'Home', description: 'Atlas landing page', category: 'main' },
+  { id: 'sample', path: '/sample/:id', label: 'Sample', description: 'Single-sample views', category: 'main' },
+  { id: 'compare', path: '/compare/:a/:b', label: 'Compare', description: 'Compare two samples', category: 'main' },
 ];
 
 /**
- * Old 13-route URLs → new URL targets.
+ * Old URLs → new sample-first / compare-first URL targets.
  * Used by ``App.tsx`` to emit ``<Navigate replace>`` routes so
  * bookmarks and external links continue to work.
  */
 export const LEGACY_REDIRECTS: Record<string, string> = {
-  '/differential-hic': '/differential',
-  '/ab-index': '/tracks?type=ab',
-  '/insulation-score': '/tracks?type=is',
-  '/tad': '/tracks?type=tad',
-  '/pei': '/tracks?type=pei',
-  '/ctcf-loops': '/tracks?type=loop',
-  '/rna-seq': '/tracks?type=rna_seq',
-  '/h3k4me3': '/tracks?type=h3k4me3',
-  '/h3k27ac': '/tracks?type=h3k27ac',
-  '/sv': '/tracks?type=sv',
-  '/gene': '/tracks?type=gene',
-  // '/hic' and '/3d' are unchanged — no redirect needed.
+  '/differential-hic': '/compare/Brain_BF3/Liver_BF3',
+  '/ab-index': '/sample/Brain_BF3?type=ab',
+  '/insulation-score': '/sample/Brain_BF3?type=is',
+  '/tad': '/sample/Brain_BF3?type=tad',
+  '/pei': '/sample/Brain_BF3?type=pei',
+  '/ctcf-loops': '/sample/Brain_BF3?type=loop',
+  '/rna-seq': '/sample/Brain_BF3?type=rna_seq',
+  '/h3k4me3': '/sample/Brain_BF3?type=h3k4me3',
+  '/h3k27ac': '/sample/Brain_BF3?type=h3k27ac',
+  '/sv': '/sample/Brain_BF3?type=sv',
+  '/gene': '/sample/Brain_BF3?type=gene',
+  '/hic': '/sample/Brain_BF3',
+  '/tracks': '/sample/Brain_BF3?tab=tracks',
+  '/3d': '/sample/Brain_BF3?tab=3d',
+  '/ctcf-motif': '/sample/Brain_BF3?tab=ctcfMotif',
+  '/differential': '/compare/Brain_BF3/Liver_BF3',
 };
