@@ -11,9 +11,9 @@ dataWeb 项目 (multi-omics 3D genome browser for pigs/chickens) 的架构模式
 | ref | 标题 | 简介 | 相对路径 |
 |---|---|---|---|
 | ref1 | **ModelFactory pattern** | 每个模型自带组件、`<ModelFactory type="hic" />` 统一入口、`render-kit/` 通用基件、`fail-loud` 注册表。**核心架构模式**。 | [[refs/ref1]] |
-| ref2 | i18n infrastructure | RTK i18nSlice + react-intl IntlProvider + URL `?lang=` 单一 source of truth + 两级 fallback (zh-CN → en → key) | (待沉淀) |
-| ref3 | RouteShell layout | 跨路由通用布局模板：`route-header` + `route-content` + region breadcrumb + page header | (待沉淀) |
-| ref4 | HomeRoute (A-style landing) | 主页面 hero + search + species cards + comparison modes 4 列网格 | (待沉淀) |
+| ref2 | i18n infrastructure | 静态字典 + RTK i18nSlice + react-intl + URL `?lang=` 单一 source of truth + 两级 fallback。 | [[refs/ref2]] |
+| ref3 | RouteShell layout | 跨 viewer 路由通用布局模板：page header + subtitle + actions + region breadcrumb + toolbar slot。 | [[refs/ref3]] |
+| ref4 | HomeRoute A-style landing | A 风格 landing page：hero centered + 搜索 + species cards + comparison modes 4 列网格 + 学术克制风格。 | [[refs/ref4]] |
 
 ## 何时使用本 skill
 
