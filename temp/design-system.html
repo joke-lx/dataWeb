@@ -1,0 +1,1321 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dataWeb — Design System Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       design-system › tokens
+       Tokens documented here MUST match home-mockup-A.html exactly.
+       ============================================================ */
+    :root {
+      /* surface stack */
+      --surface:#fafafa;
+      --surface-2:#f0f0f0;
+      --paper:#ffffff;
+      --line:#d9d9d6;
+      /* ink */
+      --ink:#181818;
+      --muted:#686868;
+      --ink-strong:#1a1a1a;
+      /* brand accent */
+      --accent:#c0392b;
+      --accent-dark:#982d22;
+      --accent-soft:#f7e9e7;
+      /* type */
+      --sans:"Inter",sans-serif;
+      --mono:"JetBrains Mono",monospace;
+      /* spacing scale (px) */
+      --space-1:4px;
+      --space-2:8px;
+      --space-3:12px;
+      --space-4:16px;
+      --space-5:24px;
+      /* biology palette */
+      --bio-a:#c0392b;
+      --bio-b:#2c5fa6;
+      --bio-tad-boundary:#1a1a1a;
+      --bio-tad-body:#f5f5f5;
+      --bio-loop-arc:#b8b8b8;
+      --bio-sv-del:#b5305d;
+      --bio-sv-dup:#2e8b57;
+      --bio-sv-inv:#6e4ca0;
+      --bio-sv-tra:#444444;
+      --bio-pei-anchor:#d4a017;
+      --bio-gene-exon:#4a7dc9;
+      --bio-gene-intron:#b8c8d8;
+      /* sample palette */
+      --sample-muscle:#B5793B;
+      --sample-liver:#3E6DA3;
+      --sample-brain:#2F8F4E;
+    }
+
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      margin:0;
+      color:var(--ink);
+      background:var(--surface);
+      font-family:var(--sans);
+      font-size:13px;
+      line-height:1.5;
+      -webkit-font-smoothing:antialiased;
+    }
+    button,input,select { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    ::selection { background:var(--accent-soft); color:var(--accent-dark); }
+
+    /* ============================================================
+       design-system › topbar (canonical reference, sticky)
+       ============================================================ */
+    .topbar {
+      height:66px;
+      padding:0 clamp(24px,5vw,76px);
+      display:flex;
+      align-items:center;
+      border-bottom:1px solid var(--line);
+      background:rgba(250,250,250,.96);
+      position:sticky; top:0; z-index:30;
+      backdrop-filter:saturate(140%) blur(6px);
+    }
+    .brand {
+      display:flex; align-items:center; gap:11px;
+      font-weight:700; letter-spacing:-.03em; font-size:20px;
+      margin-right:36px;
+    }
+    .brand-mark {
+      width:25px; height:25px;
+      border:1.5px solid var(--accent);
+      border-radius:50%;
+      position:relative; flex:none;
+    }
+    .brand-mark:before, .brand-mark:after { content:""; position:absolute; background:var(--accent); border-radius:50%; width:5px; height:5px; }
+    .brand-mark:before { left:4px; top:5px; box-shadow:10px 9px 0 var(--accent); }
+    .brand-mark:after { width:12px; height:1px; left:6px; top:12px; transform:rotate(40deg); border-radius:0; }
+
+    nav.primary { display:flex; align-items:center; gap:3px; }
+    nav.primary a {
+      color:#4e4e4e; text-decoration:none;
+      font-size:13px; font-weight:500;
+      padding:8px 11px; border-radius:6px;
+    }
+    nav.primary a:hover { color:var(--accent); background:var(--accent-soft); }
+    nav.primary a.active { color:var(--accent); background:var(--accent-soft); }
+
+    .species-toggle {
+      margin-left:auto;
+      display:flex; padding:3px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      border-radius:8px;
+    }
+    .species-toggle button {
+      border:0; background:transparent;
+      color:var(--muted);
+      padding:6px 13px; border-radius:5px;
+      font-size:12px; font-weight:600; cursor:pointer;
+    }
+    .species-toggle button.active {
+      color:var(--paper); background:var(--accent);
+      box-shadow:0 1px 3px #8f2d2428;
+    }
+
+    /* ============================================================
+       design-system › layout shell + right rail
+       ============================================================ */
+    .shell {
+      display:grid;
+      grid-template-columns: minmax(0,1fr) 220px;
+      gap:48px;
+      width:min(1240px,calc(100% - 48px));
+      margin:0 auto;
+      padding:32px 0 80px;
+    }
+    .rail {
+      position:sticky; top:88px;
+      align-self:start;
+      font-size:11px;
+      color:var(--muted);
+    }
+    .rail h4 {
+      margin:0 0 12px;
+      font-family:var(--mono);
+      font-size:10px; letter-spacing:.11em;
+      text-transform:uppercase;
+      color:#888;
+      font-weight:500;
+    }
+    .rail ol {
+      list-style:none; padding:0; margin:0;
+      border-left:1px solid var(--line);
+    }
+    .rail li { margin:0; }
+    .rail a {
+      display:block;
+      padding:6px 0 6px 14px;
+      color:var(--muted);
+      text-decoration:none;
+      border-left:1px solid transparent;
+      margin-left:-1px;
+      font-weight:500;
+    }
+    .rail a:hover { color:var(--accent); }
+    .rail a.active { color:var(--accent); border-left-color:var(--accent); }
+
+    /* ============================================================
+       design-system › section + typography
+       ============================================================ */
+    .sec { padding:56px 0 24px; border-top:1px solid var(--line); }
+    .sec:first-of-type { border-top:0; padding-top:0; }
+    .sec-head {
+      display:flex; justify-content:space-between; align-items:end;
+      gap:24px; margin-bottom:28px;
+      padding-bottom:14px; border-bottom:1px solid var(--line);
+    }
+    .sec-head h2 {
+      margin:0;
+      font-size:23px; letter-spacing:-.035em; font-weight:650;
+    }
+    .sec-head p { margin:0; color:var(--muted); font-size:12px; max-width:520px; }
+    .eyebrow {
+      display:inline-flex; align-items:center; gap:9px;
+      color:var(--accent); font-family:var(--mono);
+      text-transform:uppercase; letter-spacing:.11em;
+      font-size:11px; font-weight:500;
+    }
+    .eyebrow:before { content:""; width:24px; height:1px; background:var(--accent); }
+
+    h1.demo-h1 { margin:20px auto 17px; max-width:790px; font-size:clamp(40px,5vw,68px); line-height:1.03; letter-spacing:-.055em; font-weight:650; }
+    h2.demo-h2 { margin:0 0 6px; font-size:23px; letter-spacing:-.035em; font-weight:650; }
+    h3.demo-h3 { margin:0 0 6px; font-size:15px; font-weight:600; letter-spacing:-.02em; }
+    .demo-body { font-size:13px; line-height:1.5; color:var(--ink); }
+    .demo-small { font-size:12px; color:var(--muted); }
+    .demo-tiny { font-size:11px; color:var(--muted); }
+    .demo-eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.11em; text-transform:uppercase; color:var(--accent); font-weight:500; }
+    .demo-mono { font-family:var(--mono); font-size:12px; color:var(--ink); }
+
+    /* ============================================================
+       design-system › swatches
+       ============================================================ */
+    .swatch-grid {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
+    }
+    .swatch {
+      border:1px solid var(--line); border-radius:8px;
+      background:var(--paper); overflow:hidden;
+    }
+    .swatch-chip {
+      height:74px;
+      border-bottom:1px solid var(--line);
+      background-image:linear-gradient(45deg,#00000008 25%,transparent 25%,transparent 75%,#00000008 75%),linear-gradient(45deg,#00000008 25%,transparent 25%,transparent 75%,#00000008 75%);
+      background-size:14px 14px;
+      background-position:0 0,7px 7px;
+    }
+    .swatch-body { padding:10px 12px 12px; }
+    .swatch-name { font-weight:600; font-size:12px; }
+    .swatch-hex { font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:2px; }
+    .swatch-note { font-size:11px; color:#888; margin-top:6px; line-height:1.45; }
+
+    .palette-group + .palette-group { margin-top:24px; }
+    .palette-group h3.demo-h3 {
+      display:flex; justify-content:space-between; align-items:end;
+      margin:0 0 12px; padding-bottom:8px;
+      border-bottom:1px solid var(--line);
+      font-size:13px; font-weight:600;
+    }
+    .palette-group h3.demo-h3 .meta { font-family:var(--mono); font-size:11px; color:var(--muted); font-weight:400; }
+
+    /* ============================================================
+       design-system › spacing scale
+       ============================================================ */
+    .scale-row { display:flex; align-items:end; gap:18px; padding:18px; background:var(--paper); border:1px solid var(--line); border-radius:8px; }
+    .scale-block { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    .scale-bar { background:var(--accent); width:48px; border-radius:2px; }
+    .scale-block span { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .scale-block b { font-family:var(--mono); font-size:11px; color:var(--ink); font-weight:500; }
+
+    /* ============================================================
+       design-system › components · buttons
+       ============================================================ */
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:7px;
+      padding:9px 14px; border-radius:6px;
+      font-size:12px; font-weight:600;
+      cursor:pointer; border:1px solid transparent;
+      transition:background .15s, color .15s, border-color .15s;
+    }
+    .btn-primary { color:#fff; background:var(--accent); }
+    .btn-primary:hover { background:var(--accent-dark); }
+    .btn-secondary { color:#333; background:#fff; border-color:#c9c9c5; }
+    .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-ghost { color:#444; background:transparent; }
+    .btn-ghost:hover { background:#fff; border-color:var(--line); color:var(--accent); }
+
+    .demo-card {
+      background:var(--paper); border:1px solid var(--line); border-radius:10px;
+      padding:24px;
+    }
+    .demo-card + .demo-card { margin-top:18px; }
+    .demo-card-title {
+      display:flex; justify-content:space-between; align-items:end;
+      margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--line);
+    }
+    .demo-card-title h3 { margin:0; font-size:14px; font-weight:600; letter-spacing:-.015em; }
+    .demo-card-title .tag {
+      font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+      color:#888; text-transform:uppercase;
+    }
+    .demo-card p.usage {
+      margin:14px 0 0; color:var(--muted); font-size:12px; line-height:1.55;
+    }
+
+    /* ============================================================
+       design-system › chips
+       ============================================================ */
+    .chip {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 9px; border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff; color:#555;
+      font-family:var(--mono); font-size:11px;
+    }
+    .chip:hover { border-color:#d49b95; color:var(--accent); }
+    .chip.active { color:var(--paper); background:var(--accent); border-color:var(--accent); }
+    .chip .x { font-size:13px; line-height:1; color:inherit; opacity:.7; }
+    .chip .x:hover { opacity:1; }
+    .chip-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); display:inline-block; }
+
+    /* ============================================================
+       design-system › search shell (canonical)
+       ============================================================ */
+    .search-shell {
+      max-width:780px; margin:0 auto;
+      padding:7px; display:grid;
+      grid-template-columns:1fr 148px 112px;
+      border:1px solid #cfcfcb; border-radius:12px;
+      background:var(--paper);
+      box-shadow:0 12px 32px #2626260c,0 2px 6px #2626260a;
+      text-align:left;
+    }
+    .input-wrap { display:flex; align-items:center; min-width:0; }
+    .search-icon {
+      margin:0 13px 0 11px;
+      width:17px; height:17px;
+      border:1.7px solid #777; border-radius:50%;
+      position:relative; flex:none;
+    }
+    .search-icon:after {
+      content:""; width:7px; height:1.7px;
+      background:#777; position:absolute;
+      right:-5px; bottom:-2px; transform:rotate(45deg);
+    }
+    .search-shell input {
+      width:100%; border:0; outline:0;
+      padding:13px 8px 13px 0;
+      color:var(--ink); font-family:var(--mono); font-size:14px;
+      background:transparent;
+    }
+    .search-shell input::placeholder { color:#9a9a96; }
+    .search-shell select {
+      border:0; border-left:1px solid var(--line);
+      padding:0 14px; color:#494949;
+      background:var(--paper); outline:0;
+      font-size:13px; cursor:pointer;
+    }
+    .search-btn {
+      border:0; border-radius:7px;
+      color:#fff; background:var(--accent);
+      font-weight:600; cursor:pointer;
+    }
+    .search-btn:hover { background:var(--accent-dark); }
+    .suggestions {
+      margin-top:13px; display:flex;
+      justify-content:center; align-items:center;
+      flex-wrap:wrap; gap:7px;
+      color:#858585; font-size:11px;
+    }
+    .suggestion {
+      border:1px solid var(--line); background:#fff;
+      color:#555; border-radius:999px;
+      padding:4px 9px; font-family:var(--mono);
+      font-size:11px; cursor:pointer;
+    }
+    .suggestion:hover { border-color:#d49b95; color:var(--accent); }
+
+    /* ============================================================
+       design-system › cards
+       ============================================================ */
+    .cards-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .panel {
+      background:var(--paper); border:1px solid var(--line);
+      border-radius:10px; overflow:hidden;
+      position:relative;
+    }
+    .panel.acc-stripe:before {
+      content:""; position:absolute; left:0; top:0;
+      height:3px; width:100%; background:var(--accent);
+    }
+    .panel-head {
+      padding:18px 18px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; justify-content:space-between; align-items:start; gap:14px;
+    }
+    .panel-head .latin { font-family:var(--mono); color:var(--muted); font-size:10px; letter-spacing:.04em; }
+    .panel-head h3 { margin:4px 0 6px; font-size:18px; letter-spacing:-.03em; font-weight:650; }
+    .panel-head p { margin:0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .panel-body { padding:16px 18px; }
+    .panel-foot {
+      padding:12px 18px; border-top:1px solid var(--line);
+      background:var(--surface); display:flex; justify-content:space-between; align-items:center;
+      font-size:11px; color:var(--muted); font-family:var(--mono);
+    }
+
+    /* mini species card */
+    .species-mini { padding:18px; }
+    .species-mini h3 { margin:2px 0 4px; font-size:18px; letter-spacing:-.035em; font-weight:650; }
+    .species-mini .latin { font-family:var(--mono); color:var(--muted); font-size:10px; letter-spacing:.04em; }
+    .species-mini p { margin:6px 0 0; color:var(--muted); font-size:12px; }
+
+    /* mini mode card */
+    .mode-mini { padding:16px; }
+    .mode-mini .mode-index { color:var(--accent); font-family:var(--mono); font-size:10px; }
+    .mode-mini h3 { margin:8px 0 4px; font-size:14px; }
+    .mode-mini p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+
+    /* ============================================================
+       design-system › tables
+       ============================================================ */
+    table.meta {
+      width:100%; border-collapse:collapse;
+      background:var(--paper); border:1px solid var(--line);
+      border-radius:8px; overflow:hidden;
+      font-size:12px;
+    }
+    table.meta thead th {
+      text-align:left;
+      padding:10px 14px; font-weight:600;
+      font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+      color:#555;
+      background:var(--surface);
+      border-bottom:1px solid var(--line);
+    }
+    table.meta tbody td {
+      padding:10px 14px;
+      border-bottom:1px solid var(--line);
+      font-family:var(--mono); font-size:12px;
+    }
+    table.meta tbody tr:last-child td { border-bottom:0; }
+    table.meta tbody tr:hover { background:var(--surface); }
+
+    /* ============================================================
+       design-system › breadcrumb + status pill + stat tile + coord bar
+       ============================================================ */
+    .crumbs { display:inline-flex; align-items:center; gap:0; font-size:12px; font-family:var(--mono); }
+    .crumbs a, .crumbs span {
+      padding:6px 10px; color:#555; text-decoration:none;
+      border:1px solid var(--line); background:var(--paper);
+    }
+    .crumbs a:first-child { border-radius:6px 0 0 6px; }
+    .crumbs a:last-child, .crumbs span:last-child { border-radius:0 6px 6px 0; }
+    .crumbs a + a, .crumbs span + span, .crumbs a + span { border-left:0; }
+    .crumbs a:hover, .crumbs span:hover { color:var(--accent); }
+    .crumbs .current { background:var(--accent-soft); color:var(--accent-dark); }
+
+    .pill {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      font-size:11px; font-weight:600;
+      border:1px solid transparent;
+    }
+    .pill.ready { color:#1f5a3a; background:#e8f4ec; border-color:#cfe6d6; }
+    .pill.loading { font-family:var(--mono); color:#3a3a3a; background:#efefef; border-color:var(--line); }
+    .pill.loading .dot { width:6px; height:6px; border-radius:50%; background:#888; animation:blink 1.2s infinite; }
+    .pill.error { color:#7a1d2a; background:#fbe7ea; border-color:#f1c8ce; }
+    .pill.empty { color:#666; background:#f3f3f1; border-color:var(--line); }
+    @keyframes blink { 0%,100%{opacity:.35;} 50%{opacity:1;} }
+
+    .stats-3 {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      border:1px solid var(--line); border-radius:8px; overflow:hidden;
+    }
+    .stat-tile {
+      padding:14px; background:var(--surface);
+    }
+    .stat-tile + .stat-tile { border-left:1px solid var(--line); }
+    .stat-tile b { display:block; font-family:var(--mono); font-size:18px; font-weight:500; }
+    .stat-tile span { display:block; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.08em; margin-top:2px; }
+
+    .coord-bar {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px; border:1px solid var(--line); border-radius:8px;
+      background:var(--paper);
+      font-family:var(--mono); font-size:12px; color:var(--ink);
+    }
+    .coord-bar .copy {
+      border:0; background:transparent; cursor:pointer;
+      color:var(--muted); font-family:var(--mono); font-size:11px;
+      padding:2px 6px; border-radius:4px;
+    }
+    .coord-bar .copy:hover { background:var(--accent-soft); color:var(--accent); }
+    .coord-bar .copy.ok { color:#1f5a3a; }
+
+    /* ============================================================
+       design-system › states
+       ============================================================ */
+    .state-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .state {
+      border:1px dashed var(--line); border-radius:10px;
+      padding:28px 18px; text-align:center;
+      background:var(--paper);
+    }
+    .state.loading { color:var(--muted); font-family:var(--mono); font-size:12px; }
+    .state.loading .spinner {
+      width:14px; height:14px; border-radius:50%;
+      border:1.5px solid var(--line); border-top-color:var(--accent);
+      animation:spin 1s linear infinite; margin:0 auto 8px;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .state.empty { color:#888; font-size:12px; }
+    .state.empty .glyph { font-family:var(--mono); font-size:18px; color:#bbb; display:block; margin-bottom:6px; }
+    .state.error { color:#7a1d2a; font-size:12px; background:#fbe7ea; border-color:#f1c8ce; }
+
+    /* ============================================================
+       design-system › layout thumbnails
+       ============================================================ */
+    .thumbs { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    .thumb {
+      border:1px solid var(--line); border-radius:10px;
+      background:var(--paper); overflow:hidden;
+    }
+    .thumb-cap {
+      padding:10px 14px; border-bottom:1px solid var(--line);
+      display:flex; justify-content:space-between; align-items:center;
+      font-size:11px; font-family:var(--mono); color:var(--muted);
+    }
+    .thumb-cap b { color:var(--ink); font-weight:600; }
+    .thumb-body {
+      padding:14px;
+      background:
+        linear-gradient(180deg,#fff 0%,var(--surface) 100%);
+    }
+    .mini-bar {
+      display:flex; align-items:center; gap:6px;
+      padding:6px 8px; border:1px solid var(--line); border-radius:6px;
+      background:var(--paper); margin-bottom:10px;
+      font-size:8px; color:#999;
+    }
+    .mini-bar .b-mark { width:8px; height:8px; border:1px solid var(--accent); border-radius:50%; position:relative; }
+    .mini-bar .b-mark:before, .mini-bar .b-mark:after { content:""; position:absolute; background:var(--accent); border-radius:50%; }
+    .mini-bar .b-mark:before { left:1px; top:1px; width:2px; height:2px; box-shadow:4px 4px 0 var(--accent); }
+    .mini-bar .b-mark:after { display:none; }
+    .mini-bar .b-name { font-weight:700; color:#444; font-size:8px; margin-right:auto; }
+    .mini-bar .b-pill { padding:1px 5px; background:var(--accent); color:#fff; border-radius:3px; font-size:7px; }
+    .mini-hero { height:54px; border-radius:6px; background:linear-gradient(180deg,#fff,#fafafa); border:1px solid var(--line); display:grid; place-items:center; }
+    .mini-hero .h-title { font-size:14px; font-weight:650; letter-spacing:-.04em; text-align:center; line-height:1.05; }
+    .mini-hero .h-search { width:78%; height:14px; margin-top:8px; border-radius:4px; border:1px solid var(--line); background:var(--paper); }
+    .mini-cards { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+    .mini-card { border:1px solid var(--line); border-radius:6px; padding:8px; background:var(--paper); }
+    .mini-card h4 { margin:0 0 3px; font-size:9px; font-weight:650; }
+    .mini-card .m-stripe { height:2px; background:var(--accent); margin-bottom:5px; border-radius:1px; }
+    .mini-card p { margin:0; font-size:7px; color:var(--muted); line-height:1.4; }
+    .mini-viewer-grid { display:grid; grid-template-columns:1fr 1.4fr; gap:6px; }
+    .mini-colormap { height:100px; border:1px solid var(--line); border-radius:4px; background:linear-gradient(90deg,#fff5f0,#c0392b 50%,#982d22); position:relative; }
+    .mini-colormap:after { content:"chr1:1.0–1.6 Mb"; position:absolute; left:6px; bottom:4px; font-family:var(--mono); font-size:7px; color:#fff5f0; }
+    .mini-tracks { display:flex; flex-direction:column; gap:4px; }
+    .mini-track { height:14px; border:1px solid var(--line); border-radius:3px; background:var(--surface); position:relative; overflow:hidden; }
+    .mini-track .t-peak { position:absolute; top:2px; height:10px; background:var(--accent); border-radius:1px; }
+    .mini-track .t-exon { position:absolute; top:3px; height:8px; background:var(--bio-gene-exon); border-radius:1px; }
+    .mini-track .t-intron { position:absolute; top:5px; height:4px; background:var(--bio-gene-intron); border-radius:1px; }
+    .mini-compare { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .mini-compare .slot { border:1px solid var(--line); border-radius:4px; padding:8px; background:var(--paper); }
+    .mini-compare .slot .lbl { font-family:var(--mono); font-size:7px; color:var(--muted); }
+    .mini-compare .slot .nm { font-size:9px; font-weight:650; margin-top:3px; }
+    .mini-compare .slot .bar { height:6px; border-radius:2px; margin-top:5px; background:var(--accent); opacity:.85; }
+    .mini-compare .slot.s2 .bar { background:#3E6DA3; }
+    .mini-compare .mode-row {
+      grid-column:1 / -1; display:flex; gap:4px;
+      margin-top:4px;
+    }
+    .mini-compare .mode-row span {
+      flex:1; padding:4px 0; text-align:center;
+      border:1px solid var(--line); border-radius:4px;
+      font-size:8px; color:#555; background:var(--paper);
+    }
+    .mini-compare .mode-row span.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+    /* ============================================================
+       design-system › responsive stack
+       ============================================================ */
+    .resp-row { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    .resp {
+      border:1px solid var(--line); border-radius:10px;
+      background:var(--paper); overflow:hidden;
+    }
+    .resp-cap {
+      padding:8px 14px; border-bottom:1px solid var(--line);
+      display:flex; justify-content:space-between;
+      font-family:var(--mono); font-size:11px; color:var(--muted);
+    }
+    .resp-cap b { color:var(--ink); font-weight:600; }
+    .resp-canvas { padding:14px; background:var(--surface); }
+    .resp-w { position:relative; margin:0 auto; background:var(--paper); border:1px solid var(--line); }
+    .resp-w1280 { width:100%; max-width:480px; aspect-ratio:1280/300; padding:8px; }
+    .resp-w850  { width:100%; max-width:380px; aspect-ratio:850/320; padding:8px; }
+    .resp-w620  { width:100%; max-width:260px; aspect-ratio:620/420; padding:8px; }
+    .resp-bar {
+      height:18px; border-radius:4px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      display:flex; align-items:center; padding:0 6px; gap:4px;
+    }
+    .resp-bar .m { width:7px; height:7px; border:1px solid var(--accent); border-radius:50%; }
+    .resp-bar .n { font-size:7px; font-weight:700; color:#444; }
+    .resp-bar .p { margin-left:auto; width:34px; height:8px; background:var(--accent); border-radius:2px; }
+    .resp-hero { height:60px; margin-top:8px; border-radius:4px; background:linear-gradient(180deg,#fff,#fafafa); border:1px solid var(--line); display:grid; place-items:center; }
+    .resp-hero .h-title { font-size:11px; font-weight:650; letter-spacing:-.03em; }
+    .resp-hero .h-search { width:80%; height:8px; margin-top:6px; border:1px solid var(--line); border-radius:3px; }
+    .resp-cards { display:grid; gap:6px; margin-top:8px; }
+    .resp-cards.two { grid-template-columns:1fr 1fr; }
+    .resp-cards.one { grid-template-columns:1fr; }
+    .resp-card { border:1px solid var(--line); border-radius:4px; padding:6px; }
+    .resp-card h4 { margin:0 0 3px; font-size:8px; font-weight:650; }
+    .resp-card .s { height:2px; background:var(--accent); margin-bottom:4px; border-radius:1px; }
+    .resp-card p { margin:0; font-size:7px; color:var(--muted); }
+
+    /* ============================================================
+       design-system › icons
+       ============================================================ */
+    .icons-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+    .icon-cell {
+      background:var(--paper); border:1px solid var(--line); border-radius:8px;
+      padding:18px 10px 12px; text-align:center;
+    }
+    .icon-cell .glyph {
+      display:inline-block; width:24px; height:24px; margin:0 auto 8px;
+      position:relative;
+    }
+    .icon-cell .lbl { font-size:11px; font-weight:600; }
+    .icon-cell .code { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:2px; }
+
+    .ig-search { width:17px; height:17px; border:1.7px solid var(--ink); border-radius:50%; position:relative; }
+    .ig-search:after { content:""; width:7px; height:1.7px; background:var(--ink); position:absolute; right:-5px; bottom:-2px; transform:rotate(45deg); }
+    .ig-mark { width:25px; height:25px; border:1.5px solid var(--accent); border-radius:50%; position:relative; }
+    .ig-mark:before, .ig-mark:after { content:""; position:absolute; background:var(--accent); border-radius:50%; width:5px; height:5px; }
+    .ig-mark:before { left:4px; top:5px; box-shadow:10px 9px 0 var(--accent); }
+    .ig-mark:after { display:none; }
+    .ig-silhouette { width:24px; height:24px; position:relative; }
+    .ig-silhouette:before { content:""; position:absolute; left:8px; top:2px; width:8px; height:8px; border:1.5px solid var(--ink); border-radius:50%; background:transparent; }
+    .ig-silhouette:after { content:""; position:absolute; left:3px; top:11px; width:18px; height:11px; border:1.5px solid var(--ink); border-radius:8px 8px 4px 4px; background:transparent; }
+    .ig-sort { display:inline-block; width:14px; height:16px; position:relative; }
+    .ig-sort:before { content:"▲"; position:absolute; left:0; top:-2px; font-size:7px; color:var(--muted); }
+    .ig-sort:after { content:"▼"; position:absolute; left:0; bottom:-2px; font-size:7px; color:var(--muted); }
+    .ig-info { display:inline-block; width:18px; height:18px; border:1.5px solid var(--ink); border-radius:50%; font-family:var(--mono); font-size:11px; font-weight:600; line-height:15px; color:var(--ink); }
+    .ig-arrow-up, .ig-arrow-down { display:inline-block; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; }
+    .ig-arrow-up { border-bottom:8px solid var(--ink); }
+    .ig-arrow-down { border-top:8px solid var(--ink); }
+    .ig-external { display:inline-block; width:16px; height:16px; border:1.5px solid var(--ink); border-radius:2px; position:relative; }
+    .ig-external:after { content:""; position:absolute; right:1px; top:1px; width:8px; height:8px; border-top:1.5px solid var(--ink); border-right:1.5px solid var(--ink); transform:rotate(45deg); transform-origin:top right; }
+    .ig-dot-grid { display:inline-grid; grid-template-columns:repeat(3,1fr); gap:3px; }
+    .ig-dot-grid span { width:5px; height:5px; border-radius:50%; background:var(--ink); }
+    .ig-loop { display:inline-block; width:18px; height:18px; border:1.5px solid var(--ink); border-radius:50% 50% 50% 0; transform:rotate(-45deg); }
+    .ig-tad { display:inline-block; width:18px; height:14px; border:1.5px solid var(--ink); border-radius:50% / 80%; }
+    .ig-close { display:inline-block; width:14px; height:14px; position:relative; }
+    .ig-close:before, .ig-close:after { content:""; position:absolute; left:6px; top:1px; width:1.5px; height:12px; background:var(--ink); }
+    .ig-close:before { transform:rotate(45deg); }
+    .ig-close:after { transform:rotate(-45deg); }
+
+    /* ============================================================
+       design-system › utility · layout helpers
+       ============================================================ */
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .stack { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .stack-lg { display:flex; flex-wrap:wrap; gap:16px; align-items:center; }
+    .center { display:grid; place-items:center; padding:8px; }
+
+    /* responsive */
+    @media (max-width:1100px) { .shell { grid-template-columns:1fr; } .rail { position:static; } }
+    @media (max-width:780px) {
+      .swatch-grid { grid-template-columns:repeat(2,1fr); }
+      .grid-3, .cards-row, .state-row, .thumbs, .resp-row { grid-template-columns:1fr; }
+      .icons-grid { grid-template-columns:repeat(3,1fr); }
+      nav.primary { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============= canonical topbar (reference) ============= -->
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>dataWeb</span>
+    </div>
+    <nav class="primary" aria-label="Primary navigation">
+      <a href="#" class="active">Hi-C</a>
+      <a href="#">Δ Hi-C</a>
+      <a href="#">Tracks</a>
+      <a href="#">3D</a>
+      <a href="#">CTCF Motif</a>
+    </nav>
+    <div class="species-toggle" aria-label="Active species">
+      <button class="active" data-species="Pig">Pig</button>
+      <button data-species="Chicken">Chicken</button>
+    </div>
+  </header>
+
+  <div class="shell">
+
+    <!-- =================== main column =================== -->
+    <main>
+
+      <!-- section 1 · hero / intro ============================ -->
+      <section class="sec" id="hero">
+        <div class="eyebrow">design system · v1</div>
+        <h1 class="demo-h1">Tokens, components,<br>and conventions</h1>
+        <p class="demo-body" style="max-width:640px;color:var(--muted);font-size:14px;">
+          The canonical visual spec for every route in dataWeb. Every page should compose primitives from this document; nothing outside it ships as a new pattern. Read the home mockup first — this page documents the system it already establishes.
+        </p>
+
+        <div class="cards-row" style="margin-top:32px;">
+          <div class="demo-card">
+            <div class="demo-card-title"><h3>One source of truth</h3><span class="tag">tokens</span></div>
+            <p class="demo-small">All color, type, spacing, and motion values are CSS variables on <span class="demo-mono">:root</span>. Routes consume them — never redefine.</p>
+          </div>
+          <div class="demo-card">
+            <div class="demo-card-title"><h3>Eight sections</h3><span class="tag">structure</span></div>
+            <p class="demo-small">Foundations, typography, spacing, brand, components, layout, responsive, iconography.</p>
+          </div>
+          <div class="demo-card">
+            <div class="demo-card-title"><h3>Engineering-first</h3><span class="tag">css</span></div>
+            <p class="demo-small">Section markers <span class="demo-mono">/* design-system › ... */</span> let you grab the right snippet without scanning the file.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- section 2 · foundations ============================= -->
+      <section class="sec" id="foundations">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">01 · foundations</div>
+            <h2 class="demo-h2">Color &amp; palettes</h2>
+          </div>
+          <p>Surface stack, ink scale, brand accent, plus biology- and sample-specific palettes for chart layers.</p>
+        </div>
+
+        <div class="palette-group">
+          <h3 class="demo-h3">Surface stack <span class="meta">page chrome · cards · inputs</span></h3>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-chip" style="background:var(--surface)"></div>
+              <div class="swatch-body"><div class="swatch-name">surface</div><div class="swatch-hex">#fafafa</div><div class="swatch-note">Page background. Body sits on this.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--paper)"></div>
+              <div class="swatch-body"><div class="swatch-name">paper</div><div class="swatch-hex">#ffffff</div><div class="swatch-note">Card / panel fill. Strongest elevation.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--surface-2)"></div>
+              <div class="swatch-body"><div class="swatch-name">surface-2</div><div class="swatch-hex">#f0f0f0</div><div class="swatch-note">Subdued chrome — toggle tracks, footers.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--line);"></div>
+              <div class="swatch-body"><div class="swatch-name">line</div><div class="swatch-hex">#d9d9d6</div><div class="swatch-note">1px borders. The only divider.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--ink)"></div>
+              <div class="swatch-body"><div class="swatch-name">ink</div><div class="swatch-hex">#181818</div><div class="swatch-note">Primary text. ~16.7:1 on paper.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--muted)"></div>
+              <div class="swatch-body"><div class="swatch-name">muted</div><div class="swatch-hex">#686868</div><div class="swatch-note">Secondary text. ~5.6:1 on paper.</div></div></div>
+          </div>
+        </div>
+
+        <div class="palette-group">
+          <h3 class="demo-h3">Brand accent <span class="meta">cta · active state · brand mark</span></h3>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-chip" style="background:var(--accent)"></div>
+              <div class="swatch-body"><div class="swatch-name">accent</div><div class="swatch-hex">#c0392b</div><div class="swatch-note">Primary CTAs. ~5.3:1 on paper.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--accent-dark)"></div>
+              <div class="swatch-body"><div class="swatch-name">accent-dark</div><div class="swatch-hex">#982d22</div><div class="swatch-note">Hover / pressed CTA fill.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--accent-soft)"></div>
+              <div class="swatch-body"><div class="swatch-name">accent-soft</div><div class="swatch-hex">#f7e9e7</div><div class="swatch-note">Active link background, selection.</div></div></div>
+          </div>
+        </div>
+
+        <div class="palette-group">
+          <h3 class="demo-h3">Biology palette <span class="meta">3D / TAD / structural variation / gene tracks</span></h3>
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-a)"></div>
+              <div class="swatch-body"><div class="swatch-name">A-compartment</div><div class="swatch-hex">#c0392b</div><div class="swatch-note">3D compartment A. Active chromatin.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-b)"></div>
+              <div class="swatch-body"><div class="swatch-name">B-compartment</div><div class="swatch-hex">#2c5fa6</div><div class="swatch-note">3D compartment B. Inactive chromatin.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-tad-boundary)"></div>
+              <div class="swatch-body"><div class="swatch-name">tad-boundary</div><div class="swatch-hex">#1a1a1a</div><div class="swatch-note">TAD boundary line, 1px stroke.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-tad-body)"></div>
+              <div class="swatch-body"><div class="swatch-name">tad-body</div><div class="swatch-hex">#f5f5f5</div><div class="swatch-note">TAD fill. Lightest neutral on canvas.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-loop-arc)"></div>
+              <div class="swatch-body"><div class="swatch-name">loop-arc</div><div class="swatch-hex">#b8b8b8</div><div class="swatch-note">Loop arc connector, 1px.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-sv-del)"></div>
+              <div class="swatch-body"><div class="swatch-name">sv-del</div><div class="swatch-hex">#b5305d</div><div class="swatch-note">Structural variation — deletion.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-sv-dup)"></div>
+              <div class="swatch-body"><div class="swatch-name">sv-dup</div><div class="swatch-hex">#2e8b57</div><div class="swatch-note">Structural variation — duplication.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-sv-inv)"></div>
+              <div class="swatch-body"><div class="swatch-name">sv-inv</div><div class="swatch-hex">#6e4ca0</div><div class="swatch-note">Structural variation — inversion.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-sv-tra)"></div>
+              <div class="swatch-body"><div class="swatch-name">sv-tra</div><div class="swatch-hex">#444444</div><div class="swatch-note">Structural variation — translocation.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-pei-anchor)"></div>
+              <div class="swatch-body"><div class="swatch-name">pei-anchor</div><div class="swatch-hex">#d4a017</div><div class="swatch-note">PEI / CTCF anchor point.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-gene-exon)"></div>
+              <div class="swatch-body"><div class="swatch-name">gene-exon</div><div class="swatch-hex">#4a7dc9</div><div class="swatch-note">Gene track — exon block fill.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--bio-gene-intron)"></div>
+              <div class="swatch-body"><div class="swatch-name">gene-intron</div><div class="swatch-hex">#b8c8d8</div><div class="swatch-note">Gene track — intron connector.</div></div></div>
+          </div>
+        </div>
+
+        <div class="palette-group">
+          <h3 class="demo-h3">Sample palette <span class="meta">tissue coloring across the app</span></h3>
+          <div class="swatch-grid" style="grid-template-columns:repeat(3,1fr);">
+            <div class="swatch"><div class="swatch-chip" style="background:var(--sample-muscle)"></div>
+              <div class="swatch-body"><div class="swatch-name">Muscle</div><div class="swatch-hex">#B5793B</div><div class="swatch-note">Used for muscle tissue across tracks, comparisons, legend.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--sample-liver)"></div>
+              <div class="swatch-body"><div class="swatch-name">Liver</div><div class="swatch-hex">#3E6DA3</div><div class="swatch-note">Used for liver tissue across tracks, comparisons, legend.</div></div></div>
+            <div class="swatch"><div class="swatch-chip" style="background:var(--sample-brain)"></div>
+              <div class="swatch-body"><div class="swatch-name">Brain</div><div class="swatch-hex">#2F8F4E</div><div class="swatch-note">Used for brain tissue across tracks, comparisons, legend.</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- section 3 · typography ============================== -->
+      <section class="sec" id="typography">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">02 · typography</div>
+            <h2 class="demo-h2">Inter + JetBrains Mono</h2>
+          </div>
+          <p>Two families only. Inter for prose and headlines; JetBrains Mono for IDs, coordinates, and inline code-like data.</p>
+        </div>
+
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Type scale</h3><span class="tag">specimen</span></div>
+          <div style="display:grid;grid-template-columns:160px 1fr;gap:18px 28px;align-items:baseline;">
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">h1 · 40–68px</span>
+            <h1 class="demo-h1" style="margin:0;max-width:none;">Browse multi-omics</h1>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">h2 · 23px</span>
+            <h2 class="demo-h2">Section heading</h2>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">h3 · 15–26px</span>
+            <h3 class="demo-h3" style="font-size:26px;">Card title (large)</h3>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">h3 · 15px</span>
+            <h3 class="demo-h3">Card title (default)</h3>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">body · 13px</span>
+            <p class="demo-body" style="margin:0;max-width:560px;">The quick brown fox jumps over the lazy dog. 0123456789 — sample IDs, region strings, and metric labels read as clearly as prose.</p>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">small · 12px</span>
+            <span class="demo-small">Section description, table cells, helper text.</span>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">tiny · 11px</span>
+            <span class="demo-tiny">Timestamps, footer micro-copy, tertiary labels.</span>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">eyebrow</span>
+            <span class="demo-eyebrow">Section eyebrow</span>
+
+            <span class="demo-tiny" style="font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">mono caption</span>
+            <span class="demo-mono">chr1:1,234,567–1,456,789</span>
+          </div>
+        </div>
+
+        <div class="demo-card" style="margin-top:18px;">
+          <div class="demo-card-title"><h3>Weights loaded</h3><span class="tag">google fonts</span></div>
+          <div class="stack-lg" style="font-family:var(--sans);font-size:18px;">
+            <span style="font-weight:400;">Inter 400 — regular</span>
+            <span style="font-weight:500;">Inter 500 — medium</span>
+            <span style="font-weight:600;">Inter 600 — semibold</span>
+            <span style="font-weight:700;">Inter 700 — bold</span>
+          </div>
+          <div class="stack-lg" style="font-family:var(--mono);font-size:18px;margin-top:10px;">
+            <span style="font-weight:400;">JetBrains Mono 400 — regular</span>
+            <span style="font-weight:500;">JetBrains Mono 500 — medium</span>
+          </div>
+          <p class="usage">Use Inter for everything readable. JetBrains Mono is reserved for IDs (sample IDs, region strings, token names) and tabular numerics.</p>
+        </div>
+      </section>
+
+      <!-- section 4 · spacing ================================ -->
+      <section class="sec" id="spacing">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">03 · spacing</div>
+            <h2 class="demo-h2">4-px base scale</h2>
+          </div>
+          <p>Five steps. Don't invent off-scale values; if a layout doesn't fit, restate with a larger step.</p>
+        </div>
+
+        <div class="scale-row">
+          <div class="scale-block"><div class="scale-bar" style="height:4px;"></div><b>4</b><span>space-1</span></div>
+          <div class="scale-block"><div class="scale-bar" style="height:8px;"></div><b>8</b><span>space-2</span></div>
+          <div class="scale-block"><div class="scale-bar" style="height:12px;"></div><b>12</b><span>space-3</span></div>
+          <div class="scale-block"><div class="scale-bar" style="height:16px;"></div><b>16</b><span>space-4</span></div>
+          <div class="scale-block"><div class="scale-bar" style="height:24px;"></div><b>24</b><span>space-5</span></div>
+        </div>
+
+        <div class="demo-card" style="margin-top:18px;">
+          <div class="demo-card-title"><h3>Where each step applies</h3><span class="tag">rules</span></div>
+          <div style="display:grid;grid-template-columns:80px 1fr;gap:10px 18px;font-size:12px;">
+            <span class="demo-mono" style="color:var(--muted);">4 / 8</span><span class="demo-body">Inline element gaps — chips, suggestions, icon ↔ label.</span>
+            <span class="demo-mono" style="color:var(--muted);">12</span><span class="demo-body">Stacked form fields, list rows, padding inside chips.</span>
+            <span class="demo-mono" style="color:var(--muted);">16</span><span class="demo-body">Card body padding (small), grid gaps inside sections.</span>
+            <span class="demo-mono" style="color:var(--muted);">24</span><span class="demo-body">Major card padding (species / mode cards), section gap.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- section 5 · brand & topbar ========================= -->
+      <section class="sec" id="brand">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">04 · brand &amp; topbar</div>
+            <h2 class="demo-h2">Mark, lockup, and primary nav</h2>
+          </div>
+          <p>The topbar at the top of this page is the canonical reference. Reuse it verbatim — only the active link and selected species change per route.</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="demo-card">
+            <div class="demo-card-title"><h3>Brand mark</h3><span class="tag">css only</span></div>
+            <div style="display:flex;align-items:center;gap:18px;">
+              <span class="brand-mark" style="width:36px;height:36px;"></span>
+              <span class="brand-mark" style="width:25px;height:25px;"></span>
+              <span class="brand-mark" style="width:18px;height:18px;"></span>
+            </div>
+            <p class="usage">A 25×25 circle stroked in <span class="demo-mono">--accent</span>, with two filled dots and a connecting line inside. The construction is pure CSS — no SVG. Scale linearly; do not restroke at small sizes.</p>
+          </div>
+
+          <div class="demo-card">
+            <div class="demo-card-title"><h3>Wordmark lockup</h3><span class="tag">20px / -0.03em</span></div>
+            <div style="display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:-.03em;font-size:20px;">
+              <span class="brand-mark"></span>
+              <span>dataWeb</span>
+            </div>
+            <p class="usage">Mark + 11px gap + 20px / 700 / -0.03em wordmark. The wordmark color tracks <span class="demo-mono">--ink</span>; the mark tracks <span class="demo-mono">--accent</span>.</p>
+          </div>
+        </div>
+
+        <div class="demo-card" style="margin-top:18px;">
+          <div class="demo-card-title"><h3>Canonical topbar — Hi-C active, Pig selected</h3><span class="tag">reference</span></div>
+          <header class="topbar" style="position:static;border:1px solid var(--line);border-radius:8px;">
+            <div class="brand"><span class="brand-mark"></span><span>dataWeb</span></div>
+            <nav class="primary">
+              <a href="#" class="active">Hi-C</a>
+              <a href="#">Δ Hi-C</a>
+              <a href="#">Tracks</a>
+              <a href="#">3D</a>
+              <a href="#">CTCF Motif</a>
+            </nav>
+            <div class="species-toggle">
+              <button class="active" data-species="Pig">Pig</button>
+              <button data-species="Chicken">Chicken</button>
+            </div>
+          </header>
+          <p class="usage">Height 66px. Brand + nav on the left, species toggle right-aligned via <span class="demo-mono">margin-left:auto</span>. Background is <span class="demo-mono">rgba(250,250,250,.96)</span> with a subtle backdrop blur so it stays legible over scrolling content.</p>
+        </div>
+      </section>
+
+      <!-- section 6 · components ============================= -->
+      <section class="sec" id="components">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">05 · components</div>
+            <h2 class="demo-h2">Live components</h2>
+          </div>
+          <p>Every component the web team should compose from. Each card is a real, working example followed by a usage note.</p>
+        </div>
+
+        <!-- buttons -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Buttons</h3><span class="tag">3 variants</span></div>
+          <div class="stack-lg">
+            <button class="btn btn-primary">Search sample</button>
+            <button class="btn btn-secondary">Browse datasets</button>
+            <button class="btn btn-ghost">Cancel</button>
+            <button class="btn btn-primary" disabled style="opacity:.5;cursor:not-allowed;">Disabled</button>
+          </div>
+          <p class="usage">Primary = accent fill (only one per view). Secondary = white + line border. Ghost = text only. All three share 9×14 padding and 6px radius.</p>
+        </div>
+
+        <!-- chips -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Chips</h3><span class="tag">filter · suggestion · tag</span></div>
+          <div class="stack-lg">
+            <span class="chip">Default</span>
+            <span class="chip active">Active</span>
+            <span class="chip">Removable <button class="x" aria-label="remove">×</button></span>
+            <span class="chip"><span class="chip-dot" style="background:var(--sample-brain)"></span>Brain</span>
+            <span class="chip"><span class="chip-dot" style="background:var(--sample-liver)"></span>Liver</span>
+            <span class="chip"><span class="chip-dot" style="background:var(--sample-muscle)"></span>Muscle</span>
+          </div>
+          <p class="usage">Use chips for filter pills, sample tags, and suggestion rows. Active state inverts to accent. The leading dot picks up sample-palette colors when a chip is tissue-scoped.</p>
+        </div>
+
+        <!-- search shell -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Search shell</h3><span class="tag">hero · 780px max</span></div>
+          <form class="search-shell" onsubmit="event.preventDefault();">
+            <label class="input-wrap"><span class="search-icon" aria-hidden="true"></span><input aria-label="Sample ID" placeholder="Enter sample ID, e.g. Brain_BF3" autocomplete="off"></label>
+            <select aria-label="Species"><option>Pig</option><option>Chicken</option></select>
+            <button class="search-btn" type="submit">Search</button>
+          </form>
+          <div class="suggestions"><span>Try:</span><button class="suggestion">Brain_BF3</button><button class="suggestion">Liver_BF3</button><button class="suggestion">Muscle_BF3</button><button class="suggestion">L9876</button></div>
+          <p class="usage">The canonical entry point. 3-column grid (1fr / 148px / 112px) inside a 12px radius container. Suggestions row is optional; sits 13px below.</p>
+        </div>
+
+        <!-- cards -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Cards</h3><span class="tag">3 flavors</span></div>
+
+          <div class="cards-row">
+            <div class="panel acc-stripe species-mini">
+              <div class="latin">Sus scrofa</div>
+              <h3>Species card</h3>
+              <p>Hi-C, RNA-seq, histone and CTCF ChIP-seq across tissues and breeds. Stripe on top in accent.</p>
+              <div class="panel-foot"><span>stats / foot slot</span><span class="demo-mono">›</span></div>
+            </div>
+
+            <div class="panel mode-mini">
+              <div class="mode-index">02 / BREED</div>
+              <h3>Mode card</h3>
+              <p>Inspect genomic differences between breeds within a species.</p>
+              <div class="panel-foot"><span>no stripe</span><span class="demo-mono">›</span></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Generic panel</h3>
+                  <p>Header / body / footer slots, white fill, 1px line border.</p>
+                </div>
+                <span class="demo-mono" style="font-size:10px;color:var(--muted);">v1</span>
+              </div>
+              <div class="panel-body">
+                <p class="demo-small">The body slot is unstyled — drop whatever the route needs: tables, charts, forms, charts-as-tables.</p>
+              </div>
+              <div class="panel-foot">
+                <span>left foot</span>
+                <span>right foot</span>
+              </div>
+            </div>
+          </div>
+          <p class="usage">Species cards carry the accent stripe; mode cards don't. Generic panels are the default container for any other route content.</p>
+        </div>
+
+        <!-- tables -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Metadata table</h3><span class="tag">dense · mono</span></div>
+          <table class="meta">
+            <thead><tr><th>Sample ID</th><th>Tissue</th><th>Breed</th><th>Sex</th><th>Dev stage</th></tr></thead>
+            <tbody>
+              <tr><td>Brain_BF3</td><td>Brain</td><td>BF</td><td>F</td><td>adult</td></tr>
+              <tr><td>Liver_BF3</td><td>Liver</td><td>BF</td><td>F</td><td>adult</td></tr>
+              <tr><td>Muscle_BF2</td><td>Muscle</td><td>BF</td><td>M</td><td>adult</td></tr>
+              <tr><td>L9876</td><td>Liver</td><td>L</td><td>F</td><td>adult</td></tr>
+            </tbody>
+          </table>
+          <p class="usage">Header row is uppercase, letter-spaced, on surface. Rows use monospace for IDs and labels. Hover gives a subtle surface tint.</p>
+        </div>
+
+        <!-- breadcrumb -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Breadcrumb</h3><span class="tag">segmented</span></div>
+          <div class="crumbs">
+            <a href="#">Pig</a>
+            <a href="#">Brain</a>
+            <span class="current">Brain_BF3</span>
+          </div>
+          <p class="usage">The current segment uses <span class="demo-mono">--accent-soft</span> fill and <span class="demo-mono">--accent-dark</span> text. Upstream segments are paper with a 1px line border.</p>
+        </div>
+
+        <!-- status pill -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Status pill</h3><span class="tag">system states</span></div>
+          <div class="stack-lg">
+            <span class="pill ready">● Ready</span>
+            <span class="pill loading"><span class="dot"></span> Loading tracks…</span>
+            <span class="pill error">● Error</span>
+            <span class="pill empty">○ Empty</span>
+          </div>
+          <p class="usage">Loading uses monospace with a pulsing dot. Ready/Error/Empty use a static leading glyph. Color is the only signal — no icons.</p>
+        </div>
+
+        <!-- stat tile -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Stat tile (3-up)</h3><span class="tag">species summary</span></div>
+          <div class="stats-3">
+            <div class="stat-tile"><b>6</b><span>Samples</span></div>
+            <div class="stat-tile"><b>4</b><span>Tissues</span></div>
+            <div class="stat-tile"><b>2</b><span>Breeds</span></div>
+          </div>
+          <p class="usage">Numeric value in JetBrains Mono 500; label is uppercase 10px tracked. Dividers are 1px <span class="demo-mono">--line</span>.</p>
+        </div>
+
+        <!-- coord bar -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Region / coordinates bar</h3><span class="tag">mono · copy</span></div>
+          <div class="coord-bar">
+            <span>chr1:1,234,567–1,456,789</span>
+            <button class="copy" onclick="copyCoord(this)">copy</button>
+          </div>
+          <p class="usage">Always monospace. Copy button replaces its label with <span class="demo-mono">copied</span> for 1.5s on success — see the live behavior on the only copy button above (this card).</p>
+        </div>
+
+        <!-- suggestion chip row -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Suggestion chip row</h3><span class="tag">hero assistant</span></div>
+          <div class="suggestions" style="justify-content:flex-start;">
+            <span style="color:#858585;">Try:</span>
+            <button class="suggestion">Brain_BF3</button>
+            <button class="suggestion">Liver_BF3</button>
+            <button class="suggestion">Muscle_BF3</button>
+            <button class="suggestion">L9876</button>
+          </div>
+          <p class="usage">Same chip primitive as the suggestions under the hero search shell — do not introduce a separate style.</p>
+        </div>
+
+        <!-- states -->
+        <div class="demo-card">
+          <div class="demo-card-title"><h3>Inline states</h3><span class="tag">loading · empty · error</span></div>
+          <div class="state-row">
+            <div class="state loading">
+              <div class="spinner"></div>
+              Resolving sample…
+            </div>
+            <div class="state empty">
+              <span class="glyph">∅</span>
+              No tracks configured for this region
+            </div>
+            <div class="state error">
+              ⚠ Failed to load Hi-C map
+            </div>
+          </div>
+          <p class="usage">Three states, three surfaces: dashed border for loading (in-flight), light border for empty, dashed-replaced-by-tinted for error. Each is centered, 28px vertical padding.</p>
+        </div>
+      </section>
+
+      <!-- section 7 · layout patterns ======================== -->
+      <section class="sec" id="layout">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">06 · layout patterns</div>
+            <h2 class="demo-h2">Route thumbnails</h2>
+          </div>
+          <p>Same topbar, different main content. Each thumbnail shows the canonical layout for one route.</p>
+        </div>
+
+        <div class="thumbs">
+          <div class="thumb">
+            <div class="thumb-cap"><b>Home</b><span>hero + cards</span></div>
+            <div class="thumb-body">
+              <div class="mini-bar"><span class="b-mark"></span><span class="b-name">dataWeb</span><span class="b-pill">Pig</span></div>
+              <div class="mini-hero"><div><div class="h-title">Browse multi-omics<br>3D genome data</div><div class="h-search"></div></div></div>
+              <div class="mini-cards">
+                <div class="mini-card"><div class="m-stripe"></div><h4>Pig</h4><p>Hi-C, RNA-seq, histone &amp; CTCF ChIP-seq across tissues and breeds.</p></div>
+                <div class="mini-card"><div class="m-stripe"></div><h4>Chicken</h4><p>Hi-C, RNA-seq, CUT&amp;Tag across development stages.</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="thumb">
+            <div class="thumb-cap"><b>Viewer</b><span>colormap + tracks</span></div>
+            <div class="thumb-body">
+              <div class="mini-bar"><span class="b-mark"></span><span class="b-name">dataWeb</span><span class="b-pill">Pig</span></div>
+              <div style="display:grid;grid-template-columns:60px 1fr;gap:8px;margin-top:4px;">
+                <div style="font-family:var(--mono);font-size:7px;color:var(--muted);line-height:1.5;">
+                  Hi-C<br>Δ<br>RNA<br>H3K4me3<br>CTCF<br>Gene
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <div class="mini-colormap"></div>
+                  <div class="mini-track"><span class="t-peak" style="left:8%;width:14%;"></span></div>
+                  <div class="mini-track"><span class="t-peak" style="left:32%;width:22%;background:#3E6DA3;"></span></div>
+                  <div class="mini-track"><span class="t-peak" style="left:54%;width:10%;"></span></div>
+                  <div class="mini-track"><span class="t-peak" style="left:70%;width:8%;"></span></div>
+                  <div class="mini-track"><span class="t-exon" style="left:10%;width:6%;"></span><span class="t-intron" style="left:16%;width:24%;"></span><span class="t-exon" style="left:40%;width:8%;"></span><span class="t-intron" style="left:48%;width:30%;"></span><span class="t-exon" style="left:78%;width:6%;"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="thumb">
+            <div class="thumb-cap"><b>Compare</b><span>2 slots + mode</span></div>
+            <div class="thumb-body">
+              <div class="mini-bar"><span class="b-mark"></span><span class="b-name">dataWeb</span><span class="b-pill">Pig</span></div>
+              <div class="mini-compare" style="margin-top:6px;">
+                <div class="slot s1"><div class="lbl">Sample A</div><div class="nm">Brain_BF3</div><div class="bar"></div></div>
+                <div class="slot s2"><div class="lbl">Sample B</div><div class="nm">Liver_BF3</div><div class="bar"></div></div>
+                <div class="mode-row">
+                  <span>Tissue</span><span class="on">Breed</span><span>Cross</span><span>Time</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- section 8 · responsive ============================= -->
+      <section class="sec" id="responsive">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">07 · responsive</div>
+            <h2 class="demo-h2">Three breakpoints</h2>
+          </div>
+          <p>1280px desktop, 850px tablet (nav collapses), 620px mobile (single-column everywhere). The home mockup already wires these — they're shown here as static representations.</p>
+        </div>
+
+        <div class="resp-row">
+          <div class="resp">
+            <div class="resp-cap"><b>1280px · desktop</b><span>full nav</span></div>
+            <div class="resp-canvas">
+              <div class="resp-w resp-w1280">
+                <div class="resp-bar"><span class="m"></span><span class="n">dataWeb</span><span class="p"></span></div>
+                <div class="resp-hero"><div><div class="h-title">Browse multi-omics 3D genome data</div><div class="h-search"></div></div></div>
+                <div class="resp-cards two">
+                  <div class="resp-card"><div class="s"></div><h4>Pig</h4><p>Hi-C + RNA + ChIP-seq</p></div>
+                  <div class="resp-card"><div class="s"></div><h4>Chicken</h4><p>Hi-C + CUT&amp;Tag</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="resp">
+            <div class="resp-cap"><b>850px · tablet</b><span>nav hidden</span></div>
+            <div class="resp-canvas">
+              <div class="resp-w resp-w850">
+                <div class="resp-bar"><span class="m"></span><span class="n">dataWeb</span><span class="p"></span></div>
+                <div class="resp-hero"><div><div class="h-title">Browse multi-omics<br>3D genome data</div><div class="h-search"></div></div></div>
+                <div class="resp-cards one">
+                  <div class="resp-card"><div class="s"></div><h4>Pig</h4><p>Hi-C + RNA + ChIP-seq across tissues and breeds.</p></div>
+                  <div class="resp-card"><div class="s"></div><h4>Chicken</h4><p>Hi-C + CUT&amp;Tag across development stages.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="resp">
+            <div class="resp-cap"><b>620px · mobile</b><span>stacked</span></div>
+            <div class="resp-canvas">
+              <div class="resp-w resp-w620">
+                <div class="resp-bar"><span class="m"></span><span class="n">dataWeb</span><span class="p"></span></div>
+                <div class="resp-hero"><div><div class="h-title">Browse multi-omics</div><div class="h-search"></div></div></div>
+                <div class="resp-cards one">
+                  <div class="resp-card"><div class="s"></div><h4>Pig</h4><p>Hi-C + RNA + ChIP-seq.</p></div>
+                  <div class="resp-card"><div class="s"></div><h4>Chicken</h4><p>Hi-C + CUT&amp;Tag.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- section 9 · iconography ============================ -->
+      <section class="sec" id="icons">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">08 · iconography</div>
+            <h2 class="demo-h2">CSS-only glyphs</h2>
+          </div>
+          <p>Icons are 24px on a 1.5px ink stroke. No icon font, no sprite sheet — shapes built from borders and pseudo-elements.</p>
+        </div>
+
+        <div class="icons-grid">
+          <div class="icon-cell"><span class="glyph ig-search"></span><div class="lbl">search</div><div class="code">CSS · circle + bar</div></div>
+          <div class="icon-cell"><span class="glyph ig-mark"></span><div class="lbl">brand mark</div><div class="code">CSS · circle + dots</div></div>
+          <div class="icon-cell"><span class="glyph ig-silhouette"></span><div class="lbl">species</div><div class="code">CSS · head + body</div></div>
+          <div class="icon-cell"><span class="glyph ig-sort"></span><div class="lbl">sort</div><div class="code">U+25B2 / U+25BC</div></div>
+          <div class="icon-cell"><span class="glyph ig-info">i</span><div class="lbl">info</div><div class="code">U+2139 (ⓘ)</div></div>
+          <div class="icon-cell"><span class="glyph ig-arrow-up"></span><div class="lbl">arrow up</div><div class="code">CSS triangle</div></div>
+          <div class="icon-cell"><span class="glyph ig-arrow-down"></span><div class="lbl">arrow down</div><div class="code">CSS triangle</div></div>
+          <div class="icon-cell"><span class="glyph ig-external"></span><div class="lbl">external</div><div class="code">CSS · box + arrow</div></div>
+          <div class="icon-cell"><span class="glyph ig-dot-grid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span><div class="lbl">menu</div><div class="code">CSS grid · 3×3</div></div>
+          <div class="icon-cell"><span class="glyph ig-loop"></span><div class="lbl">loop</div><div class="code">CSS · teardrop</div></div>
+          <div class="icon-cell"><span class="glyph ig-tad"></span><div class="lbl">tad</div><div class="code">CSS · ellipse</div></div>
+          <div class="icon-cell"><span class="glyph ig-close"></span><div class="lbl">close</div><div class="code">CSS · two bars</div></div>
+        </div>
+
+        <p class="usage" style="margin-top:18px;">Two glyphs use real Unicode: <span class="demo-mono">▲</span> (U+25B2) and <span class="demo-mono">▼</span> (U+25BC) for sort indicators; <span class="demo-mono">ⓘ</span> (U+2139) for info. Everything else is rendered in CSS.</p>
+      </section>
+
+      <!-- footer rule -->
+      <section class="sec" id="footer">
+        <div class="sec-head">
+          <div>
+            <div class="eyebrow">end</div>
+            <h2 class="demo-h2">That's the system.</h2>
+          </div>
+          <p>If a route needs a pattern that's not here, that's a signal — file it as a design-system extension, not a one-off.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- =================== right rail mini-nav =================== -->
+    <aside class="rail" aria-label="Section navigation">
+      <h4>On this page</h4>
+      <ol>
+        <li><a href="#hero">Overview</a></li>
+        <li><a href="#foundations">01 · Foundations</a></li>
+        <li><a href="#typography">02 · Typography</a></li>
+        <li><a href="#spacing">03 · Spacing</a></li>
+        <li><a href="#brand">04 · Brand &amp; TopBar</a></li>
+        <li><a href="#components">05 · Components</a></li>
+        <li><a href="#layout">06 · Layout patterns</a></li>
+        <li><a href="#responsive">07 · Responsive</a></li>
+        <li><a href="#icons">08 · Iconography</a></li>
+      </ol>
+      <h4 style="margin-top:24px;">Tokens</h4>
+      <ol>
+        <li><a href="#foundations">Color</a></li>
+        <li><a href="#typography">Type</a></li>
+        <li><a href="#spacing">Spacing</a></li>
+        <li><a href="#brand">Brand mark</a></li>
+      </ol>
+    </aside>
+
+  </div>
+
+  <script>
+    // ============================================================
+    // design-system › active link tracking on right rail
+    // ============================================================
+    (function () {
+      const links = document.querySelectorAll('.rail a[href^="#"]');
+      const sections = [...links].map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+      function sync() {
+        const y = window.scrollY + 120;
+        let active = sections[0];
+        for (const s of sections) { if (s.offsetTop <= y) active = s; }
+        links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + (active && active.id)));
+      }
+      window.addEventListener('scroll', sync, { passive:true });
+      sync();
+    })();
+
+    // ============================================================
+    // design-system › copy button echo (coord bar)
+    // ============================================================
+    function copyCoord(btn) {
+      const text = btn.previousElementSibling.textContent;
+      navigator.clipboard?.writeText(text);
+      const original = btn.textContent;
+      btn.textContent = 'copied';
+      btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('ok'); }, 1500);
+    }
+
+    // ============================================================
+    // design-system › species toggle demo (topbar only)
+    // ============================================================
+    document.querySelectorAll('.species-toggle').forEach(toggle => {
+      toggle.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', () => {
+          toggle.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === button));
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dataWeb — Multi-omics 3D Genome Browser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { --surface:#fafafa; --surface-2:#f0f0f0; --paper:#fff; --ink:#181818; --muted:#686868; --line:#d9d9d6; --accent:#c0392b; --accent-dark:#982d22; --accent-soft:#f7e9e7; --mono:"JetBrains Mono",monospace; --sans:"Inter",sans-serif; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--surface); font-family:var(--sans); line-height:1.5; }
+    button,input,select { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    .topbar { height:66px; padding:0 clamp(24px,5vw,76px); display:flex; align-items:center; border-bottom:1px solid var(--line); background:rgba(250,250,250,.96); position:relative; z-index:10; }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.03em; font-size:20px; margin-right:36px; }
+    .brand-mark { width:25px; height:25px; border:1.5px solid var(--accent); border-radius:50%; position:relative; }
+    .brand-mark:before,.brand-mark:after { content:""; position:absolute; background:var(--accent); border-radius:50%; width:5px; height:5px; }
+    .brand-mark:before { left:4px; top:5px; box-shadow:10px 9px 0 var(--accent); }
+    .brand-mark:after { width:12px; height:1px; left:6px; top:12px; transform:rotate(40deg); }
+    nav { display:flex; align-items:center; gap:3px; }
+    nav a { color:#4e4e4e; text-decoration:none; font-size:13px; font-weight:500; padding:8px 11px; border-radius:6px; }
+    nav a:hover { color:var(--accent); background:var(--accent-soft); }
+    .species-toggle { margin-left:auto; display:flex; padding:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; }
+    .species-toggle button { border:0; background:transparent; color:var(--muted); padding:6px 13px; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; transition:color .15s ease,background .15s ease; }
+    .species-toggle button.active { color:var(--paper); background:var(--accent); box-shadow:0 1px 3px #8f2d2428; }
+    .species-toggle button:hover:not(.active) { color:var(--accent); }
+    .hero { min-height:62vh; padding:78px 24px 68px; display:grid; place-items:center; text-align:center; position:relative; overflow:hidden; background:linear-gradient(180deg,#fff 0%,var(--surface) 78%); }
+    .hero:before { content:""; position:absolute; inset:0; opacity:.45; background-image:linear-gradient(#d8d8d550 1px,transparent 1px),linear-gradient(90deg,#d8d8d550 1px,transparent 1px); background-size:56px 56px; mask-image:linear-gradient(to bottom,black,transparent 75%); -webkit-mask-image:linear-gradient(to bottom,black,transparent 75%); }
+    .hero-inner { width:min(920px,100%); position:relative; }
+    .eyebrow { display:inline-flex; align-items:center; gap:9px; color:var(--accent); font-family:var(--mono); text-transform:uppercase; letter-spacing:.11em; font-size:11px; font-weight:500; }
+    .eyebrow:before { content:""; width:24px; height:1px; background:var(--accent); }
+    h1 { margin:20px auto 17px; max-width:790px; font-size:clamp(40px,5vw,68px); line-height:1.03; letter-spacing:-.055em; font-weight:650; }
+    .lede { max-width:705px; margin:0 auto; font-size:16px; line-height:1.7; color:var(--muted); }
+    .search-shell { max-width:780px; margin:37px auto 0; padding:7px; display:grid; grid-template-columns:1fr 148px 112px; border:1px solid #cfcfcb; border-radius:12px; background:var(--paper); box-shadow:0 12px 32px #2626260c,0 2px 6px #2626260a; text-align:left; transition:box-shadow .2s ease,border-color .2s ease; }
+    .search-shell:focus-within { border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft),0 12px 32px #2626260c,0 2px 6px #2626260a; }
+    .input-wrap { display:flex; align-items:center; min-width:0; }
+    .search-icon { margin:0 13px 0 11px; width:17px; height:17px; border:1.7px solid #777; border-radius:50%; position:relative; flex:none; }
+    .search-icon:after { content:""; width:7px; height:1.7px; background:#777; position:absolute; right:-5px; bottom:-2px; transform:rotate(45deg); }
+    input { width:100%; border:0; outline:0; padding:13px 8px 13px 0; color:var(--ink); font-family:var(--mono); font-size:14px; background:transparent; }
+    input::placeholder { color:#9a9a96; }
+    select { border:0; border-left:1px solid var(--line); padding:0 14px; color:#494949; background:var(--paper); outline:0; font-size:13px; cursor:pointer; }
+    .search-btn { border:0; border-radius:7px; color:white; background:var(--accent); font-weight:600; cursor:pointer; transition:background .15s ease,transform .1s ease; }
+    .search-btn:hover { background:var(--accent-dark); }
+    .search-btn:active { transform:translateY(1px); }
+    .suggestions { margin-top:13px; display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:7px; color:#858585; font-size:11px; }
+    .suggestion { border:1px solid var(--line); background:#fff; color:#555; border-radius:999px; padding:4px 9px; font-family:var(--mono); cursor:pointer; transition:border-color .15s ease,color .15s ease; }
+    .suggestion:hover { border-color:#d49b95; color:var(--accent); }
+    .preview { min-height:25px; margin:12px 0 0; color:var(--accent-dark); font-family:var(--mono); font-size:11px; }
+    .preview .route { color:var(--accent); }
+    .quick-links { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:20px; }
+    .quick-links a { display:inline-flex; align-items:center; gap:7px; padding:8px 12px; border-radius:6px; color:#444; background:transparent; border:1px solid transparent; text-decoration:none; font-size:12px; font-weight:550; transition:background .15s ease,border-color .15s ease,color .15s ease; }
+    .quick-links a:hover { background:#fff; border-color:var(--line); color:var(--accent); }
+    .glyph { font-family:var(--mono); color:var(--accent); font-size:11px; }
+    main { width:min(1160px,calc(100% - 48px)); margin:0 auto; }
+    .section-head { margin:74px 0 26px; display:flex; justify-content:space-between; align-items:end; border-bottom:1px solid var(--line); padding-bottom:14px; }
+    .section-head h2 { margin:0; font-size:23px; letter-spacing:-.035em; }
+    .section-head p { margin:0; color:var(--muted); font-size:12px; }
+    .species-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .species-card { background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:27px; position:relative; overflow:hidden; transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease; }
+    .species-card:hover { transform:translateY(-2px); box-shadow:0 10px 26px #2626180f; border-color:#c9c9c5; }
+    .species-card:before { content:""; position:absolute; left:0; top:0; height:3px; width:100%; background:var(--accent); }
+    .card-top { display:flex; justify-content:space-between; gap:20px; align-items:start; }
+    .latin { font-family:var(--mono); color:var(--muted); font-size:10px; letter-spacing:.04em; }
+    .species-card h3 { margin:4px 0 8px; font-size:26px; letter-spacing:-.035em; }
+    .species-card .desc { color:var(--muted); font-size:13px; margin:0; max-width:440px; }
+    .browse { padding:8px 13px; border:1px solid #c9c9c5; border-radius:6px; color:#333; background:#fff; font-weight:600; font-size:12px; cursor:pointer; white-space:nowrap; transition:border-color .15s ease,color .15s ease,background .15s ease; }
+    .browse:hover { border-color:var(--accent); color:var(--accent); }
+    .stats { display:grid; grid-template-columns:repeat(3,1fr); margin-top:25px; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+    .stat { padding:15px 14px; background:var(--surface); }
+    .stat+.stat { border-left:1px solid var(--line); }
+    .stat b { display:block; font-family:var(--mono); font-size:19px; font-weight:500; }
+    .stat span { display:block; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.08em; margin-top:2px; }
+    .tracks { margin-top:14px; display:flex; flex-wrap:wrap; gap:5px; }
+    .track-chip { display:inline-flex; align-items:center; padding:3px 8px; border:1px solid var(--line); border-radius:4px; font-family:var(--mono); font-size:10.5px; color:#3a3a3a; background:var(--surface); }
+    .track-chip.muted { color:#9c9c9c; text-decoration:line-through; }
+    .modes { margin:72px 0 80px; }
+    .mode-grid { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--paper); position:relative; }
+    .mode { min-height:146px; padding:23px; position:relative; transition:background .15s ease; cursor:pointer; }
+    .mode:hover { background:var(--accent-soft); }
+    .mode+.mode { border-left:1px solid var(--line); }
+    .mode-index { color:var(--accent); font-family:var(--mono); font-size:10px; }
+    .mode h3 { margin:17px 0 6px; font-size:15px; }
+    .mode p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; }
+    .mode-cue { position:absolute; right:18px; bottom:14px; color:var(--accent); font-family:var(--mono); font-size:11px; opacity:0; transition:opacity .15s ease; }
+    .mode:hover .mode-cue { opacity:1; }
+    .popover { position:absolute; top:calc(100% + 6px); left:0; width:min(380px,92%); background:var(--paper); border:1px solid var(--line); border-radius:8px; box-shadow:0 18px 40px #26262626,0 4px 10px #26262614; padding:16px 16px 14px; z-index:20; }
+    .popover[hidden] { display:none; }
+    .popover-head { display:flex; align-items:center; justify-content:space-between; font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px; }
+    .popover-close { border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
+    .popover-close:hover { color:var(--accent); }
+    .popover-row { display:grid; grid-template-columns:18px 1fr 1fr; align-items:center; gap:8px; margin-bottom:8px; }
+    .popover-row label { font-family:var(--mono); font-size:11px; color:#3a3a3a; }
+    .popover-row select { border:1px solid var(--line); border-radius:5px; padding:6px 8px; font-size:12px; color:var(--ink); background:var(--surface); cursor:pointer; font-family:var(--sans); }
+    .popover-row .marker { font-family:var(--mono); color:var(--accent); font-size:11px; }
+    .popover-link { display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:7px 11px; border-radius:5px; background:var(--accent); color:white; font-size:12px; font-weight:600; text-decoration:none; transition:background .15s ease; }
+    .popover-link:hover { background:var(--accent-dark); }
+    .popular { margin:14px auto 0; max-width:780px; }
+    .popular-label { display:flex; align-items:center; gap:9px; font-family:var(--mono); color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; justify-content:center; }
+    .popular-label:before,.popular-label:after { content:""; flex:1; height:1px; background:var(--line); max-width:120px; }
+    .popular-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+    .popular-card { display:flex; flex-direction:column; gap:3px; padding:9px 10px; border:1px solid var(--line); border-radius:6px; background:var(--paper); text-align:left; cursor:pointer; font:inherit; color:inherit; transition:border-color .15s ease,color .15s ease,transform .15s ease; }
+    .popular-card:hover { border-color:#d49b95; color:var(--accent); transform:translateY(-1px); }
+    .popular-card .pop-id { font-family:var(--mono); font-size:11.5px; font-weight:500; }
+    .popular-card .pop-meta { font-size:10px; color:var(--muted); }
+    footer { border-top:1px solid var(--line); padding:26px clamp(24px,5vw,76px); display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:11px; background:var(--surface-2); }
+    footer .row { display:flex; justify-content:space-between; gap:24px; }
+    footer strong { color:#454545; }
+    footer .disclaimer { color:#8a8a8a; }
+    @media (max-width:850px) { nav { display:none; } .species-grid { grid-template-columns:1fr; } .mode-grid { grid-template-columns:1fr 1fr; } .mode:nth-child(3) { border-left:0; border-top:1px solid var(--line); } .mode:nth-child(4) { border-top:1px solid var(--line); } .popular-strip { grid-template-columns:1fr 1fr; } }
+    @media (max-width:620px) { .topbar { padding:0 17px; } .brand { margin-right:12px; } .species-toggle button { padding:6px 8px; } .hero { padding:58px 17px 48px; } .search-shell { grid-template-columns:1fr; gap:6px; } select { height:42px; border-left:0; border-top:1px solid var(--line); } .search-btn { height:44px; } main { width:calc(100% - 32px); } .section-head { align-items:start; flex-direction:column; gap:5px; } .mode-grid { grid-template-columns:1fr; } .mode+.mode { border-left:0; border-top:1px solid var(--line); } .popular-strip { grid-template-columns:1fr; } footer .row { flex-direction:column; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>dataWeb</div>
+    <nav aria-label="Primary navigation">
+      <a href="#">Hi-C</a><a href="#">Δ Hi-C</a><a href="#">Tracks</a><a href="#">3D</a><a href="#">CTCF Motif</a>
+    </nav>
+    <div class="species-toggle" role="tablist" aria-label="Active species">
+      <button class="active" data-species="Pig" role="tab" aria-selected="true">Pig</button><button data-species="Chicken" role="tab" aria-selected="false">Chicken</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow" id="eyebrow">Public multi-omics atlas — Pig</div>
+      <h1>Browse multi-omics<br>3D genome data</h1>
+      <p class="lede" id="lede">Explore sample-level Hi-C maps alongside gene expression, CTCF binding, histone marks, and structural variation across pig tissues and breeds.</p>
+      <form class="search-shell" id="searchForm">
+        <label class="input-wrap"><span class="search-icon" aria-hidden="true"></span><input id="sampleInput" aria-label="Sample ID" placeholder="Enter sample ID, e.g. Brain_BF3" autocomplete="off"></label>
+        <select id="speciesSelect" aria-label="Species"><option>Pig</option><option>Chicken</option></select>
+        <button class="search-btn" type="submit">Search</button>
+      </form>
+      <div class="suggestions" id="suggestions"><span>Try:</span><button class="suggestion">Brain_BF3</button><button class="suggestion">Liver_BF3</button><button class="suggestion">Muscle_BF3</button><button class="suggestion">L9876</button></div>
+      <p class="preview" id="preview" aria-live="polite"></p>
+
+      <div class="popular" id="popular" aria-label="Popular this week">
+        <div class="popular-label"><span>Popular this week</span></div>
+        <div class="popular-strip" id="popularStrip"></div>
+      </div>
+
+      <div class="quick-links" aria-label="Quick entry points">
+        <a href="#"><span class="glyph">▦</span>Hi-C</a><a href="#"><span class="glyph">Δ</span>Δ Hi-C</a><a href="#"><span class="glyph">≋</span>Tracks</a><a href="#"><span class="glyph">◇</span>3D</a><a href="#"><span class="glyph">⌁</span>CTCF Motif</a><a href="#comparison"><span class="glyph">⇄</span>Compare</a>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <div class="section-head"><h2>Browse by species</h2><p>Curated public datasets · reference-aligned</p></div>
+    <section class="species-grid" aria-label="Species datasets">
+      <article class="species-card">
+        <div class="card-top"><div><span class="latin">Sus scrofa</span><h3>Pig</h3><p class="desc">Hi-C, RNA-seq, histone and CTCF ChIP-seq, plus structural variation across tissues and breeds.</p></div><button class="browse" data-browse="Pig">Browse pig →</button></div>
+        <div class="stats"><div class="stat"><b>6</b><span>Samples</span></div><div class="stat"><b>4</b><span>Tissues</span></div><div class="stat"><b>2</b><span>Breeds</span></div></div>
+        <div class="tracks" data-tracks-for="Pig" aria-label="Tracks available for pig">
+          <span class="track-chip">Hi-C</span>
+          <span class="track-chip">AB index</span>
+          <span class="track-chip">TAD</span>
+          <span class="track-chip">PEI</span>
+          <span class="track-chip">RNA-seq</span>
+          <span class="track-chip">H3K4me3</span>
+          <span class="track-chip">H3K27ac</span>
+          <span class="track-chip">CTCF ChIP-seq</span>
+          <span class="track-chip">SV</span>
+        </div>
+      </article>
+      <article class="species-card">
+        <div class="card-top"><div><span class="latin">Gallus gallus</span><h3>Chicken</h3><p class="desc">Hi-C, RNA-seq, H3K4me3 and H3K27ac CUT&amp;Tag, plus structural variation across development.</p></div><button class="browse" data-browse="Chicken">Browse chicken →</button></div>
+        <div class="stats"><div class="stat"><b>TBD</b><span>Samples</span></div><div class="stat"><b>—</b><span>Tissues</span></div><div class="stat"><b>—</b><span>Breeds</span></div></div>
+        <div class="tracks" data-tracks-for="Chicken" aria-label="Tracks available for chicken">
+          <span class="track-chip">Hi-C</span>
+          <span class="track-chip">AB index</span>
+          <span class="track-chip">TAD</span>
+          <span class="track-chip">PEI</span>
+          <span class="track-chip">RNA-seq</span>
+          <span class="track-chip">H3K4me3</span>
+          <span class="track-chip">H3K27ac (CUT&amp;Tag)</span>
+          <span class="track-chip">SV</span>
+          <span class="track-chip muted" title="Not generated for chicken">no CTCF ChIP-seq</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="modes" id="comparison">
+      <div class="section-head"><h2>Comparison modes</h2><p>Choose compatible public datasets for side-by-side exploration</p></div>
+      <div class="mode-grid" id="modeGrid" role="tablist" aria-label="Comparison modes">
+        <article class="mode" role="tab" tabindex="0" data-mode="tissue">
+          <span class="mode-index">01 / TISSUE</span>
+          <h3>Tissue</h3>
+          <p>Compare chromatin organization and signal tracks across organs.</p>
+          <span class="mode-cue">▼ configure</span>
+        </article>
+        <article class="mode" role="tab" tabindex="0" data-mode="breed">
+          <span class="mode-index">02 / BREED</span>
+          <h3>Breed</h3>
+          <p>Inspect genomic differences between breeds within a species.</p>
+          <span class="mode-cue">▼ configure</span>
+        </article>
+        <article class="mode" role="tab" tabindex="0" data-mode="cross">
+          <span class="mode-index">03 / CROSS</span>
+          <h3>Reciprocal cross</h3>
+          <p>Contrast parental-origin and reciprocal-cross datasets.</p>
+          <span class="mode-cue">▼ configure</span>
+        </article>
+        <article class="mode" role="tab" tabindex="0" data-mode="time">
+          <span class="mode-index">04 / TIME</span>
+          <h3>Developmental</h3>
+          <p>Follow 3D genome features across developmental time points.</p>
+          <span class="mode-cue">▼ configure</span>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="row"><span><strong>dataWeb</strong> · Multi-omics 3D genome browser</span><span>Public-data viewer only — no personalized data analysis or uploads.</span></div>
+    <div class="row disclaimer"><span>All data are reference-aligned public releases; user uploads are not accepted in this viewer.</span></div>
+  </footer>
+
+  <script>
+    /* ---------- Data ---------- */
+    const COPY = {
+      Pig: {
+        eyebrow: 'Public multi-omics atlas — Pig',
+        lede: 'Explore sample-level Hi-C maps alongside gene expression, CTCF binding, histone marks, and structural variation across pig tissues and breeds.',
+        placeholder: 'Enter sample ID, e.g. Brain_BF3',
+        suggestions: ['Brain_BF3', 'Liver_BF3', 'Muscle_BF3', 'L9876'],
+        popular: [
+          { id: 'Brain_BF3', tissue: 'Brain',   breed: 'BF3 (Bama)' },
+          { id: 'Liver_BF3', tissue: 'Liver',   breed: 'BF3 (Bama)' },
+          { id: 'Muscle_LR', tissue: 'Muscle',  breed: 'LR (Large White)' },
+          { id: 'Heart_DLY', tissue: 'Heart',   breed: 'DLY' }
+        ],
+        samples: {
+          tissue: ['Brain_BF3', 'Liver_BF3', 'Muscle_BF3', 'Heart_BF3', 'Spleen_BF3', 'Lung_BF3'],
+          breed:  ['Brain_BF3', 'Brain_LR', 'Liver_BF3', 'Liver_LR', 'Muscle_BF3', 'Muscle_LR'],
+          cross:  ['BF3 × LR (mat)', 'LR × BF3 (mat)', 'BF3 × LR (pat)', 'LR × BF3 (pat)'],
+          time:   ['E30 Brain', 'E60 Brain', 'E90 Brain', 'Adult Brain']
+        }
+      },
+      Chicken: {
+        eyebrow: 'Public multi-omics atlas — Chicken',
+        lede: 'Explore Hi-C, RNA-seq, H3K4me3 / H3K27ac CUT&Tag, and structural variation across a developmental time-course in chicken.',
+        placeholder: 'Enter chicken sample ID, e.g. HH10_Brain',
+        suggestions: ['HH10_Brain', 'HH14_Liver', 'HH19_Muscle', 'D7_Heart'],
+        popular: [
+          { id: 'HH10_Brain', tissue: 'Brain',  breed: 'HH stage 10' },
+          { id: 'HH14_Liver', tissue: 'Liver',  breed: 'HH stage 14' },
+          { id: 'HH19_Muscle',tissue: 'Muscle', breed: 'HH stage 19' },
+          { id: 'D7_Heart',   tissue: 'Heart',  breed: 'Day 7' }
+        ],
+        samples: {
+          tissue: ['HH10_Brain', 'HH14_Brain', 'HH10_Liver', 'HH14_Liver', 'HH10_Heart', 'D7_Heart'],
+          breed:  ['Broiler HH14', 'Layer HH14', 'Broiler D7', 'Layer D7'],
+          cross:  ['Broiler × Layer', 'Layer × Broiler'],
+          time:   ['HH10', 'HH14', 'HH19', 'D7', 'D14', 'Adult']
+        }
+      }
+    };
+
+    const MODE_LABEL = {
+      tissue: 'Tissue',
+      breed:  'Breed',
+      cross:  'Reciprocal cross',
+      time:   'Developmental'
+    };
+
+    /* ---------- DOM ---------- */
+    const input       = document.getElementById('sampleInput');
+    const select      = document.getElementById('speciesSelect');
+    const preview     = document.getElementById('preview');
+    const eyebrow     = document.getElementById('eyebrow');
+    const lede        = document.getElementById('lede');
+    const suggestions = document.getElementById('suggestions');
+    const popularStrip= document.getElementById('popularStrip');
+    const toggles     = [...document.querySelectorAll('.species-toggle button')];
+    const modeGrid    = document.getElementById('modeGrid');
+
+    /* ---------- Species ---------- */
+    function renderSuggestions(species) {
+      const list = COPY[species].suggestions;
+      suggestions.innerHTML = '<span>Try:</span>' + list.map(s => `<button class="suggestion" type="button">${s}</button>`).join('');
+      suggestions.querySelectorAll('.suggestion').forEach(b => {
+        b.addEventListener('click', () => { input.value = b.textContent; input.focus(); preview.textContent = ''; });
+      });
+    }
+
+    function renderPopular(species) {
+      const list = COPY[species].popular;
+      popularStrip.innerHTML = list.map(p => `
+        <button class="popular-card" type="button" data-pop="${p.id}">
+          <span class="pop-id">${p.id}</span>
+          <span class="pop-meta">${p.tissue} · ${p.breed}</span>
+        </button>
+      `).join('');
+      popularStrip.querySelectorAll('.popular-card').forEach(c => {
+        c.addEventListener('click', () => {
+          input.value = c.dataset.pop;
+          input.focus();
+          preview.textContent = '';
+        });
+      });
+    }
+
+    function setSpecies(species, { skipScroll = false } = {}) {
+      const data = COPY[species];
+      select.value = species;
+      toggles.forEach(button => {
+        const active = button.dataset.species === species;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+      });
+      eyebrow.textContent = data.eyebrow;
+      lede.textContent = data.lede;
+      input.placeholder = data.placeholder;
+      renderSuggestions(species);
+      renderPopular(species);
+      if (!skipScroll) {
+        // no scroll on user-driven toggle — keeps focus where the user is
+      }
+    }
+
+    toggles.forEach(button => button.addEventListener('click', () => setSpecies(button.dataset.species)));
+    select.addEventListener('change', () => setSpecies(select.value));
+
+    document.querySelectorAll('[data-browse]').forEach(button => button.addEventListener('click', () => {
+      setSpecies(button.dataset.browse);
+      input.focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+
+    /* ---------- Search submit ---------- */
+    document.getElementById('searchForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const sample = input.value.trim();
+      if (!sample) {
+        preview.innerHTML = '<span style="color:#9c563f">Enter a sample ID to jump to the viewer.</span>';
+        return;
+      }
+      const route = '#/hic?sample=' + encodeURIComponent(sample);
+      // location.hash = route;  // mock — uncomment to actually navigate
+      preview.innerHTML = `<span class="route">→ ${route}</span>  <span style="color:#8a8a8a">(mock route — would open the Hi-C viewer for “${sample}”)</span>`;
+    });
+
+    /* ---------- Comparison mode popovers ---------- */
+    let openPopover = null;
+
+    function closePopover() {
+      if (openPopover) {
+        openPopover.remove();
+        openPopover = null;
+        modeGrid.querySelectorAll('.mode').forEach(m => m.setAttribute('aria-expanded', 'false'));
+      }
+    }
+
+    function openModePopover(modeEl) {
+      closePopover();
+      const mode = modeEl.dataset.mode;
+      const species = select.value;
+      const list = COPY[species].samples[mode] || [];
+
+      modeEl.setAttribute('aria-expanded', 'true');
+      const pop = document.createElement('div');
+      pop.className = 'popover';
+      pop.setAttribute('role', 'dialog');
+      pop.setAttribute('aria-label', `Configure ${MODE_LABEL[mode]} comparison`);
+      pop.innerHTML = `
+        <div class="popover-head">
+          <span>${MODE_LABEL[mode]} — pick a pair</span>
+          <button class="popover-close" type="button" aria-label="Close">×</button>
+        </div>
+        <div class="popover-row"><span class="marker">A</span><label>Sample A</label>
+          <select data-side="A">${list.map(s => `<option>${s}</option>`).join('')}</select>
+        </div>
+        <div class="popover-row"><span class="marker">B</span><label>Sample B</label>
+          <select data-side="B">${list.map((s, i) => `<option ${i === Math.min(1, list.length - 1) ? 'selected' : ''}>${s}</option>`).join('')}</select>
+        </div>
+        <a class="popover-link" href="#" data-mock>Open Δ Hi-C →</a>
+      `;
+      modeEl.appendChild(pop);
+      openPopover = pop;
+      pop.querySelector('.popover-close').addEventListener('click', closePopover);
+      pop.querySelector('[data-mock]').addEventListener('click', e => e.preventDefault());
+      // Stop propagation so clicks inside popover don't close it via document handler
+      pop.addEventListener('click', e => e.stopPropagation());
+    }
+
+    modeGrid.querySelectorAll('.mode').forEach(modeEl => {
+      modeEl.addEventListener('click', e => {
+        e.stopPropagation();
+        if (openPopover && openPopover.parentElement === modeEl) { closePopover(); return; }
+        openModePopover(modeEl);
+      });
+      modeEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModePopover(modeEl); }
+        if (e.key === 'Escape') closePopover();
+      });
+    });
+    document.addEventListener('click', e => {
+      if (openPopover && !openPopover.contains(e.target)) closePopover();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopover(); });
+
+    /* ---------- Init ---------- */
+    setSpecies('Pig', { skipScroll: true });
+  </script>
+</body>
+</html>

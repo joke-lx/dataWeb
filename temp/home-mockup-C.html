@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>dataWeb — Multi-Omics Genome Browser for Pigs & Chickens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* surfaces */
+    --color-bg: #ffffff;
+    --color-surface-1: #fafafa;
+    --color-surface-2: #f0f0f0;
+    --color-border: #e5e5e5;
+    --color-divider-strong: #c8c8c8;
+
+    /* text */
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #555;
+    --color-text-tertiary: #888;
+
+    /* accent */
+    --color-accent: #c0392b;
+    --color-accent-soft: #e6c8c4;
+
+    /* biology */
+    --color-a-compartment: #c0392b;
+    --color-b-compartment: #2c5fa6;
+    --color-tad-body: #f5f5f5;
+    --color-pei-anchor: #d4a017;
+
+    /* fonts */
+    --font-ui: "Inter", "Helvetica Neue", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "Menlo", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ============ TopBar ============ */
+  .topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--color-border);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 24px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+
+  .brand-mark {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, var(--color-accent) 0%, #e74c3c 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .topbar-nav {
+    display: flex;
+    gap: 4px;
+    margin-left: 12px;
+  }
+
+  .topbar-nav a {
+    padding: 6px 12px;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .topbar-nav a:hover {
+    background: var(--color-surface-2);
+    color: var(--color-text-primary);
+  }
+
+  .topbar-spacer { flex: 1; }
+
+  .topbar-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  .topbar-meta .pill {
+    background: var(--color-surface-2);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-secondary);
+  }
+
+  /* ============ Species Tabs ============ */
+  .species-tabs {
+    border-bottom: 1px solid var(--color-border);
+    background: #fff;
+    display: flex;
+    padding: 0 24px;
+    gap: 0;
+  }
+
+  .species-tab {
+    position: relative;
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .species-tab:hover {
+    color: var(--color-text-primary);
+  }
+
+  .species-tab.active {
+    color: var(--color-text-primary);
+    border-bottom-color: var(--color-accent);
+  }
+
+  .species-tab .icon {
+    font-size: 18px;
+  }
+
+  .species-tab .badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background: var(--color-surface-2);
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+  }
+
+  .species-tab.active .badge {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+
+  /* ============ Tab Panels ============ */
+  .species-panel {
+    display: none;
+    background: var(--color-surface-1);
+    padding: 32px 24px 64px;
+  }
+
+  .species-panel.active { display: block; }
+
+  .panel-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* header strip */
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .panel-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .panel-title .sub {
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+    font-size: 14px;
+    margin-left: 8px;
+  }
+
+  .stat-strip {
+    display: flex;
+    gap: 24px;
+    flex: 1;
+    justify-content: flex-end;
+    margin-left: 24px;
+  }
+
+  .stat {
+    text-align: right;
+    line-height: 1.2;
+  }
+
+  .stat-num {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--color-text-primary);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  .btn-browse {
+    background: var(--color-text-primary);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-browse:hover { background: #000; }
+
+  /* ============ Hero Search ============ */
+  .search-hero {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 32px 28px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  }
+
+  .search-hero::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 24px;
+    width: 32px;
+    height: 3px;
+    background: var(--color-accent);
+    border-radius: 0 0 2px 2px;
+  }
+
+  .search-headline {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--color-surface-1);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0 12px 0 16px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .search-bar:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(192,57,43,0.08);
+  }
+
+  .search-icon {
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 14px 0;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--color-text-primary);
+    outline: none;
+  }
+
+  .search-input::placeholder { color: var(--color-text-tertiary); }
+
+  .search-shortcut {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    padding: 3px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  .search-go {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .search-go:hover { background: #a93226; }
+
+  .search-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  .search-hint code {
+    font-family: var(--font-mono);
+    background: var(--color-surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--color-text-secondary);
+  }
+
+  /* autocomplete dropdown */
+  .autocomplete {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    overflow: hidden;
+    display: none;
+    z-index: 10;
+  }
+
+  .search-hero.open .autocomplete { display: block; }
+
+  .ac-section {
+    padding: 8px 0;
+  }
+
+  .ac-section + .ac-section {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .ac-label {
+    padding: 6px 16px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-tertiary);
+    font-weight: 600;
+  }
+
+  .ac-item {
+    padding: 9px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .ac-item:hover, .ac-item.focused {
+    background: var(--color-surface-1);
+  }
+
+  .ac-item .id {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .ac-item .meta {
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    margin-left: auto;
+  }
+
+  .ac-item .tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--color-surface-2);
+    color: var(--color-text-secondary);
+  }
+
+  /* ============ Tile Grid ============ */
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .tile {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tile:hover {
+    border-color: var(--color-divider-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+
+  .tile-thumb {
+    aspect-ratio: 4/3;
+    background: var(--color-surface-1);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tile-thumb svg {
+    width: 88%;
+    height: 88%;
+  }
+
+  .tile-body {
+    padding: 12px 14px 14px;
+  }
+
+  .tile-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .tile-sub {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    line-height: 1.4;
+  }
+
+  .tile-arrow {
+    color: var(--color-text-tertiary);
+    transition: transform 0.15s, color 0.15s;
+  }
+
+  .tile:hover .tile-arrow {
+    color: var(--color-accent);
+    transform: translateX(2px);
+  }
+
+  /* coming soon overlay */
+  .tile.soon {
+    cursor: default;
+  }
+
+  .tile.soon:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--color-border);
+  }
+
+  .tile.soon .tile-thumb {
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-surface-1),
+      var(--color-surface-1) 8px,
+      var(--color-surface-2) 8px,
+      var(--color-surface-2) 16px
+    );
+    opacity: 0.55;
+  }
+
+  .tile.soon .tile-thumb svg {
+    filter: grayscale(0.7);
+    opacity: 0.4;
+  }
+
+  .tile.soon .tile-title,
+  .tile.soon .tile-sub {
+    opacity: 0.6;
+  }
+
+  .coming-soon-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.9);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(4px);
+    z-index: 2;
+  }
+
+  /* ============ Quick start row ============ */
+  .quick-start {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 20px 22px 22px;
+  }
+
+  .quick-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .quick-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .quick-title .accent {
+    color: var(--color-accent);
+  }
+
+  .quick-sub {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  .quick-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .sample-card {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .sample-card:hover {
+    border-color: var(--color-accent);
+    background: #fff7f6;
+  }
+
+  .sample-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .sample-info { flex: 1; min-width: 0; }
+
+  .sample-id {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sample-meta {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 1px;
+  }
+
+  .sample-open {
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .sample-card:hover .sample-open {
+    color: var(--color-accent);
+  }
+
+  /* ============ Coming-soon banner for chicken ============ */
+  .soon-banner {
+    background: linear-gradient(135deg, #fff 0%, var(--color-surface-2) 100%);
+    border: 1px dashed var(--color-divider-strong);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .soon-banner-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--color-accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .soon-banner-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+  }
+
+  .soon-banner-text strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .soon-banner-meta {
+    text-align: right;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .soon-banner-meta .date {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--color-accent);
+    font-size: 12px;
+  }
+
+  .grayed {
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ============ Footer ============ */
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    background: #fff;
+    padding: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+  }
+
+  .site-footer a {
+    color: var(--color-text-secondary);
+    border-bottom: 1px dotted var(--color-text-tertiary);
+  }
+
+  .site-footer a:hover { color: var(--color-accent); }
+
+  /* ============ Responsive ============ */
+  @media (max-width: 960px) {
+    .tile-grid, .quick-row { grid-template-columns: repeat(2, 1fr); }
+    .topbar-nav { display: none; }
+    .stat-strip { display: none; }
+  }
+
+  @media (max-width: 560px) {
+    .tile-grid, .quick-row { grid-template-columns: 1fr; }
+    .species-tabs { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== TopBar ========== -->
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">d</span>
+    dataWeb
+  </div>
+  <nav class="topbar-nav">
+    <a href="#hic">Hi-C</a>
+    <a href="#diff">Δ Hi-C</a>
+    <a href="#tracks">Tracks</a>
+    <a href="#3d">3D</a>
+    <a href="#ctcf">CTCF Motif</a>
+  </nav>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-meta">
+    <span class="pill">public data viewer</span>
+    <span>v0.3.2</span>
+  </div>
+</header>
+
+<!-- ========== Species Tabs (elevated to top-level) ========== -->
+<nav class="species-tabs" role="tablist">
+  <button class="species-tab active" data-target="pig" role="tab">
+    <span class="icon">
+      <!-- pig icon -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11c0-3 2-5 5-5h7c3 0 5 2 5 5v3a5 5 0 0 1-5 5h-1l-2 2-1-2h-3a5 5 0 0 1-5-5z"/>
+        <circle cx="9" cy="13" r="1" fill="currentColor"/>
+        <circle cx="15" cy="13" r="1" fill="currentColor"/>
+        <path d="M11 16h2"/>
+      </svg>
+    </span>
+    Pig <em style="font-style:normal;opacity:.5;font-weight:400;margin:0 2px;">(Sus scrofa)</em>
+    <span class="badge">114 samples</span>
+  </button>
+  <button class="species-tab" data-target="chicken" role="tab">
+    <span class="icon">
+      <!-- chicken icon -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 14c0-3 3-6 7-6s7 2 7 5-3 5-7 5h-2l-1 2-1-2c-1 0-3-1-3-4z"/>
+        <path d="M11 8V5"/>
+        <circle cx="14" cy="13" r="0.8" fill="currentColor"/>
+      </svg>
+    </span>
+    Chicken <em style="font-style:normal;opacity:.5;font-weight:400;margin:0 2px;">(Gallus gallus)</em>
+    <span class="badge">12 samples</span>
+  </button>
+</nav>
+
+<!-- ========== Pig Panel ========== -->
+<section class="species-panel active" id="panel-pig" data-panel="pig">
+  <div class="panel-inner">
+
+    <!-- header strip -->
+    <div class="panel-header">
+      <div>
+        <h1 class="panel-title">
+          Pig multi-omics atlas
+          <span class="sub">Hi-C · RNA-seq · H3K4me3 · H3K27ac · CTCF · SV</span>
+        </h1>
+      </div>
+      <div class="stat-strip">
+        <div class="stat"><div class="stat-num">114</div><div class="stat-label">samples</div></div>
+        <div class="stat"><div class="stat-num">9</div><div class="stat-label">tissues</div></div>
+        <div class="stat"><div class="stat-num">6</div><div class="stat-label">breeds</div></div>
+        <div class="stat"><div class="stat-num">4</div><div class="stat-label">time-points</div></div>
+      </div>
+      <button class="btn-browse">Browse all samples →</button>
+    </div>
+
+    <!-- hero search -->
+    <div class="search-hero" id="search-hero-pig">
+      <div class="search-headline">Find a sample</div>
+      <div class="search-bar">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <input class="search-input" type="text" id="search-input-pig"
+          placeholder="Search by sample id or accession (e.g. Brain_BF3, L9876, ENSSSCG...)"
+          autocomplete="off" />
+        <span class="search-shortcut">⌘ K</span>
+        <button class="search-go">Open</button>
+      </div>
+      <div class="search-hint">
+        Try <code>Brain_BF3</code> · <code>Liver_BF3</code> · <code>Muscle_BF3</code> · or any Ensembl / NCBI accession
+      </div>
+
+      <!-- autocomplete dropdown -->
+      <div class="autocomplete" id="ac-pig">
+        <div class="ac-section">
+          <div class="ac-label">Samples matching "bra"</div>
+          <div class="ac-item focused"><span class="tag">Sample</span><span class="id">Brain_BF3</span><span class="meta">Brain · Bamei ♂</span></div>
+          <div class="ac-item"><span class="tag">Sample</span><span class="id">Brain_LR1</span><span class="meta">Brain · Large White ♀</span></div>
+          <div class="ac-item"><span class="tag">Sample</span><span class="id">Brain_F1_2</span><span class="meta">Brain · F1 (LW×BM) · 60d</span></div>
+          <div class="ac-item"><span class="tag">Sample</span><span class="id">Brain_F1_2R</span><span class="meta">Brain · reciprocal F1 · 60d</span></div>
+        </div>
+        <div class="ac-section">
+          <div class="ac-label">Tissues</div>
+          <div class="ac-item"><span class="tag">Tissue</span><span class="id">Brain</span><span class="meta">17 samples</span></div>
+          <div class="ac-item"><span class="tag">Tissue</span><span class="id">Muscle</span><span class="meta">12 samples</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- tile grid -->
+    <div class="tile-grid">
+
+      <!-- 1. Hi-C matrix viewer -->
+      <a class="tile" href="#hic">
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <!-- 8x8 stylized heatmap -->
+            <g>
+              <rect x="10" y="10" width="80" height="80" fill="#fff" stroke="#e5e5e5"/>
+              <g>
+                <!-- diagonal hot cells -->
+                <rect x="10" y="10" width="10" height="10" fill="#c0392b"/>
+                <rect x="20" y="20" width="10" height="10" fill="#c0392b"/>
+                <rect x="30" y="30" width="10" height="10" fill="#c0392b"/>
+                <rect x="40" y="40" width="10" height="10" fill="#c0392b"/>
+                <rect x="50" y="50" width="10" height="10" fill="#c0392b"/>
+                <rect x="60" y="60" width="10" height="10" fill="#c0392b"/>
+                <rect x="70" y="70" width="10" height="10" fill="#c0392b"/>
+                <rect x="80" y="80" width="10" height="10" fill="#c0392b"/>
+                <!-- off-diagonal mid -->
+                <rect x="20" y="10" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="10" y="20" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="30" y="20" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="20" y="30" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="40" y="30" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="30" y="40" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="50" y="40" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="40" y="50" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="60" y="50" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="50" y="60" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="70" y="60" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="60" y="70" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="80" y="70" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="70" y="80" width="10" height="10" fill="#e6c8c4"/>
+                <!-- TAD corner block -->
+                <rect x="10" y="40" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="20" y="40" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="40" y="10" width="10" height="10" fill="#e6c8c4"/>
+                <rect x="40" y="20" width="10" height="10" fill="#e6c8c4"/>
+              </g>
+              <!-- compartment legend -->
+              <rect x="95" y="10" width="3" height="80" fill="url(#hleg)"/>
+              <defs>
+                <linearGradient id="hleg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#c0392b"/>
+                  <stop offset="100%" stop-color="#fafafa"/>
+                </linearGradient>
+              </defs>
+              <text x="100" y="14" font-family="Inter" font-size="6" fill="#888">A</text>
+              <text x="100" y="86" font-family="Inter" font-size="6" fill="#888">B</text>
+            </g>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">
+            Hi-C matrix viewer
+            <span class="tile-arrow">→</span>
+          </div>
+          <div class="tile-sub">Contact maps · A/B compartments · TAD · loops · PEI</div>
+        </div>
+      </a>
+
+      <!-- 2. Differential Hi-C -->
+      <a class="tile" href="#diff">
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <!-- split heatmap A vs B -->
+            <text x="6" y="14" font-family="JetBrains Mono" font-size="6" fill="#888">A</text>
+            <text x="6" y="50" font-family="JetBrains Mono" font-size="6" fill="#888">B</text>
+            <!-- A matrix -->
+            <g>
+              <rect x="14" y="4" width="40" height="40" fill="#fff" stroke="#e5e5e5"/>
+              <rect x="14" y="4" width="5" height="5" fill="#c0392b"/>
+              <rect x="19" y="9" width="5" height="5" fill="#c0392b"/>
+              <rect x="24" y="14" width="5" height="5" fill="#c0392b"/>
+              <rect x="29" y="19" width="5" height="5" fill="#c0392b"/>
+              <rect x="34" y="24" width="5" height="5" fill="#c0392b"/>
+              <rect x="39" y="29" width="5" height="5" fill="#c0392b"/>
+              <rect x="44" y="34" width="5" height="5" fill="#c0392b"/>
+              <rect x="49" y="39" width="5" height="5" fill="#c0392b"/>
+              <rect x="19" y="4" width="5" height="5" fill="#e6c8c4"/>
+              <rect x="14" y="9" width="5" height="5" fill="#e6c8c4"/>
+              <rect x="29" y="14" width="5" height="5" fill="#e6c8c4"/>
+              <rect x="34" y="19" width="5" height="5" fill="#e6c8c4"/>
+              <rect x="24" y="24" width="5" height="5" fill="#e6c8c4"/>
+              <rect x="39" y="34" width="5" height="5" fill="#e6c8c4"/>
+              <rect x="44" y="39" width="5" height="5" fill="#e6c8c4"/>
+            </g>
+            <!-- B matrix (different pattern) -->
+            <g>
+              <rect x="14" y="48" width="40" height="40" fill="#fff" stroke="#e5e5e5"/>
+              <rect x="14" y="48" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="19" y="53" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="24" y="58" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="29" y="63" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="34" y="68" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="39" y="73" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="44" y="78" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="49" y="83" width="5" height="5" fill="#2c5fa6"/>
+              <rect x="34" y="48" width="5" height="5" fill="#a8c2e0"/>
+              <rect x="39" y="48" width="5" height="5" fill="#a8c2e0"/>
+              <rect x="44" y="48" width="5" height="5" fill="#a8c2e0"/>
+              <rect x="19" y="63" width="5" height="5" fill="#a8c2e0"/>
+              <rect x="24" y="68" width="5" height="5" fill="#a8c2e0"/>
+              <rect x="29" y="73" width="5" height="5" fill="#a8c2e0"/>
+              <rect x="34" y="78" width="5" height="5" fill="#a8c2e0"/>
+            </g>
+            <!-- diff arrows -->
+            <g stroke="#1a1a1a" stroke-width="0.8" fill="none">
+              <path d="M58 24 L72 64" stroke-dasharray="2 2"/>
+              <path d="M70 60 L72 64 L68 65"/>
+            </g>
+            <text x="78" y="46" font-family="JetBrains Mono" font-size="6" fill="#c0392b">Δ</text>
+            <text x="86" y="46" font-family="JetBrains Mono" font-size="6" fill="#888">log2</text>
+            <line x1="78" y1="50" x2="106" y2="50" stroke="#888" stroke-width="0.5"/>
+            <rect x="78" y="56" width="28" height="4" fill="#c0392b"/>
+            <rect x="78" y="60" width="28" height="4" fill="#fff" stroke="#e5e5e5"/>
+            <rect x="78" y="64" width="28" height="4" fill="#2c5fa6"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">
+            Differential Hi-C
+            <span class="tile-arrow">→</span>
+          </div>
+          <div class="tile-sub">Tissue · breed · cross · time-point comparison</div>
+        </div>
+      </a>
+
+      <!-- 3. Multi-omics Tracks -->
+      <a class="tile" href="#tracks">
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <!-- stacked lane preview -->
+            <g font-family="JetBrains Mono" font-size="5" fill="#888">
+              <text x="4" y="12">H3K4me3</text>
+              <text x="4" y="28">H3K27ac</text>
+              <text x="4" y="44">RNA-seq</text>
+              <text x="4" y="60">CTCF</text>
+              <text x="4" y="76">SV</text>
+            </g>
+            <!-- lane tracks -->
+            <g>
+              <rect x="40" y="6" width="76" height="10" fill="#fff" stroke="#e5e5e5"/>
+              <path d="M40 11 L46 11 L48 8 L52 14 L58 9 L62 12 L66 7 L72 13 L78 10 L84 14 L90 9 L96 12 L104 11 L116 11"
+                fill="none" stroke="#c0392b" stroke-width="1.2"/>
+              <!-- peak fill -->
+              <path d="M46 11 L48 8 L52 14 L58 9 L62 12 L66 7 L72 13 L78 10 L84 14 L90 9 L96 12 L104 11 L40 11 Z"
+                fill="#e6c8c4" opacity="0.6"/>
+            </g>
+            <g>
+              <rect x="40" y="22" width="76" height="10" fill="#fff" stroke="#e5e5e5"/>
+              <path d="M40 27 L50 27 L55 24 L60 30 L68 25 L75 28 L82 23 L90 30 L100 27 L116 27"
+                fill="none" stroke="#d4a017" stroke-width="1.2"/>
+            </g>
+            <g>
+              <rect x="40" y="38" width="76" height="10" fill="#fff" stroke="#e5e5e5"/>
+              <!-- gene model -->
+              <path d="M40 43 L52 43 L55 38 L62 48 L70 38 L72 43 L88 43 L92 40 L100 46 L108 40 L110 43 L116 43"
+                fill="none" stroke="#4a7dc9" stroke-width="1.5"/>
+            </g>
+            <g>
+              <rect x="40" y="54" width="76" height="10" fill="#fff" stroke="#e5e5e5"/>
+              <!-- CTCF peaks -->
+              <rect x="48" y="56" width="4" height="6" fill="#1a1a1a"/>
+              <rect x="72" y="56" width="4" height="6" fill="#1a1a1a"/>
+              <rect x="96" y="56" width="4" height="6" fill="#1a1a1a"/>
+            </g>
+            <g>
+              <rect x="40" y="70" width="76" height="10" fill="#fff" stroke="#e5e5e5"/>
+              <!-- SV markers -->
+              <line x1="56" y1="72" x2="56" y2="78" stroke="#b5305d" stroke-width="1.2"/>
+              <text x="54" y="82" font-family="JetBrains Mono" font-size="4" fill="#b5305d">DEL</text>
+              <line x1="84" y1="72" x2="84" y2="78" stroke="#2e8b57" stroke-width="1.2"/>
+              <text x="82" y="82" font-family="JetBrains Mono" font-size="4" fill="#2e8b57">DUP</text>
+              <line x1="100" y1="72" x2="100" y2="78" stroke="#6e4ca0" stroke-width="1.2"/>
+              <text x="98" y="82" font-family="JetBrains Mono" font-size="4" fill="#6e4ca0">INV</text>
+            </g>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">
+            Multi-omics Tracks
+            <span class="tile-arrow">→</span>
+          </div>
+          <div class="tile-sub">5 stacked tracks · bigwig / bedgraph / gene model</div>
+        </div>
+      </a>
+
+      <!-- 4. 3D Chromatin -->
+      <a class="tile" href="#3d">
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <!-- rainbow tube 3d -->
+            <defs>
+              <linearGradient id="rainbow" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#c0392b"/>
+                <stop offset="20%" stop-color="#e67e22"/>
+                <stop offset="40%" stop-color="#d4a017"/>
+                <stop offset="60%" stop-color="#2e8b57"/>
+                <stop offset="80%" stop-color="#2c5fa6"/>
+                <stop offset="100%" stop-color="#6e4ca0"/>
+              </linearGradient>
+              <radialGradient id="sphere" cx="0.35" cy="0.35">
+                <stop offset="0%" stop-color="#fff" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- rainbow tube path -->
+            <path d="M14 60 C 22 30, 38 30, 50 50 S 78 80, 96 40"
+              fill="none" stroke="url(#rainbow)" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+            <path d="M14 60 C 22 30, 38 30, 50 50 S 78 80, 96 40"
+              fill="none" stroke="#fff" stroke-width="0.8" opacity="0.7"/>
+            <!-- shadow ellipse -->
+            <ellipse cx="56" cy="78" rx="38" ry="3" fill="#000" opacity="0.06"/>
+            <!-- compartment A/B -->
+            <circle cx="20" cy="58" r="5" fill="#c0392b"/>
+            <circle cx="20" cy="58" r="5" fill="url(#sphere)"/>
+            <circle cx="92" cy="42" r="5" fill="#2c5fa6"/>
+            <circle cx="92" cy="42" r="5" fill="url(#sphere)"/>
+            <!-- loop arc -->
+            <path d="M30 30 Q 56 8, 84 22" fill="none" stroke="#b8b8b8" stroke-width="0.8" stroke-dasharray="2 1"/>
+            <!-- PEI anchor -->
+            <circle cx="48" cy="42" r="2" fill="#d4a017"/>
+            <circle cx="74" cy="58" r="2" fill="#d4a017"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">
+            3D Chromatin
+            <span class="tile-arrow">→</span>
+          </div>
+          <div class="tile-sub">A/B compartments · loop arcs · PEI anchors · structures</div>
+        </div>
+      </a>
+
+      <!-- 5. CTCF Motif -->
+      <a class="tile" href="#ctcf">
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <!-- motif logo with stacked letters -->
+            <g font-family="JetBrains Mono" font-size="9" font-weight="700" text-anchor="middle">
+              <text x="30" y="78" fill="#2e8b57">C</text>
+              <text x="50" y="78" fill="#2e8b57">C</text>
+              <text x="70" y="78" fill="#d4a017">G</text>
+              <text x="90" y="78" fill="#c0392b">N</text>
+            </g>
+            <!-- stack bars per letter (relative height) -->
+            <g>
+              <!-- pos1 C -->
+              <rect x="22" y="60" width="16" height="14" fill="#2e8b57"/>
+              <rect x="22" y="50" width="16" height="10" fill="#2e8b57" opacity="0.5"/>
+              <!-- pos2 C -->
+              <rect x="42" y="55" width="16" height="19" fill="#2e8b57"/>
+              <rect x="42" y="42" width="16" height="13" fill="#2e8b57" opacity="0.5"/>
+              <!-- pos3 G -->
+              <rect x="62" y="48" width="16" height="26" fill="#d4a017"/>
+              <rect x="62" y="34" width="16" height="14" fill="#d4a017" opacity="0.5"/>
+              <rect x="62" y="22" width="16" height="12" fill="#d4a017" opacity="0.3"/>
+              <!-- pos4 N (any) -->
+              <rect x="82" y="64" width="16" height="10" fill="#c0392b" opacity="0.6"/>
+              <text x="90" y="78" fill="#c0392b" opacity="0.6">N</text>
+            </g>
+            <!-- axis -->
+            <line x1="14" y1="82" x2="106" y2="82" stroke="#888" stroke-width="0.5"/>
+            <g font-family="JetBrains Mono" font-size="4" fill="#888">
+              <text x="22" y="88">1</text>
+              <text x="42" y="88">2</text>
+              <text x="62" y="88">3</text>
+              <text x="82" y="88">...</text>
+            </g>
+            <!-- info bits -->
+            <g font-family="JetBrains Mono" font-size="4" fill="#888">
+              <text x="86" y="14">bits</text>
+              <line x1="82" y1="18" x2="106" y2="18" stroke="#888" stroke-width="0.4"/>
+              <line x1="82" y1="32" x2="106" y2="32" stroke="#888" stroke-width="0.4"/>
+              <line x1="82" y1="46" x2="106" y2="46" stroke="#888" stroke-width="0.4"/>
+            </g>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">
+            CTCF Motif
+            <span class="tile-arrow">→</span>
+          </div>
+          <div class="tile-sub">Position weight matrix · motif scan · orientation</div>
+        </div>
+      </a>
+
+      <!-- 6. Compare samples -->
+      <a class="tile" href="#compare">
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <!-- two column comparison -->
+            <g font-family="JetBrains Mono" font-size="6" fill="#888">
+              <text x="20" y="10">Sample A</text>
+              <text x="80" y="10">Sample B</text>
+            </g>
+            <!-- mini heatmap A -->
+            <g>
+              <rect x="6" y="14" width="46" height="46" fill="#fff" stroke="#e5e5e5"/>
+              <rect x="6" y="14" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="11.75" y="19.75" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="17.5" y="25.5" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="23.25" y="31.25" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="29" y="37" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="34.75" y="42.75" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="40.5" y="48.5" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="46.25" y="54.25" width="5.75" height="5.75" fill="#c0392b"/>
+              <rect x="11.75" y="14" width="5.75" height="5.75" fill="#e6c8c4"/>
+              <rect x="6" y="19.75" width="5.75" height="5.75" fill="#e6c8c4"/>
+              <rect x="17.5" y="31.25" width="5.75" height="5.75" fill="#e6c8c4"/>
+              <rect x="23.25" y="37" width="5.75" height="5.75" fill="#e6c8c4"/>
+              <rect x="29" y="42.75" width="5.75" height="5.75" fill="#e6c8c4"/>
+              <rect x="34.75" y="48.5" width="5.75" height="5.75" fill="#e6c8c4"/>
+              <rect x="40.5" y="54.25" width="5.75" height="5.75" fill="#e6c8c4"/>
+            </g>
+            <!-- mini heatmap B -->
+            <g>
+              <rect x="66" y="14" width="46" height="46" fill="#fff" stroke="#e5e5e5"/>
+              <rect x="66" y="14" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="71.75" y="19.75" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="77.5" y="25.5" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="83.25" y="31.25" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="89" y="37" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="94.75" y="42.75" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="100.5" y="48.5" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="106.25" y="54.25" width="5.75" height="5.75" fill="#2c5fa6"/>
+              <rect x="89" y="14" width="5.75" height="5.75" fill="#a8c2e0"/>
+              <rect x="94.75" y="14" width="5.75" height="5.75" fill="#a8c2e0"/>
+              <rect x="100.5" y="14" width="5.75" height="5.75" fill="#a8c2e0"/>
+              <rect x="77.5" y="31.25" width="5.75" height="5.75" fill="#a8c2e0"/>
+              <rect x="83.25" y="37" width="5.75" height="5.75" fill="#a8c2e0"/>
+              <rect x="89" y="42.75" width="5.75" height="5.75" fill="#a8c2e0"/>
+            </g>
+            <!-- dim labels -->
+            <g font-family="JetBrains Mono" font-size="5" fill="#888">
+              <text x="6" y="72">chr1:10–12 Mb</text>
+              <text x="86" y="72">chr1:10–12 Mb</text>
+            </g>
+            <!-- vs separator -->
+            <text x="57" y="42" font-family="Inter" font-size="10" font-weight="700" fill="#c0392b" text-anchor="middle">vs</text>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">
+            Compare samples
+            <span class="tile-arrow">→</span>
+          </div>
+          <div class="tile-sub">Side-by-side heatmaps · shared locus · difference log</div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- quick start row -->
+    <div class="quick-start">
+      <div class="quick-head">
+        <div class="quick-title">
+          Quick start <span class="accent">·</span> pick a sample to open in Hi-C viewer
+        </div>
+        <div class="quick-sub">Try one of these to see the full data flow.</div>
+      </div>
+      <div class="quick-row">
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#c0392b">B3</div>
+          <div class="sample-info">
+            <div class="sample-id">Brain_BF3</div>
+            <div class="sample-meta">Brain · Bamei ♂ · 180 d</div>
+          </div>
+          <div class="sample-open">Open →</div>
+        </div>
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#d4a017">L1</div>
+          <div class="sample-info">
+            <div class="sample-id">Liver_LR1</div>
+            <div class="sample-meta">Liver · Large White ♀ · 180 d</div>
+          </div>
+          <div class="sample-open">Open →</div>
+        </div>
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#2e8b57">M2</div>
+          <div class="sample-info">
+            <div class="sample-id">Muscle_BF3</div>
+            <div class="sample-meta">Muscle · Bamei ♂ · 180 d</div>
+          </div>
+          <div class="sample-open">Open →</div>
+        </div>
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#6e4ca0">F1</div>
+          <div class="sample-info">
+            <div class="sample-id">F1_2_Brain</div>
+            <div class="sample-meta">Brain · F1 (LW×BM) · 60 d</div>
+          </div>
+          <div class="sample-open">Open →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== Chicken Panel ========== -->
+<section class="species-panel" id="panel-chicken" data-panel="chicken">
+  <div class="panel-inner">
+
+    <div class="panel-header">
+      <div>
+        <h1 class="panel-title">
+          Chicken multi-omics atlas
+          <span class="sub">Hi-C · RNA-seq · H3K4me3 · H3K27ac · SV</span>
+        </h1>
+      </div>
+      <div class="stat-strip">
+        <div class="stat"><div class="stat-num">12</div><div class="stat-label">samples</div></div>
+        <div class="stat"><div class="stat-num">4</div><div class="stat-label">tissues</div></div>
+        <div class="stat"><div class="stat-num">2</div><div class="stat-label">breeds</div></div>
+        <div class="stat"><div class="stat-num">3</div><div class="stat-label">time-points</div></div>
+      </div>
+      <button class="btn-browse" style="background:#888">Notify me →</button>
+    </div>
+
+    <!-- coming soon banner -->
+    <div class="soon-banner">
+      <div class="soon-banner-icon">!</div>
+      <div class="soon-banner-text">
+        <strong>Chicken data is coming online Q3 2026.</strong> Hi-C, RNA-seq, CUT&amp;Tag (H3K4me3, H3K27ac), and SV are planned — including the developmental time-course and reciprocal cross comparisons. The viewer below is in preview.
+      </div>
+      <div class="soon-banner-meta">
+        ETA<br>
+        <span class="date">Q3 / 2026</span>
+      </div>
+    </div>
+
+    <!-- grayed hero -->
+    <div class="search-hero grayed">
+      <div class="search-headline">Find a sample</div>
+      <div class="search-bar">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <input class="search-input" type="text"
+          placeholder="Chicken sample browser is not yet available"
+          disabled />
+        <span class="search-shortcut">⌘ K</span>
+        <button class="search-go" style="background:#888" disabled>Open</button>
+      </div>
+      <div class="search-hint">12 samples / 4 tissues / 2 breeds planned for this release.</div>
+    </div>
+
+    <!-- tile grid (all "coming soon") -->
+    <div class="tile-grid">
+
+      <div class="tile soon">
+        <span class="coming-soon-badge">Coming soon</span>
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+            <g>
+              <rect x="10" y="10" width="80" height="80" fill="#fff" stroke="#e5e5e5"/>
+              <rect x="10" y="10" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+              <rect x="20" y="20" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+              <rect x="30" y="30" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+              <rect x="40" y="40" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+              <rect x="50" y="50" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+              <rect x="60" y="60" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+              <rect x="70" y="70" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+              <rect x="80" y="80" width="10" height="10" fill="#c0392b" opacity="0.7"/>
+            </g>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">Hi-C matrix viewer <span class="tile-arrow">→</span></div>
+          <div class="tile-sub">Pending integration · 5x5kb resolution</div>
+        </div>
+      </div>
+
+      <div class="tile soon">
+        <span class="coming-soon-badge">Coming soon</span>
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="4" width="40" height="40" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+            <rect x="14" y="48" width="40" height="40" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">Differential Hi-C <span class="tile-arrow">→</span></div>
+          <div class="tile-sub">Developmental time-course &amp; reciprocal cross</div>
+        </div>
+      </div>
+
+      <div class="tile soon">
+        <span class="coming-soon-badge">Coming soon</span>
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="40" y="6" width="76" height="10" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+            <rect x="40" y="22" width="76" height="10" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+            <rect x="40" y="38" width="76" height="10" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+            <rect x="40" y="54" width="76" height="10" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">Multi-omics Tracks <span class="tile-arrow">→</span></div>
+          <div class="tile-sub">CUT&amp;Tag replaces ChIP-seq for chicken</div>
+        </div>
+      </div>
+
+      <div class="tile soon">
+        <span class="coming-soon-badge">Coming soon</span>
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 60 C 22 30, 38 30, 50 50 S 78 80, 96 40"
+              fill="none" stroke="#c0392b" stroke-width="10" stroke-linecap="round" opacity="0.4"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">3D Chromatin <span class="tile-arrow">→</span></div>
+          <div class="tile-sub">Structure prediction in progress</div>
+        </div>
+      </div>
+
+      <div class="tile soon">
+        <span class="coming-soon-badge">Not planned</span>
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="22" y="60" width="76" height="20" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">CTCF Motif <span class="tile-arrow">→</span></div>
+          <div class="tile-sub">No CTCF ChIP-seq in chicken dataset</div>
+        </div>
+      </div>
+
+      <div class="tile soon">
+        <span class="coming-soon-badge">Coming soon</span>
+        <div class="tile-thumb">
+          <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="14" width="46" height="46" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+            <rect x="66" y="14" width="46" height="46" fill="#fff" stroke="#e5e5e5" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="tile-body">
+          <div class="tile-title">Compare samples <span class="tile-arrow">→</span></div>
+          <div class="tile-sub">Time-course ↔ breed cross comparison</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- preview quick start -->
+    <div class="quick-start grayed">
+      <div class="quick-head">
+        <div class="quick-title">
+          Preview <span class="accent">·</span> sample set planned for first release
+        </div>
+        <div class="quick-sub">Listed for reference; not yet queryable.</div>
+      </div>
+      <div class="quick-row">
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#888">E10</div>
+          <div class="sample-info">
+            <div class="sample-id">Embryo_E10</div>
+            <div class="sample-meta">Whole embryo · d10</div>
+          </div>
+          <div class="sample-open" style="opacity:0.4">Soon →</div>
+        </div>
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#888">E15</div>
+          <div class="sample-info">
+            <div class="sample-id">Embryo_E15</div>
+            <div class="sample-meta">Whole embryo · d15</div>
+          </div>
+          <div class="sample-open" style="opacity:0.4">Soon →</div>
+        </div>
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#888">Br1</div>
+          <div class="sample-info">
+            <div class="sample-id">Brain_RH1</div>
+            <div class="meta" style="display:none"></div>
+            <div class="sample-meta">Brain · Rhode Island Red</div>
+          </div>
+          <div class="sample-open" style="opacity:0.4">Soon →</div>
+        </div>
+        <div class="sample-card">
+          <div class="sample-dot" style="background:#888">Lv1</div>
+          <div class="sample-info">
+            <div class="sample-id">Liver_WL1</div>
+            <div class="sample-meta">Liver · White Leghorn</div>
+          </div>
+          <div class="sample-open" style="opacity:0.4">Soon →</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========== Footer ========== -->
+<footer class="site-footer">
+  <p>
+    dataWeb · public-data viewer for multi-omic chromatin landscapes &nbsp;·&nbsp;
+    not for personalized analysis &nbsp;·&nbsp;
+    modeled after <a href="https://pigome.com/">pigome.com</a>,
+    <a href="https://3dgenome.fsm.northwestern.edu/">3dgenome.fsm.northwestern.edu</a>,
+    <a href="https://genocat.tools/tools/psu_3d_genome_browser/">genocat.tools / psu_3d</a>
+  </p>
+</footer>
+
+<!-- ========== Minimal JS ========== -->
+<script>
+  // --- tab switching ---
+  const tabs = document.querySelectorAll('.species-tab');
+  const panels = document.querySelectorAll('.species-panel');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.target;
+      tabs.forEach(t => t.classList.toggle('active', t === tab));
+      panels.forEach(p => p.classList.toggle('active', p.dataset.panel === target));
+      // close any open autocomplete
+      document.querySelectorAll('.search-hero.open').forEach(h => h.classList.remove('open'));
+    });
+  });
+
+  // --- autocomplete: open on focus/input, close on outside click ---
+  const hero = document.getElementById('search-hero-pig');
+  const input = document.getElementById('search-input-pig');
+
+  if (hero && input) {
+    const open = () => hero.classList.add('open');
+    const close = () => hero.classList.remove('open');
+
+    input.addEventListener('focus', open);
+    input.addEventListener('input', open);
+
+    document.addEventListener('click', (e) => {
+      if (!hero.contains(e.target)) close();
+    });
+
+    // hover items = focus
+    hero.querySelectorAll('.ac-item').forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        hero.querySelectorAll('.ac-item.focused').forEach(i => i.classList.remove('focused'));
+        item.classList.add('focused');
+      });
+      item.addEventListener('click', () => {
+        input.value = item.querySelector('.id').textContent;
+        close();
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

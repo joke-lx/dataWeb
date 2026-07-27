@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dataWeb — 3D chromatin folding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --surface:#fafafa; --surface-2:#f0f0f0; --paper:#fff; --ink:#181818;
+      --muted:#686868; --line:#d9d9d6; --accent:#c0392b; --accent-dark:#982d22;
+      --accent-soft:#f7e9e7;
+      --mono:"JetBrains Mono",monospace; --sans:"Inter",sans-serif;
+      --serif:Georgia,"Times New Roman",serif;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--surface); font-family:var(--sans); line-height:1.5; }
+    button,input,select { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+
+    /* ─── TopBar (verbatim from home-mockup-A.html) ─── */
+    .topbar { height:66px; padding:0 clamp(24px,5vw,76px); display:flex; align-items:center; border-bottom:1px solid var(--line); background:rgba(250,250,250,.96); position:sticky; top:0; z-index:10; }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.03em; font-size:20px; margin-right:36px; }
+    .brand-mark { width:25px; height:25px; border:1.5px solid var(--accent); border-radius:50%; position:relative; }
+    .brand-mark:before,.brand-mark:after { content:""; position:absolute; background:var(--accent); border-radius:50%; width:5px; height:5px; }
+    .brand-mark:before { left:4px; top:5px; box-shadow:10px 9px 0 var(--accent); }
+    .brand-mark:after { width:12px; height:1px; left:6px; top:12px; transform:rotate(40deg); }
+    nav { display:flex; align-items:center; gap:3px; }
+    nav a { color:#4e4e4e; text-decoration:none; font-size:13px; font-weight:500; padding:8px 11px; border-radius:6px; }
+    nav a:hover { color:var(--accent); background:var(--accent-soft); }
+    nav a.active { color:var(--accent); background:var(--accent-soft); }
+    .species-toggle { margin-left:auto; display:flex; padding:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; }
+    .species-toggle button { border:0; background:transparent; color:var(--muted); padding:6px 13px; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; }
+    .species-toggle button.active { color:var(--paper); background:var(--accent); box-shadow:0 1px 3px #8f2d2428; }
+
+    /* ─── Region breadcrumb bar ─── */
+    .region-bar { padding:14px clamp(24px,5vw,76px); border-bottom:1px solid var(--line); background:var(--paper); display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+    .crumbs { display:flex; align-items:center; gap:10px; font-family:var(--mono); font-size:12px; color:var(--muted); }
+    .crumbs strong { color:var(--ink); font-weight:500; }
+    .crumbs .sep { color:#bdbdb8; }
+    .crumbs .accent { color:var(--accent); }
+    .region-bar .spacer { flex:1; }
+    .sample-picker { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted); }
+    .sample-picker label { font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-size:10px; }
+    .sample-picker select { border:1px solid var(--line); border-radius:6px; padding:6px 10px; background:var(--paper); color:var(--ink); font-size:12px; cursor:pointer; outline:0; }
+    .sample-picker select:focus { border-color:var(--accent); }
+
+    /* ─── Page header ─── */
+    .page-head { padding:34px clamp(24px,5vw,76px) 22px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#fff 0%,var(--surface) 100%); flex-wrap:wrap; }
+    .page-head .eyebrow { display:inline-flex; align-items:center; gap:9px; color:var(--accent); font-family:var(--mono); text-transform:uppercase; letter-spacing:.11em; font-size:11px; font-weight:500; }
+    .page-head .eyebrow:before { content:""; width:24px; height:1px; background:var(--accent); }
+    .page-head h1 { margin:14px 0 8px; font-size:30px; letter-spacing:-.035em; font-weight:650; line-height:1.15; }
+    .page-head .subtitle { margin:0; color:var(--muted); font-size:14px; }
+    .page-head .actions { display:flex; gap:8px; }
+    .icon-btn { display:inline-flex; align-items:center; gap:7px; padding:8px 13px; border:1px solid #c9c9c5; border-radius:6px; color:#333; background:var(--paper); font-weight:600; font-size:12px; cursor:pointer; }
+    .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .icon-btn .glyph { font-family:var(--mono); color:var(--accent); font-size:11px; }
+
+    main { width:min(1160px,calc(100% - 48px)); margin:0 auto; }
+
+    /* ─── Organ panels ─── */
+    .panel-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:32px 0 30px; }
+    .organ-panel { background:var(--paper); border:1px solid var(--line); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; transition:border-color .15s; }
+    .organ-panel:hover { border-color:#c4c4c0; }
+    .organ-panel.expanded { grid-column:1 / -1; }
+    .organ-head { padding:14px 18px 10px; border-bottom:1px solid var(--line); display:flex; align-items:flex-start; gap:12px; }
+    .organ-head .organ-name { font-family:var(--serif); font-size:22px; letter-spacing:.3px; line-height:1.1; color:var(--ink); }
+    .organ-head .latin { display:block; margin-top:3px; font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:.04em; }
+    .organ-head .organ-actions { margin-left:auto; display:flex; gap:5px; }
+    .mini-btn { width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:5px; background:var(--paper); color:var(--muted); font-size:13px; cursor:pointer; }
+    .mini-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+    .organ-canvas-wrap { padding:14px 18px; background:linear-gradient(180deg,#fff,#fbfbf9); }
+    .organ-canvas { width:100%; aspect-ratio:360/220; background:#fff; border:1px solid var(--line); border-radius:4px; overflow:hidden; display:block; cursor:grab; position:relative; }
+    .organ-canvas:active { cursor:grabbing; }
+    .organ-canvas svg { width:100%; height:100%; display:block; user-select:none; -webkit-user-select:none; touch-action:none; }
+    .organ-canvas .axis-line { stroke:#e7e7e3; stroke-width:.4; }
+    .organ-caption { padding:10px 18px 14px; font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.02em; display:flex; gap:10px; flex-wrap:wrap; }
+    .organ-caption span { display:inline-flex; align-items:center; gap:5px; }
+    .organ-caption .swatch { width:8px; height:8px; border-radius:50%; display:inline-block; }
+    .organ-caption .dot-green { background:#459f52; }
+    .organ-caption .dot-grey { background:#808080; }
+    .organ-caption .dot-arc { background:#b8b8b8; }
+
+    /* PEI arc legend swatch */
+    .pei-legend { font-size:10px; }
+
+    /* ─── PEI table ─── */
+    .pei-section { background:var(--paper); border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:30px; }
+    .pei-section-head { padding:18px 22px 12px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:end; }
+    .pei-section-head h2 { margin:0; font-size:18px; letter-spacing:-.025em; font-weight:600; }
+    .pei-section-head .eyebrow { display:inline-flex; align-items:center; gap:9px; color:var(--accent); font-family:var(--mono); text-transform:uppercase; letter-spacing:.11em; font-size:10px; font-weight:500; margin-bottom:6px; }
+    .pei-section-head .eyebrow:before { content:""; width:20px; height:1px; background:var(--accent); }
+    .pei-section-head p { margin:6px 0 0; color:var(--muted); font-size:12px; }
+    .pei-section-head .right { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    table.pei-table { width:100%; border-collapse:collapse; font-size:13px; }
+    table.pei-table thead th { text-align:left; padding:11px 22px; background:var(--surface); border-bottom:1px solid var(--line); font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:500; }
+    table.pei-table tbody td { padding:11px 22px; border-bottom:1px solid #ececea; }
+    table.pei-table tbody tr:last-child td { border-bottom:0; }
+    table.pei-table .anchor-id { font-family:var(--mono); font-size:12px; color:var(--accent-dark); }
+    table.pei-table .gene { font-weight:600; }
+    table.pei-table .num { font-family:var(--mono); font-size:12px; }
+    .score-bar { display:inline-block; width:60px; height:6px; background:#ececea; border-radius:3px; position:relative; vertical-align:middle; margin-right:8px; }
+    .score-bar i { display:block; height:100%; background:linear-gradient(90deg,#459f52,#c0392b); border-radius:3px; }
+
+    /* ─── Region navigator ─── */
+    .region-nav { padding:24px clamp(24px,5vw,76px); border:1px solid var(--line); border-radius:10px; background:var(--paper); margin-bottom:34px; }
+    .region-nav h3 { margin:0 0 14px; font-size:13px; letter-spacing:.025em; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+    .region-nav h3 .hint { font-family:var(--mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:500; }
+    .region-track { display:grid; grid-template-columns:repeat(20,1fr); gap:2px; height:32px; }
+    .region-tick { background:var(--surface-2); border-radius:2px; cursor:pointer; transition:background .12s; position:relative; }
+    .region-tick:hover { background:#cfcfcb; }
+    .region-tick.active { background:var(--accent); }
+    .region-tick.active::after { content:""; position:absolute; left:50%; top:-6px; transform:translateX(-50%); width:1px; height:6px; background:var(--accent); }
+    .region-axis { display:flex; justify-content:space-between; margin-top:8px; font-family:var(--mono); font-size:10px; color:var(--muted); }
+    .region-axis span { display:inline-flex; align-items:center; gap:4px; }
+    .region-axis .pin { width:6px; height:6px; background:var(--accent); border-radius:50%; }
+
+    /* ─── Status footer (mirrors home-mockup-A.html) ─── */
+    footer { border-top:1px solid var(--line); padding:22px clamp(24px,5vw,76px); display:flex; justify-content:space-between; gap:24px; color:var(--muted); font-size:11px; background:var(--surface-2); margin-top:18px; }
+    footer strong { color:#454545; }
+    footer .status { display:flex; gap:18px; font-family:var(--mono); }
+    footer .status .dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#459f52; margin-right:5px; vertical-align:middle; }
+
+    /* ─── Responsive ─── */
+    @media (max-width:980px) {
+      .panel-grid { grid-template-columns:1fr; }
+      .organ-panel.expanded { grid-column:auto; }
+    }
+    @media (max-width:620px) {
+      .topbar { padding:0 17px; } .brand { margin-right:12px; }
+      nav { display:none; }
+      main { width:calc(100% - 32px); }
+      .page-head { padding:24px 17px 18px; }
+      .region-bar { padding:12px 17px; gap:10px; }
+      .region-nav { padding:18px 17px; }
+      table.pei-table thead th, table.pei-table tbody td { padding:9px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── TopBar ─── -->
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>dataWeb</div>
+    <nav aria-label="Primary navigation">
+      <a href="#">Hi-C</a><a href="#">Δ Hi-C</a><a href="#">Tracks</a><a href="#" class="active">3D</a><a href="#">CTCF Motif</a>
+    </nav>
+    <div class="species-toggle" aria-label="Active species" id="speciesToggle">
+      <button class="active" data-species="Pig">Pig</button><button data-species="Chicken">Chicken</button>
+    </div>
+  </header>
+
+  <!-- ─── Region breadcrumb ─── -->
+  <nav class="region-bar" aria-label="Region breadcrumb">
+    <div class="crumbs">
+      <span class="accent">Pig</span><span class="sep">›</span>
+      <span>Brain</span><span class="sep">·</span>
+      <strong>Brain_BF3</strong><span class="sep">·</span>
+      <strong>chr1:1,234,000-1,456,000</strong>
+    </div>
+    <span class="spacer"></span>
+    <div class="sample-picker">
+      <label for="sampleSel">Sample</label>
+      <select id="sampleSel">
+        <option selected>Brain_BF3</option>
+        <option>Brain_BF1</option>
+        <option>Liver_BF3</option>
+        <option>Muscle_BF3</option>
+        <option>L9876</option>
+      </select>
+    </div>
+  </nav>
+
+  <!-- ─── Page header ─── -->
+  <header class="page-head">
+    <div>
+      <div class="eyebrow">3D genome viewer</div>
+      <h1>3D chromatin folding — Brain (BF3)</h1>
+      <p class="subtitle">Random-walk backbone · 74 control points · 3 PEI anchors in view</p>
+    </div>
+    <div class="actions">
+      <button class="icon-btn"><span class="glyph">↓</span>Download PNG</button>
+      <button class="icon-btn"><span class="glyph">⤴</span>Share link</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ─── 3 organ panels ─── -->
+    <section class="panel-grid" aria-label="Organ folding models">
+      <article class="organ-panel" data-organ="liver">
+        <div class="organ-head">
+          <div>
+            <span class="organ-name">Liver</span>
+            <span class="latin">Sus scrofa · hepatocyte</span>
+          </div>
+          <div class="organ-actions">
+            <button class="mini-btn" title="Reset camera" data-action="reset">↻</button>
+            <button class="mini-btn" title="Expand" data-action="expand">⊟</button>
+          </div>
+        </div>
+        <div class="organ-canvas-wrap">
+          <div class="organ-canvas" data-canvas="liver"></div>
+        </div>
+        <div class="organ-caption">
+          <span><i class="swatch dot-green"></i>seed=7</span>
+          <span>·</span>
+          <span>80 steps</span>
+          <span>·</span>
+          <span><i class="swatch dot-green"></i>3 promoter + <i class="swatch dot-grey"></i>2 enhancer</span>
+        </div>
+      </article>
+
+      <article class="organ-panel" data-organ="muscle">
+        <div class="organ-head">
+          <div>
+            <span class="organ-name">Muscle</span>
+            <span class="latin">Sus scrofa · longissimus dorsi</span>
+          </div>
+          <div class="organ-actions">
+            <button class="mini-btn" title="Reset camera" data-action="reset">↻</button>
+            <button class="mini-btn" title="Expand" data-action="expand">⊟</button>
+          </div>
+        </div>
+        <div class="organ-canvas-wrap">
+          <div class="organ-canvas" data-canvas="muscle"></div>
+        </div>
+        <div class="organ-caption">
+          <span>seed=23</span>
+          <span>·</span>
+          <span>72 steps</span>
+          <span>·</span>
+          <span><i class="swatch dot-grey"></i>1 enhancer</span>
+        </div>
+      </article>
+
+      <article class="organ-panel" data-organ="brain">
+        <div class="organ-head">
+          <div>
+            <span class="organ-name">Brain</span>
+            <span class="latin">Sus scrofa · prefrontal cortex</span>
+          </div>
+          <div class="organ-actions">
+            <button class="mini-btn" title="Reset camera" data-action="reset">↻</button>
+            <button class="mini-btn" title="Expand" data-action="expand">⊟</button>
+          </div>
+        </div>
+        <div class="organ-canvas-wrap">
+          <div class="organ-canvas" data-canvas="brain"></div>
+        </div>
+        <div class="organ-caption">
+          <span>seed=41</span>
+          <span>·</span>
+          <span>74 steps</span>
+          <span>·</span>
+          <span><i class="swatch dot-grey"></i>1 enhancer</span>
+          <span>·</span>
+          <span class="pei-legend"><i class="swatch dot-arc"></i>3 PEI arcs</span>
+        </div>
+      </article>
+    </section>
+
+    <!-- ─── PEI detail table (brain) ─── -->
+    <section class="pei-section" aria-label="Promoter-enhancer interactions">
+      <div class="pei-section-head">
+        <div>
+          <div class="eyebrow">Brain · PEI interactions</div>
+          <h2>Promoter–enhancer interactions in view</h2>
+          <p>chr1:1,234,000-1,456,000 · score ≥ 0.4 · 5 of 3,247 shown</p>
+        </div>
+        <div class="right">Showing top 5 · sorted by score ↓</div>
+      </div>
+      <table class="pei-table">
+        <thead>
+          <tr><th>anchor</th><th>gene</th><th>distance</th><th>score</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="anchor-id">PEI_017</td>
+            <td class="gene">NEUROD6</td>
+            <td class="num">142 kb</td>
+            <td><span class="score-bar"><i style="width:94%"></i></span><span class="num">0.94</span></td>
+          </tr>
+          <tr>
+            <td class="anchor-id">PEI_203</td>
+            <td class="gene">BDNF</td>
+            <td class="num">88 kb</td>
+            <td><span class="score-bar"><i style="width:78%"></i></span><span class="num">0.78</span></td>
+          </tr>
+          <tr>
+            <td class="anchor-id">PEI_044</td>
+            <td class="gene">SLC17A7</td>
+            <td class="num">312 kb</td>
+            <td><span class="score-bar"><i style="width:62%"></i></span><span class="num">0.62</span></td>
+          </tr>
+          <tr>
+            <td class="anchor-id">PEI_412</td>
+            <td class="gene">RBFOX3</td>
+            <td class="num">256 kb</td>
+            <td><span class="score-bar"><i style="width:51%"></i></span><span class="num">0.51</span></td>
+          </tr>
+          <tr>
+            <td class="anchor-id">PEI_198</td>
+            <td class="gene">CAMK2A</td>
+            <td class="num">421 kb</td>
+            <td><span class="score-bar"><i style="width:44%"></i></span><span class="num">0.44</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ─── Region navigator ─── -->
+    <section class="region-nav" aria-label="Region navigator">
+      <h3>Region navigator <span class="hint">chr1 · 222 kb</span></h3>
+      <div class="region-track" id="regionTrack"></div>
+      <div class="region-axis">
+        <span><span class="pin"></span>1,234,000</span>
+        <span>1,300,000</span>
+        <span>1,400,000</span>
+        <span>1,456,000</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span><strong>dataWeb</strong> · Multi-omics 3D genome browser</span>
+    <span class="status">
+      <span><i class="dot"></i>Live</span>
+      <span>backbone 74 pts</span>
+      <span>3 arcs in view</span>
+    </span>
+    <span>Public-data viewer only — no personalized data analysis or uploads.</span>
+  </footer>
+
+  <!-- ═══════════════ Script ═══════════════ -->
+  <script>
+  (() => {
+    // ───── Per-organ geometry (mirrors ThreeDChromatin.tsx ORGAN_PARAMS) ─────
+    const ORGAN_PARAMS = {
+      liver:  { seed: 7,  steps: 80, markers: [{t:.16,c:'#459f52'},{t:.26,c:'#459f52'},{t:.37,c:'#459f52'},{t:.52,c:'#808080'},{t:.72,c:'#808080'}] },
+      muscle: { seed: 23, steps: 72, markers: [{t:.55,c:'#808080'}] },
+      brain:  { seed: 41, steps: 74, markers: [{t:.50,c:'#808080'}] },
+    };
+    const PEI_FOR_BRAIN = true;
+
+    // ───── deterministic PRNG (mulberry32, matches demo + ThreeDChromatin.tsx) ─────
+    function mulberry32(seed) {
+      let a = seed | 0;
+      return () => {
+        a = (a + 0x6d2b79f5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    // ───── Catmull-Rom smoothing (matches chromatin3d.html) ─────
+    function catmull(pts, seg) {
+      const out = []; const n = pts.length;
+      for (let i = 0; i < n - 1; i++) {
+        const p0 = pts[Math.max(0, i-1)];
+        const p1 = pts[i], p2 = pts[i+1];
+        const p3 = pts[Math.min(n-1, i+2)];
+        for (let s = 0; s < seg; s++) {
+          const t = s / seg, t2 = t*t, t3 = t2*t;
+          out.push([0,1,2].map(k => 0.5*(
+            2*p1[k]
+            + (-p0[k] + p2[k]) * t
+            + (2*p0[k] - 5*p1[k] + 4*p2[k] - p3[k]) * t2
+            + (-p0[k] + 3*p1[k] - 3*p2[k] + p3[k]) * t3
+          )));
+        }
+      }
+      out.push(pts[n-1]);
+      return out;
+    }
+
+    function normalizePts(pts) {
+      const c = [0,0,0];
+      pts.forEach(p => { c[0]+=p[0]; c[1]+=p[1]; c[2]+=p[2]; });
+      c[0]/=pts.length; c[1]/=pts.length; c[2]/=pts.length;
+      let R = 0;
+      const o = pts.map(p => {
+        const q = [p[0]-c[0], p[1]-c[1], p[2]-c[2]];
+        R = Math.max(R, Math.hypot(...q));
+        return q;
+      });
+      const s = 1.25 / (R || 1);
+      return o.map(q => [q[0]*s, q[1]*s, q[2]*s]);
+    }
+
+    function makePath(seed, steps) {
+      const rng = mulberry32(seed);
+      let d = norm([rng()-.5, rng()-.5, rng()-.5]);
+      let p = [0,0,0]; const pts = [[0,0,0]];
+      for (let i = 0; i < steps; i++) {
+        d = norm([d[0]+(rng()-.5)*1.85, d[1]+(rng()-.5)*1.85, d[2]+(rng()-.5)*1.85]);
+        p = [p[0]+d[0]*0.42, p[1]+d[1]*0.42, p[2]+d[2]*0.42];
+        pts.push(p.slice());
+      }
+      return normalizePts(catmull(pts, 10));
+    }
+
+    function norm(v) {
+      const l = Math.hypot(...v) || 1;
+      return [v[0]/l, v[1]/l, v[2]/l];
+    }
+
+    // ───── Project 3D → 2D (fixed isometric-ish camera, matches demo perspective(42°)) ─────
+    // Camera at (1.6, 1.1, 3.0) looking at origin, up = +Y.
+    const CAM = {
+      eye: [1.6, 1.1, 3.0],
+      target: [0, 0, 0],
+      up: [0, 1, 0],
+      fov: 42 * Math.PI / 180,
+    };
+    function buildProjection(W, H) {
+      // forward
+      const f = norm([CAM.eye[0]-CAM.target[0], CAM.eye[1]-CAM.target[1], CAM.eye[2]-CAM.target[2]]);
+      // right = forward × up
+      let r = cross(f, CAM.up);
+      r = norm(r);
+      // true up = right × forward
+      const u = cross(r, f);
+      const aspect = W / H;
+      const tan = Math.tan(CAM.fov / 2);
+      const near = 0.1, far = 100;
+      return (P) => {
+        // view-space coords
+        const vx = P[0]*r[0] + P[1]*r[1] + P[2]*r[2];
+        const vy = P[0]*u[0] + P[1]*u[1] + P[2]*u[2];
+        const vz = P[0]*f[0] + P[1]*f[1] + P[2]*f[2];
+        const depth = -vz;                       // distance from camera plane
+        if (depth < near) return [NaN, NaN, depth];
+        const ndcX = (vx / depth) / (tan * aspect);
+        const ndcY = (vy / depth) / tan;
+        return [
+          (ndcX * 0.5 + 0.5) * W,
+          (1 - (ndcY * 0.5 + 0.5)) * H,
+          depth,
+        ];
+      };
+    }
+    function cross(a, b) {
+      return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+    }
+
+    // ───── Build one canvas's SVG ─────
+    function buildSVG(W, H, organ) {
+      const params = ORGAN_PARAMS[organ];
+      const path3 = makePath(params.seed, params.steps);
+      const project = buildProjection(W, H);
+
+      // Project all path points
+      const proj2 = path3.map(project);
+      // Filter NaN
+      const valid = proj2.filter(p => !Number.isNaN(p[0]));
+
+      // Construct SVG path
+      let d = '';
+      valid.forEach((p, i) => {
+        d += (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + ' ';
+      });
+
+      // Rainbow linearGradient along the path's normalised index
+      const stops = [
+        {p:0,    c:'#3955c9'},  // blue  (hsl 240°)
+        {p:.25,  c:'#3fb6b8'},  // cyan
+        {p:.5,   c:'#52c75a'},  // green
+        {p:.75,  c:'#e3b943'},  // yellow
+        {p:1,    c:'#c0392b'},  // red
+      ];
+      const stopsSVG = stops.map(s => `<stop offset="${(s.p*100).toFixed(0)}%" stop-color="${s.c}"/>`).join('');
+
+      // Markers: project path point at marker.t
+      const markersSVG = params.markers.map(m => {
+        const idx = Math.round(m.t * (valid.length - 1));
+        const p = valid[idx];
+        // subtle stroke for sphere look
+        return `
+          <circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="9" fill="${m.c}" fill-opacity=".18"/>
+          <circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="5.5" fill="${m.c}" stroke="#ffffff" stroke-width="1.2"/>
+        `;
+      }).join('');
+
+      // ─── Brain-only: PEI interaction arcs (semi-transparent grey tubes between promoter + enhancer) ───
+      let peiArcsSVG = '';
+      if (organ === 'brain' && PEI_FOR_BRAIN) {
+        const promoterIdx = Math.round(0.50 * (valid.length - 1));
+        const promoter = valid[promoterIdx];
+        const arcData = [
+          { phi: 0,         dist: 0.65, span: 92000 },
+          { phi: Math.PI*2/3, dist: 1.05, span: 188000 },
+          { phi: Math.PI*4/3, dist: 0.85, span: 142000 },
+        ];
+        arcData.forEach((a, i) => {
+          // Build 3D points around the path's centre then re-project.
+          const raid = a.dist;
+          const enh3 = [raid*Math.cos(a.phi), 0.55*Math.sin(a.phi*1.4), raid*Math.sin(a.phi)];
+          const mid3 = [
+            (path3[promoterIdx][0] + enh3[0])/2,
+            (path3[promoterIdx][1] + enh3[1])/2 + 0.4 + Math.min(1.2, a.span/100000)*0.4,
+            (path3[promoterIdx][2] + enh3[2])/2,
+          ];
+          // Re-project promoter from 3D world (not 2D-projected path)
+          const projP = project(path3[promoterIdx]);
+          const projM = project(mid3);
+          const projE = project(enh3);
+          if (Number.isNaN(projP[0]) || Number.isNaN(projM[0]) || Number.isNaN(projE[0])) return;
+          const arcD = `M ${projP[0].toFixed(1)} ${projP[1].toFixed(1)} Q ${projM[0].toFixed(1)} ${projM[1].toFixed(1)} ${projE[0].toFixed(1)} ${projE[1].toFixed(1)}`;
+          peiArcsSVG += `
+            <path d="${arcD}" fill="none" stroke="#b8b8b8" stroke-width="2.2" stroke-opacity=".45" stroke-linecap="round"/>
+            <circle cx="${projE[0].toFixed(1)}" cy="${projE[1].toFixed(1)}" r="4.5" fill="#5ba854" fill-opacity=".95" stroke="#ffffff" stroke-width="1"/>
+          `;
+        });
+      }
+
+      return `
+        <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="g-${organ}" x1="0%" y1="0%" x2="100%" y2="20%" gradientUnits="objectBoundingBox">
+              ${stopsSVG}
+            </linearGradient>
+            <filter id="glow-${organ}" x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0.4"/>
+            </filter>
+          </defs>
+          <!-- faint axis ticks -->
+          <line class="axis-line" x1="0" y1="${H/2}" x2="${W}" y2="${H/2}"/>
+          <line class="axis-line" x1="${W/2}" y1="0" x2="${W/2}" y2="${H}"/>
+          <!-- tube under-shadow (for depth) -->
+          <path d="${d}" fill="none" stroke="#e7e7e3" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- main rainbow tube -->
+          <path d="${d}" fill="none" stroke="url(#g-${organ})" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- PEI arcs (brain only) -->
+          ${peiArcsSVG}
+          <!-- sphere markers -->
+          ${markersSVG}
+        </svg>
+      `;
+    }
+
+    // ───── Render each canvas ─────
+    document.querySelectorAll('.organ-canvas').forEach(el => {
+      const organ = el.dataset.canvas;
+      const W = 360, H = 220;
+      el.innerHTML = buildSVG(W, H, organ);
+    });
+
+    // ───── Region track (decorative ticks) ─────
+    const track = document.getElementById('regionTrack');
+    const ticks = 20;
+    const activeStart = 5, activeEnd = 12;  // visual representation of current window
+    for (let i = 0; i < ticks; i++) {
+      const t = document.createElement('div');
+      t.className = 'region-tick' + (i >= activeStart && i <= activeEnd ? ' active' : '');
+      track.appendChild(t);
+    }
+
+    // ───── Species toggle visual sync (parallels home-mockup-A.html logic) ─────
+    const toggles = document.querySelectorAll('#speciesToggle button');
+    toggles.forEach(button => {
+      button.addEventListener('click', () => {
+        toggles.forEach(b => b.classList.toggle('active', b === button));
+        // Reflect into the breadcrumb's species slot
+        const crumb = document.querySelector('.crumbs .accent');
+        if (crumb) crumb.textContent = button.dataset.species;
+      });
+    });
+
+    // ───── Reset-camera button echo ─────
+    document.querySelectorAll('[data-action="reset"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panel = btn.closest('.organ-panel');
+        const canvas = panel.querySelector('.organ-canvas svg');
+        if (!canvas) return;
+        canvas.animate(
+          [{ transform: 'scale(1.06) rotate(2deg)' }, { transform: 'scale(1) rotate(0deg)' }],
+          { duration: 380, easing: 'cubic-bezier(.2,.7,.2,1)' }
+        );
+      });
+    });
+
+    // ───── Expand button toggle ─────
+    document.querySelectorAll('[data-action="expand"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const panel = btn.closest('.organ-panel');
+        panel.classList.toggle('expanded');
+        btn.textContent = panel.classList.contains('expanded') ? '⊞' : '⊟';
+      });
+    });
+
+    // ───── Per-canvas drag-to-rotate (isolated to each canvas, doesn't bleed) ─────
+    document.querySelectorAll('.organ-canvas').forEach(canvas => {
+      const svg = canvas.querySelector('svg');
+      if (!svg) return;
+
+      let dragging = false, startX = 0, startY = 0, rot = 0;
+      const onDown = (e) => {
+        dragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        rot = currentRot(canvas);
+        canvas.style.cursor = 'grabbing';
+        e.stopPropagation();
+        e.preventDefault();
+      };
+      const onMove = (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        svg.style.transformOrigin = '50% 50%';
+        svg.style.transform = `rotateX(${rot.x + dy * 0.4}deg) rotateY(${rot.y + dx * 0.4}deg)`;
+        e.stopPropagation();
+      };
+      const onUp = (e) => {
+        dragging = false;
+        canvas.style.cursor = 'grab';
+        e.stopPropagation();
+      };
+      canvas.addEventListener('pointerdown', onDown);
+      canvas.addEventListener('pointermove', onMove);
+      canvas.addEventListener('pointerup', onUp);
+      canvas.addEventListener('pointercancel', onUp);
+
+      // wheel-to-zoom (per-canvas, stops bubbling so siblings don't see it)
+      canvas.addEventListener('wheel', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const cur = currentScale(canvas);
+        const next = Math.min(1.6, Math.max(0.6, cur + (e.deltaY > 0 ? -0.08 : 0.08)));
+        svg.style.transformOrigin = '50% 50%';
+        // preserve existing rotation
+        const r = currentRot(canvas);
+        svg.style.transform = `scale(${next}) rotateX(${r.x}deg) rotateY(${r.y}deg)`;
+      }, { passive: false });
+    });
+
+    function currentRot(canvas) {
+      const svg = canvas.querySelector('svg');
+      const t = (svg.style.transform || '');
+      const rx = /rotateX\(([-\d.]+)deg\)/.exec(t);
+      const ry = /rotateY\(([-\d.]+)deg\)/.exec(t);
+      return { x: rx ? +rx[1] : 0, y: ry ? +ry[1] : 0 };
+    }
+    function currentScale(canvas) {
+      const svg = canvas.querySelector('svg');
+      const t = (svg.style.transform || '');
+      const m = /scale\(([-\d.]+)\)/.exec(t);
+      return m ? +m[1] : 1;
+    }
+  })();
+  </script>
+</body>
+</html>

@@ -119,7 +119,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
           timeout: 5m
-          command_timeout: 15m
+          command_timeout: 30m
           envs: GITHUB_SHA
           script: |
             set -e
@@ -135,39 +135,24 @@ jobs:
 
             mkdir -p data
 
-            echo "Pulling images (authenticated)..."
-            # The link between this server and ghcr.io can be very slow. Strategy:
-            # 1. If the exact SHA tag is already cached locally, skip pull.
-            # 2. Otherwise, try a pull with a hard 8-minute timeout per image.
-            # 3. On timeout, fall back to the locally-cached :latest tag.
-            pull_one() {
-              local img="$1"
-              if docker image inspect "$img" >/dev/null 2>&1; then
-                echo "  $img: cached locally"
-                return 0
-              fi
-              echo "  $img: pulling (8 min budget)..."
-              if timeout 480 docker pull "$img" >/dev/null 2>&1; then
-                echo "  $img: pulled"
-                return 0
-              fi
-              echo "  $img: pull timed out, will fall back to :latest"
-              return 1
-            }
-            pull_one "ghcr.io/<owner>/<repo>-api:${GITHUB_SHA}" || true
-            pull_one "ghcr.io/<owner>/<repo>-web:${GITHUB_SHA}" || true
+            echo "Pulling images via docker compose (forces refresh of :latest cache)..."
+            # CRITICAL: `docker compose up -d` alone does NOT re-pull a
+            # refreshed :latest tag — it reuses the locally-cached image
+            # digest. The cached container keeps running the OLD bundle
+            # even after GHCR's :latest advances. `compose pull` forces
+            # the daemon to fetch the new digest before we re-create.
+            #
+            # The GHCR link is often very slow (~1 MB/s); a 437 MB web
+            # image easily exceeds the SSH command_timeout. Wrap pull in
+            # a 12-minute budget so a slow pull doesn't kill the deploy.
+            # On pull timeout we fall back to the locally-cached image
+            # (still better than abandoning the deploy entirely).
+            timeout 720 docker compose -f docker-compose.prod.yml pull \
+              && echo "compose pull: ok" \
+              || echo "WARN: compose pull failed/timeout (continuing with cache)"
 
-            # Pin to SHA tag if we have it, otherwise fall back to :latest.
-            if docker image inspect "ghcr.io/<owner>/<repo>-api:${GITHUB_SHA}" >/dev/null 2>&1 \
-               && docker image inspect "ghcr.io/<owner>/<repo>-web:${GITHUB_SHA}" >/dev/null 2>&1; then
-              echo "TAG=${GITHUB_SHA}" > .env
-            else
-              echo "Falling back to :latest tag"
-              echo "TAG=latest" > .env
-            fi
-
-            echo "Starting stack..."
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            echo "Recreating stack..."
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate
 
             echo "Pruning old images..."
             docker image prune -f || true
@@ -246,7 +231,7 @@ server {
 }
 ```
 
-## 4 个必知坑点(按出现频率排序)
+## 5 个必知坑点(按出现频率排序)
 
 ### 坑 1:GHCR auth 用 job output 会被 secret-scanner 拦
 
@@ -270,13 +255,39 @@ err: error: cannot perform an interactive login from a non TTY device
 ### 坑 3:慢网络 fallback(服务器到 GHCR 1MB/s)
 
 - 437MB api 镜像拉 7 小时,15min `command_timeout` 不够
-- 解法:`pull_one()` 函数 + per-image 8min budget + 失败 fall back 到 `:latest`
+- 解法:`docker compose pull` 包在 `timeout 720` (12 min) 内,失败 fall back 到本地缓存
+- SSH `command_timeout` 提到 30m 容纳 pull + recreate + health check
 - 第二次 deploy 通常就拿到正确版本(只要一次拉成功)
 
 ### 坑 4:GHCR package 默认 private → 401
 
 - user-namespace packages 即使 UI 显示 "Public",匿名 `docker pull` 仍可能 401(GHCR visibility 同步怪现象)
 - 解法:用 `GHCR_TOKEN` secret 走认证(fine-grained PAT,`Public Repositories (read-only)` + `Packages: Read`)
+
+### 坑 5:`docker compose up -d` 不自动 pull 新 :latest ⚠️ 实战高频
+
+**症状**:workflow 绿,服务器 bundle hash 没换;`docker compose ps` 显示容器 image 仍是老 commit。
+
+**根因**:`docker compose up -d` 检测到本地 image 已存在时,**直接复用本地 digest**,不去拉新 push 上去的 `:latest`。即使 GHCR `:latest` 指向新 SHA,本地缓存仍是旧 digest。
+
+**修法**:`up -d` 之前必须显式 `docker compose pull`:
+```yaml
+- name: Pull images and (re)start stack
+  uses: appleboy/ssh-action@v1.0.3
+  with:
+    command_timeout: 30m
+    script: |
+      echo "Pulling images via docker compose (forces refresh of :latest cache)..."
+      timeout 720 docker compose -f docker-compose.prod.yml pull \
+        && echo "compose pull: ok" \
+        || echo "WARN: compose pull failed/timeout (continuing with cache)"
+      docker compose -f docker-compose.prod.yml up -d --remove-orphans --force-recreate
+```
+要点:
+- `timeout 720` 防止慢网络拖死整个 SSH command
+- `|| echo WARN` 让 pull 失败不阻断 deploy(用本地缓存)
+- `--force-recreate` 强制按新 image 重建容器(不依赖容器 hash 比对)
+- `command_timeout: 30m` 容纳 pull (12 min) + recreate + health check (30 sec) 全部预算
 
 ## 必填 Secrets
 

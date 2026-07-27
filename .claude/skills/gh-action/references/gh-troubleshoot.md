@@ -112,12 +112,15 @@ docker compose -f docker-compose.prod.yml logs --tail 100 -f
 
 ## 8. 容器不是新 commit(workflow 显示 success 但 image 没换)
 
-**症状**:deploy 绿,`docker compose ps` 显示容器 image 还是老 commit。
-**原因**:`docker compose up -d` 默认**不重新拉**已存在 image,即使 `.env` 里 TAG 改了。
-**修法**:
-- 加 `--force-recreate` 已经在模板里(✓)
-- 但前提是 `pull_one` 真的拉到了新 image(否则 fall back 到 `:latest`,那个还是老 commit)
-- 检查:`docker images --format "{{.CreatedAt}}" | sort | tail` 确认 image 是新的
+**症状**:deploy 绿,`docker compose ps` 显示容器 image 还是老 commit,bundle hash 不变。
+**根因**:`docker compose up -d` 默认**不重新拉**已存在 image,即使 `.env` 里 TAG 改了或 `:latest` 在 GHCR 上指向新 SHA,本地缓存的 image digest 也不会更新。
+**修法**(deploy-template 已包含):
+- `up -d` 之前显式 `docker compose pull` 强制拉新 digest
+- `--force-recreate` 强制按新 image 重建容器
+- 慢网络场景:把 `pull` 包在 `timeout 720` (12 min) 内,失败 fall back 到本地缓存
+- SSH `command_timeout` 提到 30m
+- 验证:`docker images --format "{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}" | grep <owner>` 看 image 创建时间
+- 二次 deploy 通常就拉到正确版本(第一次只完成 pull,第二次走 upgrade)
 
 ## 9. SSH 私钥路径问题(Windows 本地调用)
 
@@ -147,8 +150,8 @@ gh workflow run deploy.yml --repo <owner>/<repo> -f key=value
 | `error: cannot connect without a private SSH key or password` | secrets 是空,填 `HOST`/`USERNAME`/`SSH_KEY`/`PORT` |
 | `err: cannot perform an interactive login from a non TTY` | `docker login` 不可用,改用预写 config.json |
 | `##[warning]Skip output '... ' since it may contain secret` | output 名含 `AUTH`/`TOKEN` 关键词被 secret-scanner 拦,改名 + 用 artifact |
-| `Pulling images (authenticated)...` 后 hang 15min timeout | 服务器到 GHCR 慢,加 `pull_one` fallback + per-image 8min budget |
-| 容器 image 是老 commit(workflow green 但没换) | fall back 到 `:latest` 触发了;让 pull 真的拉完,或手动 `docker pull <sha>` |
+| `Pulling images (authenticated)...` 后 hang 15min timeout | 服务器到 GHCR 慢,加 `compose pull` + `timeout 720` + SSH `command_timeout: 30m` |
+| 容器 image 是老 commit(workflow green 但没换) | `docker compose up -d` 不 re-pull,deploy-template 需 `compose pull` + `--force-recreate`(详见坑 5) |
 | web 200 但 api 502 | 容器没起,`docker compose logs` 看 pyBigWig 编译错 |
 | `docker compose pull` 401 | PAT 失效或权限不够,regenerate fine-grained PAT with `Packages: Read` |
 | `Warning: Identity file ... not accessible` | PowerShell `$env:USERPROFILE` 没展开,改绝对路径 |

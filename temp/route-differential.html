@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dataWeb — Differential Hi-C (Δ A / B)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --surface:#fafafa; --surface-2:#f0f0f0; --paper:#fff; --ink:#181818; --muted:#686868;
+      --line:#d9d9d6; --line-soft:#e9e9e6;
+      --accent:#c0392b; --accent-dark:#982d22; --accent-soft:#f7e9e7;
+      --pos:#2b6cc4;    /* A-strong blue (log2 positive) */
+      --neg:#c0392b;    /* B-strong red (log2 negative) */
+      --pos-soft:#dde7f6;
+      --neg-soft:#f7e9e7;
+      --mono:"JetBrains Mono",monospace;
+      --sans:"Inter",sans-serif;
+    }
+    * { box-sizing:border-box; }
+    html,body { margin:0; }
+    body { color:var(--ink); background:var(--surface); font-family:var(--sans); line-height:1.5; }
+    button,input,select { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    a { color:inherit; text-decoration:none; }
+
+    /* ---------- TopBar (verbatim from home mockup) ---------- */
+    .topbar { height:66px; padding:0 clamp(24px,5vw,76px); display:flex; align-items:center; border-bottom:1px solid var(--line); background:rgba(250,250,250,.96); position:sticky; top:0; z-index:20; }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.03em; font-size:20px; margin-right:36px; }
+    .brand-mark { width:25px; height:25px; border:1.5px solid var(--accent); border-radius:50%; position:relative; }
+    .brand-mark:before,.brand-mark:after { content:""; position:absolute; background:var(--accent); border-radius:50%; width:5px; height:5px; }
+    .brand-mark:before { left:4px; top:5px; box-shadow:10px 9px 0 var(--accent); }
+    .brand-mark:after { width:12px; height:1px; left:6px; top:12px; transform:rotate(40deg); }
+    nav { display:flex; align-items:center; gap:3px; }
+    nav a { color:#4e4e4e; font-size:13px; font-weight:500; padding:8px 11px; border-radius:6px; }
+    nav a:hover { color:var(--accent); background:var(--accent-soft); }
+    nav a.active { color:var(--accent); background:var(--accent-soft); }
+    .species-toggle { margin-left:auto; display:flex; padding:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; }
+    .species-toggle button { border:0; background:transparent; color:var(--muted); padding:6px 13px; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; }
+    .species-toggle button.active { color:var(--paper); background:var(--accent); box-shadow:0 1px 3px #8f2d2428; }
+
+    /* ---------- Layout ---------- */
+    main { width:min(1240px,calc(100% - 48px)); margin:0 auto; padding:24px 0 64px; }
+
+    /* ---------- Sample-pair strip ---------- */
+    .pair-strip {
+      display:grid;
+      grid-template-columns:1fr 64px 1fr;
+      gap:14px;
+      align-items:stretch;
+      margin-bottom:18px;
+    }
+    .slot {
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:var(--paper);
+      padding:14px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      position:relative;
+    }
+    .slot.slot-a { border-left:3px solid var(--pos); }
+    .slot.slot-b { border-left:3px solid var(--neg); }
+    .slot-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .slot-label { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+    .slot-label.pos { color:var(--pos); }
+    .slot-label.neg { color:var(--neg); }
+    .slot-name { font-size:18px; font-weight:650; letter-spacing:-.025em; }
+    .slot-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .slot-chips .chip { font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:999px; background:var(--surface-2); color:#4a4a4a; }
+    .slot-chips .chip.tissue { background:#eef4ee; color:#2d6b3f; }
+    .slot-chips .chip.breed { background:#f3eef4; color:#5d3b75; }
+    .slot-input { display:flex; gap:8px; }
+    .slot-input input {
+      flex:1; min-width:0;
+      border:1px solid var(--line);
+      border-radius:6px;
+      padding:8px 10px;
+      font-family:var(--mono);
+      font-size:12px;
+      color:var(--ink);
+      background:#fff;
+      outline:0;
+    }
+    .slot-input input:focus { border-color:var(--accent); }
+    .slot-input button {
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      padding:8px 12px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:12px;
+      font-weight:600;
+    }
+    .slot-input button:hover { color:var(--accent); border-color:var(--accent); }
+    .slot-remove {
+      position:absolute; top:10px; right:10px;
+      width:22px; height:22px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--muted);
+      border-radius:50%;
+      cursor:pointer;
+      font-size:13px;
+      line-height:1;
+      padding:0;
+      display:grid; place-items:center;
+    }
+    .slot-remove:hover { color:var(--neg); border-color:var(--neg); }
+
+    .swap-cell {
+      display:grid;
+      place-items:center;
+      gap:8px;
+    }
+    .swap-btn {
+      width:48px; height:48px;
+      border-radius:50%;
+      border:1px solid var(--line);
+      background:var(--paper);
+      color:var(--accent);
+      font-size:18px;
+      cursor:pointer;
+      display:grid; place-items:center;
+      transition:transform .18s ease, border-color .18s ease;
+    }
+    .swap-btn:hover { border-color:var(--accent); transform:rotate(180deg); }
+    .swap-arrow { font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:.12em; }
+
+    .mode-row {
+      display:flex; align-items:center; gap:10px;
+      margin:14px 0 0;
+      padding:10px 14px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      border-radius:8px;
+    }
+    .mode-row .mode-label { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+    .mode-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .mode-chip {
+      border:1px solid var(--line);
+      background:#fff;
+      color:#444;
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:550;
+      cursor:pointer;
+      font-family:var(--mono);
+    }
+    .mode-chip:hover { border-color:var(--accent); color:var(--accent); }
+    .mode-chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .mode-row .hint { margin-left:auto; font-size:11px; color:var(--muted); }
+
+    /* ---------- Page header ---------- */
+    .page-head {
+      display:flex; align-items:end; justify-content:space-between;
+      gap:24px; flex-wrap:wrap;
+      margin:24px 0 18px;
+      padding-bottom:14px;
+      border-bottom:1px solid var(--line);
+    }
+    .page-head h1 { margin:0 0 6px; font-size:30px; letter-spacing:-.04em; font-weight:650; }
+    .page-head .subtitle { font-family:var(--mono); font-size:12px; color:var(--muted); }
+    .page-head .subtitle b { color:var(--ink); font-weight:600; }
+    .page-head-actions { display:flex; gap:8px; }
+    .btn {
+      padding:8px 14px;
+      border:1px solid #c9c9c5;
+      border-radius:6px;
+      background:#fff;
+      color:#333;
+      font-size:12px;
+      font-weight:600;
+      cursor:pointer;
+      font-family:var(--mono);
+    }
+    .btn:hover { border-color:var(--accent); color:var(--accent); }
+    .btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .btn.primary:hover { background:var(--accent-dark); border-color:var(--accent-dark); color:#fff; }
+
+    /* ---------- Viewer toolbar ---------- */
+    .viewer-toolbar {
+      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+      padding:10px 14px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:var(--paper);
+      margin-bottom:14px;
+    }
+    .toolbar-group { display:flex; align-items:center; gap:6px; }
+    .toolbar-label { font-family:var(--mono); font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; margin-right:4px; }
+    .segmented {
+      display:inline-flex;
+      padding:2px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      border-radius:6px;
+    }
+    .segmented button {
+      border:0; background:transparent; color:var(--muted);
+      padding:5px 10px; border-radius:4px;
+      font-size:11px; font-weight:600; cursor:pointer;
+      font-family:var(--mono);
+    }
+    .segmented button.active { color:var(--ink); background:var(--paper); box-shadow:0 1px 2px rgba(0,0,0,.06); }
+    .segmented button:disabled { opacity:.4; cursor:not-allowed; }
+    .toolbar-sep { width:1px; height:22px; background:var(--line); }
+    .stepper {
+      display:inline-flex; align-items:center;
+      border:1px solid var(--line); border-radius:6px; overflow:hidden;
+      background:#fff;
+    }
+    .stepper button { border:0; background:#fff; padding:4px 9px; cursor:pointer; color:#555; font-size:13px; }
+    .stepper button:hover { background:var(--surface-2); color:var(--ink); }
+    .stepper .stepper-val { padding:4px 9px; font-family:var(--mono); font-size:12px; border-left:1px solid var(--line); border-right:1px solid var(--line); min-width:64px; text-align:center; }
+    .toolbar-spacer { flex:1; }
+    .refresh { display:inline-flex; align-items:center; gap:6px; }
+
+    /* ---------- Main viewer: colorbar + heatmap ---------- */
+    .viewer {
+      display:grid;
+      grid-template-columns:96px 1fr;
+      gap:18px;
+      align-items:start;
+      padding:18px;
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:10px;
+      margin-bottom:18px;
+    }
+    .colorbar-wrap {
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+    }
+    .colorbar {
+      width:60px;
+      height:520px;
+      border:1px solid var(--line);
+      border-radius:4px;
+      position:relative;
+      background:linear-gradient(to bottom,
+        rgb(43,108,196) 0%,
+        rgb(120,170,220) 17%,
+        rgb(220,225,232) 38%,
+        rgb(255,255,255) 50%,
+        rgb(232,220,220) 62%,
+        rgb(220,150,140) 82%,
+        rgb(192,57,43) 100%);
+    }
+    .colorbar-ticks {
+      position:absolute;
+      left:64px; top:0;
+      height:520px;
+      width:30px;
+      pointer-events:none;
+    }
+    .tick {
+      position:absolute;
+      left:0;
+      transform:translateY(-50%);
+      font-family:var(--mono);
+      font-size:10px;
+      color:var(--ink);
+      display:flex;
+      align-items:center;
+      gap:4px;
+    }
+    .tick:before {
+      content:"";
+      width:6px; height:1px;
+      background:var(--ink);
+    }
+    .cb-title {
+      font-family:var(--mono);
+      font-size:10px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.12em;
+      writing-mode:vertical-rl;
+      transform:rotate(180deg);
+      margin-bottom:6px;
+    }
+    .cb-endpoints {
+      display:flex; flex-direction:column; justify-content:space-between;
+      font-family:var(--mono); font-size:10px;
+      color:var(--muted);
+      margin-top:4px;
+      width:60px;
+      text-align:center;
+    }
+    .cb-endpoints span { display:block; }
+
+    .heatmap-cell {
+      position:relative;
+      width:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+    .heatmap-frame {
+      position:relative;
+      width:520px; height:520px;
+      max-width:100%;
+    }
+    canvas.heatmap {
+      width:520px; height:520px;
+      border:1px solid var(--line);
+      display:block;
+      image-rendering:pixelated;
+    }
+    .heatmap-scale-bar {
+      position:absolute;
+      left:10px; bottom:10px;
+      display:flex; align-items:center; gap:6px;
+      background:rgba(255,255,255,.85);
+      padding:3px 7px;
+      border-radius:3px;
+      font-family:var(--mono);
+      font-size:10px;
+      color:#2b2b2a;
+    }
+    .heatmap-scale-bar .bar { width:46px; height:3px; background:#2b2b2a; }
+    .heatmap-overlay {
+      position:absolute;
+      top:0; left:0;
+      pointer-events:none;
+    }
+    .heatmap-meta {
+      margin-top:12px;
+      display:flex; gap:18px;
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--muted);
+    }
+    .heatmap-meta b { color:var(--ink); font-weight:600; }
+    .heatmap-axis-x, .heatmap-axis-y {
+      position:absolute;
+      font-family:var(--mono);
+      font-size:10px;
+      color:#5a5a5a;
+    }
+    .heatmap-axis-x { left:0; right:0; bottom:-22px; display:flex; justify-content:space-between; padding:0 2px; }
+    .heatmap-axis-y { left:-44px; top:0; bottom:0; display:flex; flex-direction:column; justify-content:space-between; padding:2px 0; }
+
+    /* ---------- A/B preview tiles ---------- */
+    .previews {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-bottom:18px;
+    }
+    .preview-tile {
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:16px;
+      display:grid;
+      grid-template-columns:1fr 240px;
+      gap:16px;
+      align-items:start;
+      cursor:pointer;
+      transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    .preview-tile:hover { border-color:var(--accent); box-shadow:0 4px 14px rgba(192,57,43,.08); }
+    .preview-tile.is-a { border-left:3px solid var(--pos); }
+    .preview-tile.is-b { border-left:3px solid var(--neg); }
+    .preview-tile-info { display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .preview-tile-info .tag { font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+    .preview-tile.is-a .tag { color:var(--pos); }
+    .preview-tile.is-b .tag { color:var(--neg); }
+    .preview-tile-info .name { font-size:18px; font-weight:650; letter-spacing:-.025em; }
+    .preview-tile-info .meta { font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.6; }
+    .preview-tile-info .meta div { display:flex; justify-content:space-between; max-width:280px; gap:10px; }
+    .preview-tile-info .meta b { color:var(--ink); font-weight:500; }
+    .preview-tile-info .open-hint { font-size:11px; color:var(--accent); margin-top:6px; font-family:var(--mono); }
+    .preview-canvas-wrap {
+      position:relative;
+      width:240px; height:240px;
+      border:1px solid var(--line);
+      border-radius:6px;
+      overflow:hidden;
+    }
+    .preview-canvas-wrap canvas { width:240px; height:240px; display:block; image-rendering:pixelated; }
+    .preview-mini-cbar {
+      position:absolute;
+      left:6px; right:6px; bottom:6px;
+      height:8px;
+      border-radius:2px;
+      background:linear-gradient(to right, #fff 0%, #555 100%);
+      border:1px solid rgba(0,0,0,.15);
+    }
+    .preview-mini-cbar.is-a { background:linear-gradient(to right, #fff 0%, var(--pos) 100%); }
+    .preview-mini-cbar.is-b { background:linear-gradient(to right, #fff 0%, var(--neg) 100%); }
+    .preview-mini-cbar-label {
+      position:absolute;
+      right:6px; bottom:18px;
+      font-family:var(--mono);
+      font-size:9px;
+      color:#fff;
+      text-shadow:0 1px 2px rgba(0,0,0,.6);
+    }
+
+    /* expanded state */
+    .preview-tile.expanded {
+      grid-column:1 / -1;
+      grid-template-columns:1fr;
+      padding:24px;
+    }
+    .preview-tile.expanded .preview-canvas-wrap { width:100%; height:auto; aspect-ratio:1/1; max-width:520px; margin:0 auto; }
+    .preview-tile.expanded .preview-canvas-wrap canvas { width:100%; height:100%; }
+    .preview-tile.expanded .open-hint::before { content:"▣ "; }
+    .preview-tile:not(.expanded) .open-hint::before { content:"▢ "; }
+
+    /* ---------- Region navigator ---------- */
+    .region {
+      padding:18px;
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:10px;
+      margin-bottom:14px;
+    }
+    .region-head {
+      display:flex; justify-content:space-between; align-items:end;
+      margin-bottom:10px;
+      padding-bottom:8px;
+      border-bottom:1px solid var(--line-soft);
+    }
+    .region-head h3 { margin:0; font-size:14px; letter-spacing:-.01em; }
+    .region-head .rsub { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .chrom-strip {
+      position:relative;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:6px;
+    }
+    .chrom-strip .label {
+      font-family:var(--mono);
+      font-size:11px;
+      color:var(--ink);
+      min-width:46px;
+    }
+    .chrom-bar {
+      position:relative;
+      flex:1;
+      height:28px;
+      background:var(--surface-2);
+      border:1px solid var(--line);
+      border-radius:4px;
+      overflow:hidden;
+    }
+    .chrom-bar .chrom-fill {
+      position:absolute;
+      inset:0;
+      background:linear-gradient(90deg,#ece9e3,#dfd9cd);
+    }
+    .chrom-bar .region-rect {
+      position:absolute;
+      top:2px; bottom:2px;
+      left:14%; width:32%;
+      background:rgba(192,57,43,.18);
+      border:1.5px solid var(--accent);
+      border-radius:3px;
+      cursor:grab;
+    }
+    .chrom-bar .region-rect:active { cursor:grabbing; }
+    .chrom-bar .tick-row {
+      position:absolute;
+      inset:0;
+      display:flex;
+      justify-content:space-between;
+      pointer-events:none;
+    }
+    .chrom-bar .tick-row span {
+      align-self:center;
+      width:1px;
+      height:10px;
+      background:#a9a9a4;
+    }
+    .chrom-bar .scale-labels {
+      position:absolute;
+      bottom:-18px; left:0; right:0;
+      display:flex;
+      justify-content:space-between;
+      font-family:var(--mono);
+      font-size:9px;
+      color:var(--muted);
+    }
+    .chrom-tabs {
+      display:flex;
+      gap:4px;
+      overflow-x:auto;
+      padding-bottom:8px;
+    }
+    .chrom-tab {
+      font-family:var(--mono);
+      font-size:11px;
+      padding:4px 8px;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:4px;
+      cursor:pointer;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .chrom-tab:hover { color:var(--ink); border-color:#c9c9c5; }
+    .chrom-tab.active { color:#fff; background:var(--accent); border-color:var(--accent); }
+
+    /* ---------- Status footer ---------- */
+    footer.status {
+      border-top:1px solid var(--line);
+      padding:14px clamp(24px,5vw,76px);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:24px;
+      color:var(--muted);
+      font-size:11px;
+      background:var(--surface-2);
+      font-family:var(--mono);
+    }
+    footer.status strong { color:#454545; }
+    footer.status .status-dot {
+      display:inline-block;
+      width:7px; height:7px;
+      border-radius:50%;
+      background:#2d8a3f;
+      margin-right:6px;
+      vertical-align:middle;
+    }
+
+    @media (max-width:1080px) {
+      .viewer { grid-template-columns:1fr; }
+      .colorbar-wrap { flex-direction:row; align-items:center; }
+      .colorbar { width:520px; height:60px; background:linear-gradient(to right, rgb(43,108,196) 0%, rgb(220,225,232) 50%, rgb(192,57,43) 100%); }
+      .colorbar-ticks { position:absolute; left:0; top:64px; width:520px; height:24px; }
+      .tick { transform:translateX(-50%); top:0 !important; }
+      .tick:before { display:none; }
+      .tick:after { content:""; display:block; width:1px; height:6px; background:var(--ink); margin:2px auto 0; }
+      .cb-title { writing-mode:horizontal-tb; transform:none; margin-bottom:0; }
+      .cb-endpoints { display:none; }
+    }
+    @media (max-width:720px) {
+      .pair-strip { grid-template-columns:1fr; }
+      .swap-cell { padding:8px 0; }
+      .previews { grid-template-columns:1fr; }
+      .preview-tile { grid-template-columns:1fr; }
+      .heatmap-frame, canvas.heatmap { width:100%; height:auto; aspect-ratio:1/1; }
+      canvas.heatmap { height:auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TopBar -->
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>dataWeb</div>
+    <nav aria-label="Primary navigation">
+      <a href="#">Hi-C</a>
+      <a href="#" class="active">Δ Hi-C</a>
+      <a href="#">Tracks</a>
+      <a href="#">3D</a>
+      <a href="#">CTCF Motif</a>
+    </nav>
+    <div class="species-toggle" aria-label="Active species">
+      <button class="active" data-species="Pig">Pig</button>
+      <button data-species="Chicken">Chicken</button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Sample-pair selector strip -->
+    <section class="pair-strip" aria-label="Sample pair">
+      <!-- Slot A -->
+      <div class="slot slot-a" id="slotA">
+        <button class="slot-remove" data-remove="a" aria-label="Remove sample A" title="Remove sample A">×</button>
+        <div class="slot-head">
+          <span class="slot-label pos">Sample A · log2(A/B) positive</span>
+        </div>
+        <div class="slot-name" data-name="a">Brain_BF3</div>
+        <div class="slot-chips">
+          <span class="chip tissue">tissue: Brain</span>
+          <span class="chip breed">breed: BF3 (Bamaxiang)</span>
+          <span class="chip">age: adult</span>
+        </div>
+        <div class="slot-input">
+          <input type="text" placeholder="Replace with sample id…" aria-label="Replace sample A">
+          <button data-replace="a">Replace</button>
+        </div>
+      </div>
+
+      <!-- Swap -->
+      <div class="swap-cell">
+        <button class="swap-btn" id="swapBtn" aria-label="Swap A and B" title="Swap A and B">⇄</button>
+        <span class="swap-arrow">swap</span>
+      </div>
+
+      <!-- Slot B -->
+      <div class="slot slot-b" id="slotB">
+        <button class="slot-remove" data-remove="b" aria-label="Remove sample B" title="Remove sample B">×</button>
+        <div class="slot-head">
+          <span class="slot-label neg">Sample B · log2(A/B) negative</span>
+        </div>
+        <div class="slot-name" data-name="b">Liver_BF3</div>
+        <div class="slot-chips">
+          <span class="chip tissue">tissue: Liver</span>
+          <span class="chip breed">breed: BF3 (Bamaxiang)</span>
+          <span class="chip">age: adult</span>
+        </div>
+        <div class="slot-input">
+          <input type="text" placeholder="Replace with sample id…" aria-label="Replace sample B">
+          <button data-replace="b">Replace</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mode chips -->
+    <div class="mode-row">
+      <span class="mode-label">Comparison mode</span>
+      <div class="mode-chips" id="modeChips">
+        <button class="mode-chip active" data-mode="tissue">Tissue</button>
+        <button class="mode-chip" data-mode="breed">Breed</button>
+        <button class="mode-chip" data-mode="cross">Reciprocal cross</button>
+        <button class="mode-chip" data-mode="dev">Developmental</button>
+      </div>
+      <span class="hint">slot order updates on selection</span>
+    </div>
+
+    <!-- Page header -->
+    <div class="page-head">
+      <div>
+        <h1>Differential Hi-C <span style="font-family:var(--mono); font-weight:500; color:var(--muted); font-size:18px;">(log<sub>2</sub> A / B)</span></h1>
+        <div class="subtitle">Sus scrofa · <b>chr1</b> · region <b>52.4 Mb → 79.8 Mb</b> · bin <b>10 kb</b> · <b>2,748 × 2,748</b> cells</div>
+      </div>
+      <div class="page-head-actions">
+        <button class="btn">Change region</button>
+        <button class="btn">Share link</button>
+        <button class="btn primary">Export PNG</button>
+      </div>
+    </div>
+
+    <!-- Viewer toolbar -->
+    <div class="viewer-toolbar" aria-label="Viewer controls">
+      <div class="toolbar-group">
+        <span class="toolbar-label">Colormap</span>
+        <div class="segmented" id="cmapSeg">
+          <button class="active" data-cmap="div">Divergent</button>
+          <button disabled title="Not appropriate for log2(A/B)">Sequential</button>
+          <button disabled title="Not appropriate for log2(A/B)">Greys</button>
+        </div>
+      </div>
+      <div class="toolbar-sep"></div>
+      <div class="toolbar-group">
+        <span class="toolbar-label">Resolution</span>
+        <div class="stepper" id="resStepper">
+          <button data-step="-">−</button>
+          <span class="stepper-val" id="resVal">10 kb</span>
+          <button data-step="+">+</button>
+        </div>
+      </div>
+      <div class="toolbar-sep"></div>
+      <div class="toolbar-group">
+        <span class="toolbar-label">Bin</span>
+        <select id="binSel" style="border:1px solid var(--line); border-radius:6px; padding:5px 9px; background:#fff; font-family:var(--mono); font-size:12px;">
+          <option>10 kb</option>
+          <option>25 kb</option>
+          <option>50 kb</option>
+          <option>100 kb</option>
+        </select>
+      </div>
+      <div class="toolbar-spacer"></div>
+      <div class="toolbar-group refresh">
+        <button class="btn primary" id="refetchBtn">Re-fetch matrix</button>
+      </div>
+    </div>
+
+    <!-- Main viewer -->
+    <section class="viewer" aria-label="Differential heatmap">
+      <!-- Vertical colorbar on the LEFT -->
+      <div class="colorbar-wrap">
+        <div class="cb-title">log<sub>2</sub>(A/B)</div>
+        <div style="position:relative;">
+          <div class="colorbar" id="vColorbar"></div>
+          <div class="colorbar-ticks" id="vTicks">
+            <span class="tick" style="top:0%;">+3</span>
+            <span class="tick" style="top:16.66%;">+2</span>
+            <span class="tick" style="top:33.33%;">+1</span>
+            <span class="tick" style="top:50%;">0</span>
+            <span class="tick" style="top:66.66%;">−1</span>
+            <span class="tick" style="top:83.33%;">−2</span>
+            <span class="tick" style="top:100%;">−3</span>
+          </div>
+        </div>
+        <div class="cb-endpoints">
+          <span style="color:var(--pos);">A-strong</span>
+          <span style="color:var(--neg);">B-strong</span>
+        </div>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="heatmap-cell">
+        <div class="heatmap-frame" id="heatFrame">
+          <canvas class="heatmap" id="heatmap" width="260" height="260"></canvas>
+          <div class="heatmap-axis-y">
+            <span>79.8 Mb</span>
+            <span>66.1 Mb</span>
+            <span>52.4 Mb</span>
+          </div>
+          <div class="heatmap-axis-x">
+            <span>52.4 Mb</span>
+            <span>66.1 Mb</span>
+            <span>79.8 Mb</span>
+          </div>
+          <div class="heatmap-scale-bar">
+            <span class="bar"></span>
+            <span>5 Mb</span>
+          </div>
+        </div>
+        <div class="heatmap-meta">
+          <span><b>log2(A/B) range</b> [−3.4, +3.7]</span>
+          <span><b>cells</b> 2,748 × 2,748</span>
+          <span><b>saturated</b> 0.8%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- A/B preview tiles -->
+    <section class="previews" aria-label="Individual A and B previews">
+      <article class="preview-tile is-a" id="tileA" data-which="a">
+        <div class="preview-tile-info">
+          <span class="tag">Sample A · Hi-C matrix</span>
+          <span class="name">Brain_BF3</span>
+          <div class="meta">
+            <div><span>contact scale</span><b>0 → 1,420</b></div>
+            <div><span>cis / trans</span><b>97.6% / 2.4%</b></div>
+            <div><span>reads</span><b>184.2 M</b></div>
+            <div><span>resolution</span><b>10 kb</b></div>
+          </div>
+          <span class="open-hint">Click to expand</span>
+        </div>
+        <div class="preview-canvas-wrap">
+          <canvas id="previewA" width="240" height="240"></canvas>
+          <div class="preview-mini-cbar is-a"></div>
+          <div class="preview-mini-cbar-label">0 → 1,420</div>
+        </div>
+      </article>
+
+      <article class="preview-tile is-b" id="tileB" data-which="b">
+        <div class="preview-tile-info">
+          <span class="tag">Sample B · Hi-C matrix</span>
+          <span class="name">Liver_BF3</span>
+          <div class="meta">
+            <div><span>contact scale</span><b>0 → 1,180</b></div>
+            <div><span>cis / trans</span><b>96.1% / 3.9%</b></div>
+            <div><span>reads</span><b>142.7 M</b></div>
+            <div><span>resolution</span><b>10 kb</b></div>
+          </div>
+          <span class="open-hint">Click to expand</span>
+        </div>
+        <div class="preview-canvas-wrap">
+          <canvas id="previewB" width="240" height="240"></canvas>
+          <div class="preview-mini-cbar is-b"></div>
+          <div class="preview-mini-cbar-label">0 → 1,180</div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Region navigator -->
+    <section class="region" aria-label="Region navigator">
+      <div class="region-head">
+        <h3>Region navigator</h3>
+        <span class="rsub">chr1 · 52.4 – 79.8 Mb · 10 kb</span>
+      </div>
+      <div class="chrom-tabs">
+        <button class="chrom-tab">chr1</button>
+        <button class="chrom-tab">chr2</button>
+        <button class="chrom-tab">chr3</button>
+        <button class="chrom-tab">chr4</button>
+        <button class="chrom-tab">chr5</button>
+        <button class="chrom-tab active">chr6</button>
+        <button class="chrom-tab">chr7</button>
+        <button class="chrom-tab">chr8</button>
+        <button class="chrom-tab">chr9</button>
+        <button class="chrom-tab">chr10</button>
+        <button class="chrom-tab">chr11</button>
+        <button class="chrom-tab">chr12</button>
+        <button class="chrom-tab">chr13</button>
+        <button class="chrom-tab">chr14</button>
+        <button class="chrom-tab">chr15</button>
+        <button class="chrom-tab">chr16</button>
+        <button class="chrom-tab">chr17</button>
+        <button class="chrom-tab">chr18</button>
+      </div>
+      <div class="chrom-strip">
+        <span class="label">chr1</span>
+        <div class="chrom-bar" id="chromBar">
+          <div class="chrom-fill"></div>
+          <div class="tick-row">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="region-rect" id="regionRect"></div>
+          <div class="scale-labels">
+            <span>0</span><span>62 Mb</span><span>124 Mb</span><span>186 Mb</span><span>248 Mb</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="status">
+    <span><span class="status-dot"></span>Ready · <strong>cache hit</strong> · 128 ms</span>
+    <span><strong>route:</strong> /differential?sample_a=Brain_BF3&amp;sample_b=Liver_BF3&amp;species=pig&amp;chr=chr1&amp;start=52400000&amp;end=79800000&amp;bin=10000</span>
+    <span>dataWeb · build 2026.07 · viewer v0.4.2</span>
+  </footer>
+
+  <script>
+  // ---------- Procedurally generated differential heatmap ----------
+  const heat = document.getElementById('heatmap');
+  const NX = heat.width, NY = heat.height;
+  const hctx = heat.getContext('2d');
+  const himg = hctx.createImageData(NX, NY);
+
+  // LCG seeded random (so the pattern is stable across reloads)
+  let seed = 9128371;
+  function rnd(){ seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+  function gauss(){ let u = rnd() || 1e-9, v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+  // Build a signed log2(A/B) field with a clear left-half negative / right-half positive bias
+  // plus structured blobs, noise, and a faint diagonal (TAD-like).
+  const N = NX;
+  const field = new Float32Array(N * N);
+
+  // base noise
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) field[i * N + j] = gauss() * 0.35;
+
+  // half-plane bias (left half negative, right half positive) — strongest near diagonal
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const xn = j / N;                  // 0..1 left->right
+      const yn = i / N;
+      const d  = Math.abs(xn - yn);      // distance from diagonal
+      const lobe = Math.exp(-d * d / 0.18);
+      const sign = (xn + yn) > 1 ? -1 : 1;  // upper-right + lower-left = positive, rest = negative
+      field[i * N + j] += sign * 1.6 * lobe;
+    }
+  }
+
+  // structured blobs: distinct features that look biological
+  const blobs = [
+    { ci: 60,  cj: 190, amp: 2.6,  si: 28, sj: 22 },  // strong red blob (B dominant)
+    { ci: 200, cj: 70,  amp: 2.8,  si: 22, sj: 28 },  // strong blue blob (A dominant)
+    { ci: 130, cj: 130, amp: -1.4, si: 14, sj: 14 },  // diagonal weak red
+    { ci: 80,  cj: 80,  amp: 1.6,  si: 12, sj: 12 },  // diagonal weak blue
+    { ci: 200, cj: 200, amp: -1.8, si: 10, sj: 10 },
+    { ci: 40,  cj: 220, amp: 1.2,  si: 18, sj: 12 },
+    { ci: 220, cj: 40,  amp: 1.2,  si: 12, sj: 18 },
+    { ci: 160, cj: 100, amp: -1.1, si: 8,  sj: 12 },
+    { ci: 100, cj: 160, amp: 1.4,  si: 12, sj: 8  }
+  ];
+  for (const b of blobs) {
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < N; j++) {
+        const di = (i - b.ci) / b.si;
+        const dj = (j - b.cj) / b.sj;
+        const e = Math.exp(-(di * di + dj * dj) * 0.5);
+        if (e > 0.005) field[i * N + j] += b.amp * e;
+      }
+    }
+  }
+
+  // add fine speckle
+  for (let i = 0; i < N * N; i++) field[i] += gauss() * 0.18;
+
+  // map log2(A/B) in roughly [-3.5, +3.5] to RGB (divergent blue <-> white <-> red)
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function mapColor(v) {
+    const t = Math.max(-1, Math.min(1, v / 3.5));  // normalize
+    // anchors (red B-strong <-> white <-> blue A-strong)
+    const negR = 192, negG = 57,  negB = 43;
+    const midR = 255, midG = 255, midB = 255;
+    const posR = 43,  posG = 108, posB = 196;
+    let r, g, bl;
+    if (t < 0) {
+      const k = -t;
+      r = lerp(midR, negR, k); g = lerp(midG, negG, k); bl = lerp(midB, negB, k);
+    } else {
+      r = lerp(midR, posR, t); g = lerp(midG, posG, t); bl = lerp(midB, posB, t);
+    }
+    return [r | 0, g | 0, bl | 0];
+  }
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const idx = (i * N + j) * 4;
+      const [r, g, b] = mapColor(field[i * N + j]);
+      himg.data[idx] = r;
+      himg.data[idx + 1] = g;
+      himg.data[idx + 2] = b;
+      himg.data[idx + 3] = 255;
+    }
+  }
+  hctx.putImageData(himg, 0, 0);
+
+  // ---------- Preview tiles: A and B (Hi-C contact maps) ----------
+  function renderHic(canvas, opts) {
+    const N = canvas.width;
+    const ctx = canvas.getContext('2d');
+    const img = ctx.createImageData(N, N);
+    const noise = new Float32Array(N * N);
+    let sd = opts.seed;
+    function r(){ sd = (sd * 1103515245 + 12345) & 0x7fffffff; return sd / 0x7fffffff; }
+    function g(){ let u = r() || 1e-9, v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+    // decay with genomic distance + structured blobs
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const d = Math.abs(i - j) / N;
+      const base = Math.exp(-d * d / 0.05) * 1.4;
+      noise[i * N + j] = base + g() * 0.25;
+    }
+    // TAD-like blobs
+    const blobs = opts.blobs;
+    for (const b of blobs) for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const di = (i - b.ci) / b.si;
+      const dj = (j - b.cj) / b.sj;
+      const e = Math.exp(-(di * di + dj * dj) * 0.5);
+      if (e > 0.003) noise[i * N + j] += b.amp * e;
+    }
+    // map to grayscale w/ accent hue
+    const vmax = opts.vmax;
+    for (let i = 0; i < N * N; i++) {
+      const v = Math.max(0, Math.min(1, noise[i] / vmax));
+      const idx = i * 4;
+      const t = Math.pow(v, 0.6);
+      let r, g, b;
+      if (opts.hue === 'pos') {
+        r = 255 - t * (255 - 43);
+        g = 255 - t * (255 - 108);
+        b = 255 - t * (255 - 196);
+      } else {
+        r = 255 - t * (255 - 192);
+        g = 255 - t * (255 - 57);
+        b = 255 - t * (255 - 43);
+      }
+      img.data[idx] = r | 0;
+      img.data[idx + 1] = g | 0;
+      img.data[idx + 2] = b | 0;
+      img.data[idx + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  renderHic(document.getElementById('previewA'), {
+    seed: 33445,
+    vmax: 1.4,
+    hue: 'pos',
+    blobs: [
+      { ci: 60,  cj: 60,  amp: 1.2, si: 14, sj: 14 },
+      { ci: 180, cj: 180, amp: 1.4, si: 18, sj: 18 },
+      { ci: 120, cj: 120, amp: 1.0, si: 10, sj: 10 },
+      { ci: 40,  cj: 200, amp: 0.9, si: 12, sj: 12 },
+      { ci: 200, cj: 40,  amp: 0.9, si: 12, sj: 12 }
+    ]
+  });
+  renderHic(document.getElementById('previewB'), {
+    seed: 91287,
+    vmax: 1.4,
+    hue: 'neg',
+    blobs: [
+      { ci: 80,  cj: 80,  amp: 1.0, si: 12, sj: 12 },
+      { ci: 200, cj: 200, amp: 1.5, si: 20, sj: 20 },
+      { ci: 160, cj: 160, amp: 1.1, si: 14, sj: 14 },
+      { ci: 60,  cj: 60,  amp: 0.7, si: 10, sj: 10 }
+    ]
+  });
+
+  // ---------- UI behaviours ----------
+
+  // Swap A and B (toggle labels in the demo)
+  const swapBtn = document.getElementById('swapBtn');
+  swapBtn.addEventListener('click', () => {
+    const nameA = document.querySelector('[data-name="a"]');
+    const nameB = document.querySelector('[data-name="b"]');
+    const tmp = nameA.textContent;
+    nameA.textContent = nameB.textContent;
+    nameB.textContent = tmp;
+    // also swap input field placeholders' seed for fun — optional
+    const inputA = document.querySelector('.slot-a input');
+    const inputB = document.querySelector('.slot-b input');
+    const phA = inputA.placeholder; inputA.placeholder = inputB.placeholder; inputB.placeholder = phA;
+  });
+
+  // Remove sample (mock — just blanks the name)
+  document.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const which = btn.getAttribute('data-remove');
+      const nameEl = document.querySelector(`[data-name="${which}"]`);
+      nameEl.textContent = '— select —';
+    });
+  });
+
+  // Replace sample (mock — fills the slot name with the input value)
+  document.querySelectorAll('[data-replace]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const which = btn.getAttribute('data-replace');
+      const input = btn.parentElement.querySelector('input');
+      const v = input.value.trim();
+      if (!v) return;
+      document.querySelector(`[data-name="${which}"]`).textContent = v;
+      input.value = '';
+    });
+  });
+
+  // Mode chips toggle (visual only — reorders slot label text in the demo)
+  const modeChips = document.querySelectorAll('#modeChips .mode-chip');
+  modeChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      modeChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const mode = chip.dataset.mode;
+      const labelA = document.querySelector('.slot-a .slot-label');
+      const labelB = document.querySelector('.slot-b .slot-label');
+      const map = {
+        tissue: ['Sample A · log2(A/B) positive', 'Sample B · log2(A/B) negative'],
+        breed:  ['Breed A · log2(A/B) positive', 'Breed B · log2(A/B) negative'],
+        cross:  ['Cross ♀ · log2(A/B) positive', 'Cross ♂ · log2(A/B) negative'],
+        dev:    ['Stage A · log2(A/B) positive', 'Stage B · log2(A/B) negative']
+      };
+      labelA.textContent = map[mode][0];
+      labelB.textContent = map[mode][1];
+    });
+  });
+
+  // Resolution stepper
+  const resOrder = ['5 kb', '10 kb', '25 kb', '50 kb', '100 kb'];
+  let resIdx = 1;
+  const resVal = document.getElementById('resVal');
+  document.querySelectorAll('#resStepper button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.step === '+') resIdx = Math.min(resOrder.length - 1, resIdx + 1);
+      else resIdx = Math.max(0, resIdx - 1);
+      resVal.textContent = resOrder[resIdx];
+    });
+  });
+
+  // Colormap segmented control (only Divergent is enabled)
+  document.querySelectorAll('#cmapSeg button').forEach(btn => {
+    if (btn.disabled) return;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#cmapSeg button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Mini-tile expand (toggle CSS class)
+  document.querySelectorAll('.preview-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      // collapse others first
+      document.querySelectorAll('.preview-tile').forEach(t => { if (t !== tile) t.classList.remove('expanded'); });
+      tile.classList.toggle('expanded');
+      const hint = tile.querySelector('.open-hint');
+      hint.textContent = tile.classList.contains('expanded') ? 'Click to collapse' : 'Click to expand';
+    });
+  });
+
+  // Region rect drag (visual only)
+  const regionRect = document.getElementById('regionRect');
+  const chromBar = document.getElementById('chromBar');
+  let dragging = false;
+  let startX = 0, startLeft = 0;
+  function pct(clientX) {
+    const rect = chromBar.getBoundingClientRect();
+    return Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+  }
+  regionRect.addEventListener('mousedown', e => {
+    dragging = true; startX = e.clientX;
+    startLeft = parseFloat(regionRect.style.left || '14');
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const rect = chromBar.getBoundingClientRect();
+    const dx = ((e.clientX - startX) / rect.width) * 100;
+    let nl = Math.max(0, Math.min(80, startLeft + dx));
+    regionRect.style.left = nl + '%';
+  });
+  window.addEventListener('mouseup', () => { dragging = false; });
+
+  // Re-fetch button (visual only — just flashes)
+  document.getElementById('refetchBtn').addEventListener('click', e => {
+    const btn = e.currentTarget;
+    const orig = btn.textContent;
+    btn.textContent = 'Fetching…';
+    btn.disabled = true;
+    setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 700);
+  });
+
+  // Species toggle (top right) — visual only
+  document.querySelectorAll('.species-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.species-toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  </script>
+</body>
+</html>

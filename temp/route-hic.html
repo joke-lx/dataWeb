@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hi-C contact map · Brain_BF3 · dataWeb</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --surface: #fafafa;
+      --surface-2: #f0f0f0;
+      --paper: #fff;
+      --ink: #181818;
+      --muted: #686868;
+      --muted-2: #8a8a8a;
+      --line: #d9d9d6;
+      --line-soft: #ececea;
+      --accent: #c0392b;
+      --accent-dark: #982d22;
+      --accent-soft: #f7e9e7;
+      --pos: #1f9e89;
+      --neg: #c0392b;
+      --warn: #b58300;
+      --mono: "JetBrains Mono", monospace;
+      --sans: "Inter", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--surface); font-family: var(--sans); line-height: 1.5; }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    /* ---------- TopBar (verbatim from home-mockup-A) ---------- */
+    .topbar { height: 66px; padding: 0 clamp(24px, 5vw, 76px); display: flex; align-items: center; border-bottom: 1px solid var(--line); background: rgba(250, 250, 250, .96); position: relative; z-index: 10; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; letter-spacing: -.03em; font-size: 20px; margin-right: 36px; }
+    .brand-mark { width: 25px; height: 25px; border: 1.5px solid var(--accent); border-radius: 50%; position: relative; }
+    .brand-mark:before, .brand-mark:after { content: ""; position: absolute; background: var(--accent); border-radius: 50%; width: 5px; height: 5px; }
+    .brand-mark:before { left: 4px; top: 5px; box-shadow: 10px 9px 0 var(--accent); }
+    .brand-mark:after { width: 12px; height: 1px; left: 6px; top: 12px; transform: rotate(40deg); }
+    nav { display: flex; align-items: center; gap: 3px; }
+    nav a { color: #4e4e4e; text-decoration: none; font-size: 13px; font-weight: 500; padding: 8px 11px; border-radius: 6px; }
+    nav a:hover { color: var(--accent); background: var(--accent-soft); }
+    nav a.active { color: var(--accent); background: var(--accent-soft); }
+    .species-toggle { margin-left: auto; display: flex; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+    .species-toggle button { border: 0; background: transparent; color: var(--muted); padding: 6px 13px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .species-toggle button.active { color: var(--paper); background: var(--accent); box-shadow: 0 1px 3px #8f2d2428; }
+
+    /* ---------- Region breadcrumb bar ---------- */
+    .region-bar { padding: 10px clamp(24px, 5vw, 76px); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); background: var(--paper); font-size: 12px; color: var(--muted); }
+    .region-bar .crumb { font-family: var(--mono); color: var(--ink); font-weight: 500; }
+    .region-bar .sep { color: var(--muted-2); }
+    .region-bar .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--muted-2); margin: 0 6px; }
+    .change-sample { margin-left: auto; position: relative; }
+    .change-sample button { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer; }
+    .change-sample button:hover { border-color: var(--accent); color: var(--accent); }
+    .change-sample button .glyph { font-family: var(--mono); color: var(--accent); font-size: 11px; }
+    .change-sample .menu { position: absolute; top: calc(100% + 6px); right: 0; min-width: 240px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 32px #2626260f, 0 2px 6px #2626260a; padding: 6px; display: none; z-index: 20; }
+    .change-sample.open .menu { display: block; }
+    .change-sample .menu input { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; font-family: var(--mono); font-size: 12px; outline: 0; }
+    .change-sample .menu .list { margin-top: 6px; max-height: 220px; overflow: auto; }
+    .change-sample .menu .row { padding: 7px 10px; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .change-sample .menu .row:hover { background: var(--accent-soft); }
+    .change-sample .menu .row.active { background: var(--accent-soft); color: var(--accent); }
+    .change-sample .menu .row b { font-family: var(--mono); font-weight: 500; font-size: 12px; }
+    .change-sample .menu .row span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ---------- Page layout ---------- */
+    main { width: min(1280px, calc(100% - 48px)); margin: 0 auto; padding: 28px 0 0; }
+    .page-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .page-head h1 { margin: 0; font-size: 30px; letter-spacing: -.04em; font-weight: 650; }
+    .page-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    .page-head p code { font-family: var(--mono); color: var(--accent); font-size: 12px; }
+    .share-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .share-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .share-btn .glyph { font-family: var(--mono); color: var(--accent); font-size: 12px; }
+    .share-btn.copied { color: var(--accent); border-color: var(--accent); }
+
+    /* ---------- Viewer toolbar ---------- */
+    .toolbar { display: flex; align-items: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .tool-group { display: inline-flex; align-items: center; gap: 6px; }
+    .toolbar .right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+    .seg { display: inline-flex; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; }
+    .seg button { border: 0; background: transparent; color: var(--muted); padding: 6px 11px; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .seg button.active { color: var(--paper); background: var(--accent); box-shadow: 0 1px 3px #8f2d2428; }
+    .bin-input { display: inline-flex; align-items: center; border: 1px solid var(--line); background: var(--paper); border-radius: 7px; overflow: hidden; }
+    .bin-input button { border: 0; background: transparent; padding: 7px 9px; color: var(--muted); cursor: pointer; font-family: var(--mono); font-size: 12px; }
+    .bin-input button:hover { color: var(--accent); }
+    .bin-input input { border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); width: 88px; text-align: center; font-family: var(--mono); font-size: 12px; padding: 7px 0; outline: 0; }
+    .refetch { padding: 7px 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 7px; font-weight: 600; font-size: 12px; cursor: pointer; }
+    .refetch:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+    .dl-btn { padding: 7px 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 7px; font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .dl-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .dl-btn .glyph { font-family: var(--mono); color: var(--accent); font-size: 12px; }
+
+    /* ---------- Viewer area ---------- */
+    .viewer { margin-top: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
+    .viewer-grid { display: grid; grid-template-columns: 60px 1fr; gap: 0; }
+    .colormap-rail { display: flex; flex-direction: column; align-items: center; padding: 18px 8px; border-right: 1px solid var(--line); background: var(--surface); gap: 8px; }
+    .colormap-rail .title { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    .colormap-rail .bar { width: 14px; flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: 2px; }
+    .colormap-rail .ticks { display: flex; flex-direction: column; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted); height: 100%; }
+    .colormap-rail .ticks { width: 100%; flex: 1; }
+    .colormap-rail .ticks-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .colormap-rail .ticks-row .bar { flex: 1; }
+    .colormap-rail .tick { font-variant-numeric: tabular-nums; }
+
+    .viewer-main { display: grid; grid-template-rows: 36px 1fr; }
+    .gene-track { border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 60px 1fr; align-items: center; }
+    .gene-track .axis { padding: 0 10px; font-family: var(--mono); font-size: 10px; color: var(--muted); border-right: 1px solid var(--line); height: 100%; display: flex; align-items: center; background: var(--surface); }
+    .gene-track .lane { position: relative; height: 100%; overflow: hidden; }
+    .heatmap-wrap { position: relative; padding: 10px; display: grid; grid-template-columns: 60px 1fr; grid-template-rows: 28px 1fr; gap: 4px; }
+    .heatmap-wrap .top-axis { grid-column: 2; display: flex; align-items: end; justify-content: space-between; padding: 0 2px 2px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+    .heatmap-wrap .left-axis { grid-row: 2; display: flex; flex-direction: column; justify-content: space-between; padding: 2px 6px 2px 0; font-family: var(--mono); font-size: 10px; color: var(--muted); align-items: end; }
+    .heatmap-wrap .left-axis span { transform: rotate(0deg); }
+    .heatmap-wrap .heat { grid-row: 2; grid-column: 2; position: relative; aspect-ratio: 1 / 1; max-width: 100%; max-height: 560px; margin: 0 auto; border: 1px solid var(--line); background: #fff; }
+    .heatmap-wrap .heat svg { display: block; width: 100%; height: 100%; }
+    .loop-marker { fill: none; stroke: var(--accent); stroke-width: 2; }
+    .diag { stroke: var(--accent); stroke-width: 0.4; opacity: .55; }
+    .pin { fill: var(--accent); opacity: .9; }
+    .pin-label { font-family: var(--mono); font-size: 9px; fill: var(--accent); font-weight: 600; }
+    .corner-label { font-family: var(--mono); font-size: 10px; fill: var(--ink); }
+
+    /* ---------- Tracks stack ---------- */
+    .tracks-stack { margin-top: 28px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
+    .tracks-head { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: end; }
+    .tracks-head h3 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+    .tracks-head p { margin: 4px 0 0; color: var(--muted); font-size: 11px; font-family: var(--mono); }
+    .lane { border-top: 1px solid var(--line-soft); display: grid; grid-template-columns: 140px 1fr 30px; align-items: stretch; min-height: 56px; }
+    .lane:first-of-type { border-top: 0; }
+    .lane-gutter { padding: 10px 12px; border-right: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
+    .lane-gutter .name { font-size: 12px; font-weight: 600; color: var(--ink); }
+    .lane-gutter .meta { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+    .lane-gutter .badge { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 9px; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+    .lane-gutter .badge:before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+    .lane-body { position: relative; padding: 6px 10px; min-width: 0; }
+    .lane-body svg { width: 100%; height: 100%; display: block; }
+    .lane-remove { border: 0; background: transparent; color: var(--muted-2); cursor: pointer; font-size: 16px; padding: 0; }
+    .lane-remove:hover { color: var(--accent); }
+    .lane.collapsed .lane-body { display: none; }
+    .lane.collapsed .lane-gutter { justify-content: center; }
+    .lane-head-btn { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 0; border: 0; background: transparent; cursor: pointer; width: 100%; }
+    .lane-head-button .chev { font-family: var(--mono); color: var(--muted); font-size: 10px; }
+
+    /* ---------- Region navigator (mini-map) ---------- */
+    .region-nav { margin-top: 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 14px 18px 18px; }
+    .region-nav-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 8px; }
+    .region-nav-head h3 { margin: 0; font-size: 14px; letter-spacing: -.02em; }
+    .region-nav-head p { margin: 2px 0 0; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .region-nav-head .right { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .minimap-wrap { position: relative; width: 100%; overflow: hidden; }
+    .minimap-wrap svg { display: block; width: 100%; height: 60px; }
+    .minimap-cursor { cursor: grab; }
+    .minimap-cursor:active { cursor: grabbing; }
+
+    /* ---------- Status footer ---------- */
+    .status-bar { margin-top: 18px; padding: 10px 18px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); display: flex; justify-content: space-between; align-items: center; gap: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .status-bar .left { display: inline-flex; align-items: center; gap: 14px; }
+    .status-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pos); }
+    .status-bar b { color: var(--ink); font-weight: 500; font-family: var(--mono); }
+    .status-bar .right a { color: var(--muted); text-decoration: none; margin-left: 12px; }
+    .status-bar .right a:hover { color: var(--accent); }
+
+    /* footer */
+    footer { border-top: 1px solid var(--line); padding: 22px clamp(24px, 5vw, 76px); display: flex; justify-content: space-between; gap: 24px; color: var(--muted); font-size: 11px; background: var(--surface-2); margin-top: 32px; }
+    footer strong { color: #454545; }
+
+    @media (max-width: 1100px) { .viewer-grid { grid-template-columns: 50px 1fr; } .heatmap-wrap { grid-template-columns: 50px 1fr; } .lane { grid-template-columns: 120px 1fr 28px; } }
+    @media (max-width: 850px) { nav { display: none; } .viewer-grid { grid-template-columns: 40px 1fr; } .heatmap-wrap { grid-template-columns: 40px 1fr; } .lane { grid-template-columns: 100px 1fr 24px; } .lane-gutter { padding: 8px; } }
+    @media (max-width: 620px) { .topbar, .region-bar { padding-left: 17px; padding-right: 17px; } .brand { margin-right: 12px; } .species-toggle button { padding: 6px 8px; } .page-head { flex-direction: column; align-items: start; gap: 10px; } main { width: calc(100% - 32px); } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>dataWeb</div>
+    <nav aria-label="Primary navigation">
+      <a class="active" href="#">Hi-C</a><a href="#">Δ Hi-C</a><a href="#">Tracks</a><a href="#">3D</a><a href="#">CTCF Motif</a>
+    </nav>
+    <div class="species-toggle" aria-label="Active species" id="speciesToggle">
+      <button class="active" data-species="Pig">Pig</button><button data-species="Chicken">Chicken</button>
+    </div>
+  </header>
+
+  <div class="region-bar">
+    <span class="crumb">Pig</span><span class="sep">›</span><span class="crumb">Brain</span><span class="sep">›</span><span class="crumb" id="sampleCrumb">Brain_BF3</span>
+    <span class="dot"></span>
+    <span class="crumb" id="regionCrumb">chr1:1,234,000-1,456,000</span>
+    <span class="dot"></span>
+    <span>bin <code style="font-family:var(--mono);color:var(--ink);">10,000</code> bp</span>
+    <div class="change-sample" id="changeSample">
+      <button type="button"><span class="glyph">⇄</span> Change sample</button>
+      <div class="menu">
+        <input type="text" placeholder="Filter samples…" id="sampleFilter">
+        <div class="list" id="sampleList">
+          <div class="row active" data-id="Brain_BF3"><b>Brain_BF3</b><span>Brain · Pig</span></div>
+          <div class="row" data-id="Brain_BF7"><b>Brain_BF7</b><span>Brain · Pig</span></div>
+          <div class="row" data-id="Liver_BF3"><b>Liver_BF3</b><span>Liver · Pig</span></div>
+          <div class="row" data-id="Liver_BF9"><b>Liver_BF9</b><span>Liver · Pig</span></div>
+          <div class="row" data-id="Muscle_BF3"><b>Muscle_BF3</b><span>Muscle · Pig</span></div>
+          <div class="row" data-id="Muscle_BF11"><b>Muscle_BF11</b><span>Muscle · Pig</span></div>
+          <div class="row" data-id="Heart_BF2"><b>Heart_BF2</b><span>Heart · Pig</span></div>
+          <div class="row" data-id="Kidney_BF4"><b>Kidney_BF4</b><span>Kidney · Pig</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Hi-C contact map</h1>
+        <p>Pig · <code>Brain_BF3</code> · 10 kb resolution · chr1:1,234,000-1,456,000</p>
+      </div>
+      <button class="share-btn" id="shareBtn"><span class="glyph">⎘</span> Share</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="tool-group">
+        <span style="font-size:11px;color:var(--muted);margin-right:2px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">Colormap</span>
+        <div class="seg" id="cmapSeg">
+          <button class="active" data-cmap="ref">ref</button>
+          <button data-cmap="inferno">inferno</button>
+          <button data-cmap="viridis">viridis</button>
+          <button data-cmap="blue-red">blue-red</button>
+        </div>
+      </div>
+      <div class="tool-group">
+        <span style="font-size:11px;color:var(--muted);margin-right:2px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;">Bin</span>
+        <div class="bin-input">
+          <button type="button" id="binMinus">−25</button>
+          <input type="text" id="binInput" value="10000" readonly>
+          <button type="button" id="binPlus">+25</button>
+        </div>
+      </div>
+      <button class="refetch" id="refetchBtn"><span style="font-family:var(--mono);">↻</span> Re-fetch</button>
+      <div class="right">
+        <button class="dl-btn"><span class="glyph">↓</span> PNG</button>
+        <button class="dl-btn"><span class="glyph">↓</span> CSV</button>
+      </div>
+    </div>
+
+    <div class="viewer">
+      <div class="viewer-grid">
+        <div class="colormap-rail" id="colormapRail">
+          <span class="title">Intensity</span>
+          <div class="ticks-row" style="width:100%;flex:1;">
+            <div class="ticks" style="display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;width:100%;height:100%;">
+              <div style="display:flex;align-items:center;gap:6px;width:100%;">
+                <span class="tick" id="vmaxTick">0</span>
+                <div class="bar" id="cmapBar"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;width:100%;">
+                <span class="tick">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="viewer-main">
+          <div class="gene-track">
+            <div class="axis">Genes</div>
+            <div class="lane"><svg id="geneSVG" viewBox="0 0 1100 36" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg></div>
+          </div>
+          <div class="heatmap-wrap">
+            <div></div>
+            <div class="top-axis">
+              <span>1,234,000</span>
+              <span>1,400,000</span>
+              <span>1,456,000</span>
+            </div>
+            <div class="left-axis">
+              <span>1,456</span>
+              <span>1,400</span>
+              <span>1,234</span>
+            </div>
+            <div class="heat">
+              <svg id="heatSVG" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tracks-stack">
+      <div class="tracks-head">
+        <div>
+          <h3>Ancillary tracks</h3>
+          <p>chr1:1,234,000-1,456,000 · Brain_BF3</p>
+        </div>
+        <div style="display:inline-flex;gap:6px;">
+          <button class="dl-btn"><span class="glyph">+</span> Add track</button>
+        </div>
+      </div>
+      <div class="lane" data-lane="tad">
+        <div class="lane-gutter">
+          <button class="lane-head-btn" data-collapse>
+            <span class="name">TAD boundary</span>
+            <span class="chev">▾</span>
+          </button>
+          <span class="badge">primary</span>
+          <span class="meta">Brain_BF3 · 18 boundaries</span>
+        </div>
+        <div class="lane-body"><svg viewBox="0 0 1100 56" preserveAspectRatio="none" id="tadSVG"></svg></div>
+        <button class="lane-remove" title="Remove track">×</button>
+      </div>
+      <div class="lane collapsed" data-lane="ab">
+        <div class="lane-gutter">
+          <button class="lane-head-btn" data-collapse>
+            <span class="name">AB index</span>
+            <span class="chev">▸</span>
+          </button>
+          <span class="meta">Brain_BF3 · mean 0.18</span>
+        </div>
+        <div class="lane-body"><svg viewBox="0 0 1100 56" preserveAspectRatio="none" id="abSVG"></svg></div>
+        <button class="lane-remove" title="Remove track">×</button>
+      </div>
+      <div class="lane collapsed" data-lane="pei">
+        <div class="lane-gutter">
+          <button class="lane-head-btn" data-collapse>
+            <span class="name">PEI anchors</span>
+            <span class="chev">▸</span>
+          </button>
+          <span class="meta">Brain_BF3 · 7 anchors</span>
+        </div>
+        <div class="lane-body"><svg viewBox="0 0 1100 56" preserveAspectRatio="none" id="peiSVG"></svg></div>
+        <button class="lane-remove" title="Remove track">×</button>
+      </div>
+      <div class="lane collapsed" data-lane="rna">
+        <div class="lane-gutter">
+          <button class="lane-head-btn" data-collapse>
+            <span class="name">RNA-seq</span>
+            <span class="chev">▸</span>
+          </button>
+          <span class="meta">Brain_BF3 · FPKM</span>
+        </div>
+        <div class="lane-body"><svg viewBox="0 0 1100 56" preserveAspectRatio="none" id="rnaSVG"></svg></div>
+        <button class="lane-remove" title="Remove track">×</button>
+      </div>
+      <div class="lane" data-lane="gene">
+        <div class="lane-gutter">
+          <button class="lane-head-btn" data-collapse>
+            <span class="name">Gene model</span>
+            <span class="chev">▾</span>
+          </button>
+          <span class="badge">primary</span>
+          <span class="meta">11 genes</span>
+        </div>
+        <div class="lane-body"><svg viewBox="0 0 1100 56" preserveAspectRatio="none" id="geneModelSVG"></svg></div>
+        <button class="lane-remove" title="Remove track">×</button>
+      </div>
+    </div>
+
+    <div class="region-nav">
+      <div class="region-nav-head">
+        <div>
+          <h3>Region navigator · chr1</h3>
+          <p>window: 222 kb · click to pan · drag inside to resize</p>
+        </div>
+        <div class="right">chr1 · 304 Mb · drag rectangle to update window</div>
+      </div>
+      <div class="minimap-wrap minimap-cursor" id="minimap">
+        <svg viewBox="0 0 1100 60" preserveAspectRatio="none" id="minimapSVG"></svg>
+      </div>
+    </div>
+
+    <div class="status-bar" role="status" aria-live="polite">
+      <div class="left">
+        <span class="dot"></span>
+        <span>Ready</span>
+        <span>·</span>
+        <span><b id="contactCount">24,832</b> contacts</span>
+        <span>·</span>
+        <span>fetched in <b id="fetchMs">142</b> ms</span>
+        <span>·</span>
+        <span>bin <b>10,000</b> bp</span>
+      </div>
+      <div class="right">
+        <a href="#">API</a>
+        <a href="#">Logs</a>
+        <a href="#">Help</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span><strong>dataWeb</strong> · Multi-omics 3D genome browser</span>
+    <span>Public-data viewer only — no personalized data analysis or uploads.</span>
+  </footer>
+
+  <script>
+    // ------------------- Colormaps -------------------
+    const colormaps = {
+      'ref':       ['#5b7099','#7fa6c8','#9dc4d0','#c4c195','#ddb044','#de923b','#c85e5d'],
+      'inferno':   ['#000004','#1b0c42','#4a0c6b','#781c6d','#a52c60','#cf4446','#ed6925','#fb9b06','#f7d13d','#fcffa4'],
+      'viridis':   ['#440154','#482878','#3e4989','#31688e','#26828e','#1f9e89','#35b779','#6ece58','#b5de2b','#fde725'],
+      'blue-red':  ['#2c5fa6','#5b8bb8','#9bb8d6','#cfd6df','#f7f7f7','#f0b6ad','#df806a','#c0392b']
+    };
+    function cmapCss(name) {
+      const stops = colormaps[name];
+      return 'linear-gradient(to bottom, ' + stops.map((c,i)=>c+' '+(i/(stops.length-1)*100).toFixed(1)+'%').join(', ') + ')';
+    }
+    function cmapColor(name, t) {
+      const stops = colormaps[name];
+      const x = Math.max(0, Math.min(1, t));
+      const idx = x * (stops.length - 1);
+      const i = Math.floor(idx);
+      const f = idx - i;
+      if (i >= stops.length - 1) return stops[stops.length - 1];
+      const a = parseInt(stops[i].slice(1), 16);
+      const b = parseInt(stops[i+1].slice(1), 16);
+      const ar = (a>>16)&255, ag = (a>>8)&255, ab = a&255;
+      const br = (b>>16)&255, bg = (b>>8)&255, bb = b&255;
+      const r = Math.round(ar + (br-ar)*f);
+      const g = Math.round(ag + (bg-ag)*f);
+      const bl = Math.round(ab + (bb-ab)*f);
+      return 'rgb('+r+','+g+','+bl+')';
+    }
+    function setColormap(name) {
+      document.getElementById('cmapBar').style.background = cmapCss(name);
+      document.querySelectorAll('#cmapSeg button').forEach(b => b.classList.toggle('active', b.dataset.cmap === name));
+      renderHeatmap();
+    }
+    document.querySelectorAll('#cmapSeg button').forEach(b => {
+      b.addEventListener('click', () => setColormap(b.dataset.cmap));
+    });
+    setColormap('ref');
+
+    // ------------------- Heatmap rendering -------------------
+    // Seeded pseudo-Hi-C: diagonal-strong + off-diagonal decay + noise + TAD-like blocks + loops
+    let heatSeed = 20260726;
+    function rnd() { heatSeed = (heatSeed * 1103515245 + 12345) & 0x7fffffff; return heatSeed / 0x7fffffff; }
+    function gauss() { return (rnd()+rnd()+rnd()+rnd()-2) * 0.5; }
+    let activeCmap = 'ref';
+    function getCmap() { return activeCmap; }
+    function buildMatrix(N) {
+      const m = new Float32Array(N * N);
+      // TAD boundaries (block seams)
+      const tads = [0.15, 0.22, 0.43, 0.51, 0.66, 0.78];
+      for (let i = 0; i < N; i++) {
+        for (let j = i; j < N; j++) {
+          const d = j - i;
+          let v;
+          const dn = d / N;
+          if (d === 0) v = 1.0;
+          else if (d === 1) v = 0.62 + rnd() * 0.12;
+          else if (d === 2) v = 0.45 + rnd() * 0.12;
+          else if (d === 3) v = 0.30 + rnd() * 0.10;
+          else v = 0.10 + Math.exp(-dn * 12) * 0.20 + rnd() * 0.07;
+          // TAD-block emphasis: same-block bonus
+          const fi = i / N, fj = j / N;
+          let inSameTad = false;
+          for (let k = 0; k < tads.length - 1; k++) {
+            const a = tads[k], b = tads[k+1];
+            if (fi >= a && fi <= b && fj >= a && fj <= b) { inSameTad = true; break; }
+          }
+          if (inSameTad && d > 1) v += 0.08 + rnd() * 0.05;
+          // Off-block penalty
+          v += gauss() * 0.06;
+          // Loop anchor pairs
+          const loops = [[110, 140], [80, 200], [180, 230], [260, 300]];
+          for (const [a, b] of loops) {
+            if ((i === a && j === b) || (i === b && j === a)) v = Math.max(v, 0.85 + rnd() * 0.1);
+          }
+          // Sparse long-range loops
+          if (rnd() < 0.0008 && d > 12) v = Math.max(v, 0.55 + rnd() * 0.25);
+          v = Math.max(0, Math.min(1, v));
+          m[i * N + j] = v;
+          m[j * N + i] = v;
+        }
+      }
+      return m;
+    }
+    const HEAT_N = 320;
+    let matrix = buildMatrix(HEAT_N);
+    function renderHeatmap() {
+      const svg = document.getElementById('heatSVG');
+      const NS = 'http://www.w3.org/2000/svg';
+      // Render a coarse grid for SVG perf: use rect-per-cell at 1px each on 320x320
+      const sample = 4; // 80x80 cells in SVG
+      const cell = HEAT_N / sample;
+      const cellPx = 400 / sample;
+      let rects = '';
+      for (let i = 0; i < sample; i++) {
+        for (let j = 0; j < sample; j++) {
+          // average a small block
+          let sum = 0, count = 0;
+          for (let di = 0; di < cell; di++) {
+            for (let dj = 0; dj < cell; dj++) {
+              sum += matrix[(i*cell+di) * HEAT_N + (j*cell+dj)];
+              count++;
+            }
+          }
+          const v = sum / count;
+          const fill = cmapColor(activeCmap, v);
+          rects += `<rect x="${(j*cellPx).toFixed(2)}" y="${(i*cellPx).toFixed(2)}" width="${(cellPx).toFixed(2)}" height="${(cellPx).toFixed(2)}" fill="${fill}"/>`;
+        }
+      }
+      // Loop marker overlay (one highlighted interaction)
+      const loopCellPx = 400 / HEAT_N;
+      const loop1 = [110, 140];
+      const cx1 = (loop1[1] + 0.5) * loopCellPx, cy1 = (loop1[0] + 0.5) * loopCellPx;
+      const loop2 = [80, 200];
+      const cx2 = (loop2[1] + 0.5) * loopCellPx, cy2 = (loop2[0] + 0.5) * loopCellPx;
+      svg.innerHTML = `
+        ${rects}
+        <line class="diag" x1="0" y1="0" x2="400" y2="400"/>
+        <circle class="loop-marker" cx="${cx1}" cy="${cy1}" r="${loopCellPx*1.8}" stroke-width="1.4"/>
+        <circle class="loop-marker" cx="${cx2}" cy="${cy2}" r="${loopCellPx*1.8}" stroke-width="1.4"/>
+        <text class="corner-label" x="6" y="14">Brain_BF3</text>
+        <text class="corner-label" x="394" y="394" text-anchor="end">chr1:1.23-1.46 Mb</text>
+      `;
+    }
+    renderHeatmap();
+
+    // ------------------- Gene track (top strip) -------------------
+    function renderGeneTrack() {
+      const svg = document.getElementById('geneSVG');
+      const NS = 'http://www.w3.org/2000/svg';
+      const genes = [
+        { x: 60,  w: 110, name: 'SOX2',  strand: 1 },
+        { x: 210, w: 60,  name: 'LINC',  strand: -1 },
+        { x: 320, w: 90,  name: 'PAX6',  strand: 1 },
+        { x: 470, w: 70,  name: 'HESX1', strand: -1 },
+        { x: 600, w: 130, name: 'NKX2-2',strand: 1 },
+        { x: 770, w: 80,  name: 'DMBX1', strand: -1 },
+        { x: 900, w: 100, name: 'OTX2',  strand: 1 }
+      ];
+      let out = '';
+      genes.forEach(g => {
+        const y = 12, h = 12;
+        const strandW = g.strand === 1 ? 4 : -4;
+        out += `<rect x="${g.x}" y="${y}" width="${g.w}" height="${h}" fill="#5b7099" opacity="0.78"/>`;
+        // Intron lines (thin lines extending)
+        out += `<line x1="${g.x + g.w/2}" y1="${y+h/2}" x2="${g.x + g.w + 30}" y2="${y+h/2}" stroke="#9aa0aa" stroke-width="0.6" stroke-dasharray="2,3"/>`;
+        // Arrow direction indicator
+        out += `<polygon points="${g.x+g.w-3},${y+h/2-3} ${g.x+g.w+4},${y+h/2} ${g.x+g.w-3},${y+h/2+3}" fill="#fff"/>`;
+        out += `<text x="${g.x + 4}" y="${y + h/2 + 3}" font-family="JetBrains Mono, monospace" font-size="8" fill="#fff" font-style="italic">${g.name}</text>`;
+      });
+      svg.innerHTML = out;
+    }
+    renderGeneTrack();
+
+    // ------------------- Bottom tracks (SVG mock) -------------------
+    function drawTracks() {
+      const NS = 'http://www.w3.org/2000/svg';
+      // TAD boundary
+      document.getElementById('tadSVG').innerHTML = (() => {
+        const lines = [];
+        const tads = [80, 230, 410, 590, 760, 930, 1060];
+        tads.forEach((x, i) => {
+          lines.push(`<line x1="${x}" y1="6" x2="${x}" y2="50" stroke="#c0392b" stroke-width="1.4"/>`);
+          lines.push(`<text x="${x+4}" y="14" font-family="JetBrains Mono, monospace" font-size="8" fill="#c0392b">TAD${i+1}</text>`);
+        });
+        // baseline signal
+        for (let x = 0; x < 1100; x += 24) {
+          const h = 4 + Math.sin(x * 0.04 + 1.2) * 4 + Math.random() * 3;
+          lines.push(`<rect x="${x}" y="${44 - h}" width="20" height="${h.toFixed(1)}" fill="#5b7099" opacity="0.55"/>`);
+        }
+        return lines.join('');
+      })();
+
+      // AB index (signal area)
+      document.getElementById('abSVG').innerHTML = (() => {
+        let path = `M 0 40`;
+        for (let x = 0; x <= 1100; x += 10) {
+          const y = 30 + Math.sin(x * 0.012) * 10 + Math.cos(x * 0.027) * 6 + (Math.random() - 0.5) * 3;
+          path += ` L ${x} ${y.toFixed(1)}`;
+        }
+        return `
+          <path d="${path} L 1100 50 L 0 50 Z" fill="#c0392b" opacity="0.18"/>
+          <path d="${path}" stroke="#c0392b" stroke-width="1.2" fill="none"/>
+          <line x1="0" y1="30" x2="1100" y2="30" stroke="#d9d9d6" stroke-dasharray="3,3"/>
+          <text x="6" y="14" font-family="JetBrains Mono, monospace" font-size="8" fill="#686868">AB index · mean 0.18</text>
+        `;
+      })();
+
+      // PEI anchors
+      document.getElementById('peiSVG').innerHTML = (() => {
+        const anchors = [[120,180],[280,360],[440,520],[600,680],[800,900],[950,1040]];
+        let s = '';
+        anchors.forEach(([a,b]) => {
+          s += `<line x1="${a}" y1="14" x2="${a}" y2="50" stroke="#1f9e89" stroke-width="1.4"/>`;
+          s += `<line x1="${b}" y1="14" x2="${b}" y2="50" stroke="#1f9e89" stroke-width="1.4"/>`;
+          const mx=(a+b)/2, dip = 8 + Math.min(20, (b-a)*0.08);
+          s += `<path d="M ${a} 28 Q ${mx} ${8+dip} ${b} 28" fill="none" stroke="#1f9e89" stroke-width="1.2"/>`;
+        });
+        return s;
+      })();
+
+      // RNA-seq (bar plot)
+      document.getElementById('rnaSVG').innerHTML = (() => {
+        let s = '';
+        for (let x = 0; x < 1100; x += 12) {
+          const h = 6 + Math.abs(Math.sin(x * 0.025)) * 28 + (Math.random() * 6);
+          s += `<rect x="${x}" y="${48 - h}" width="8" height="${h.toFixed(1)}" fill="#31688e" opacity="0.78"/>`;
+        }
+        return s + `<line x1="0" y1="48" x2="1100" y2="48" stroke="#d9d9d6"/>`;
+      })();
+
+      // Gene model
+      document.getElementById('geneModelSVG').innerHTML = (() => {
+        const genes = [
+          { x: 30,   w: 90, name: 'SOX2', strand: 1 },
+          { x: 170,  w: 50, name: 'LINC005', strand: -1 },
+          { x: 260,  w: 120, name: 'PAX6', strand: 1 },
+          { x: 430,  w: 70, name: 'HESX1', strand: -1 },
+          { x: 540,  w: 150, name: 'NKX2-2', strand: 1 },
+          { x: 720,  w: 80, name: 'DMBX1', strand: -1 },
+          { x: 830,  w: 100, name: 'OTX2', strand: 1 },
+          { x: 960,  w: 110, name: 'FOXG1', strand: 1 }
+        ];
+        let s = '';
+        genes.forEach(g => {
+          const y = 18, h = 18;
+          s += `<rect x="${g.x}" y="${y}" width="${g.w}" height="${h}" fill="#5b7099" opacity="0.82"/>`;
+          s += `<line x1="${g.x + g.w/2}" y1="${y+h/2}" x2="${g.x + g.w + 28}" y2="${y+h/2}" stroke="#9aa0aa" stroke-width="0.6" stroke-dasharray="2,3"/>`;
+          s += `<polygon points="${g.x+g.w-3},${y+h/2-4} ${g.x+g.w+5},${y+h/2} ${g.x+g.w-3},${y+h/2+4}" fill="#fff"/>`;
+          s += `<text x="${g.x + 5}" y="${y + h/2 + 3}" font-family="JetBrains Mono, monospace" font-size="9" fill="#fff" font-style="italic">${g.name}</text>`;
+        });
+        return s;
+      })();
+    }
+    drawTracks();
+
+    // ------------------- Track collapse -------------------
+    document.querySelectorAll('[data-collapse]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lane = btn.closest('.lane');
+        const collapsed = lane.classList.toggle('collapsed');
+        const chev = btn.querySelector('.chev');
+        if (chev) chev.textContent = collapsed ? '▸' : '▾';
+      });
+    });
+    document.querySelectorAll('.lane-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lane = btn.closest('.lane');
+        lane.style.transition = 'opacity .2s';
+        lane.style.opacity = '0.3';
+        setTimeout(() => { lane.style.opacity = '0'; lane.style.height = '0'; lane.style.minHeight = '0'; lane.style.overflow = 'hidden'; }, 200);
+      });
+    });
+
+    // ------------------- Colormap ticks -------------------
+    const vmaxTick = document.getElementById('vmaxTick');
+    const maxes = { 'ref': 50, 'inferno': 1.0, 'viridis': 1.0, 'blue-red': 0.85 };
+    function updateVmax() {
+      vmaxTick.textContent = maxes[activeCmap].toString();
+    }
+    const observer = new MutationObserver(() => { updateVmax(); });
+    observer.observe(document.getElementById('cmapSeg'), { attributes: true, subtree: true, attributeFilter: ['class'] });
+    setInterval(updateVmax, 600);
+
+    // ------------------- Change sample dropdown -------------------
+    const changeSample = document.getElementById('changeSample');
+    const sampleBtn = changeSample.querySelector('button');
+    sampleBtn.addEventListener('click', () => changeSample.classList.toggle('open'));
+    document.addEventListener('click', (e) => {
+      if (!changeSample.contains(e.target)) changeSample.classList.remove('open');
+    });
+    document.querySelectorAll('#sampleList .row').forEach(row => {
+      row.addEventListener('click', () => {
+        document.querySelectorAll('#sampleList .row').forEach(r => r.classList.remove('active'));
+        row.classList.add('active');
+        document.getElementById('sampleCrumb').textContent = row.dataset.id;
+        changeSample.classList.remove('open');
+      });
+    });
+    document.getElementById('sampleFilter').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('#sampleList .row').forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+
+    // ------------------- Bin stepper -------------------
+    const binInput = document.getElementById('binInput');
+    function setBin(v) {
+      v = Math.max(1000, Math.round(v / 25) * 25);
+      binInput.value = v.toLocaleString();
+      // adjust matrix density proportionally for visual feedback
+      HEAT_N && (matrix = buildMatrix(HEAT_N));
+      renderHeatmap();
+    }
+    document.getElementById('binPlus').addEventListener('click', () => setBin(parseInt(binInput.value.replace(/,/g,'')) + 25));
+    document.getElementById('binMinus').addEventListener('click', () => setBin(parseInt(binInput.value.replace(/,/g,'')) - 25));
+
+    // ------------------- Re-fetch (visual feedback) -------------------
+    document.getElementById('refetchBtn').addEventListener('click', () => {
+      heatSeed = Math.floor(Math.random() * 1e9);
+      matrix = buildMatrix(HEAT_N);
+      renderHeatmap();
+      const c = document.getElementById('contactCount');
+      const m = document.getElementById('fetchMs');
+      c.textContent = (18000 + Math.floor(Math.random()*12000)).toLocaleString();
+      m.textContent = (90 + Math.floor(Math.random()*180)).toString();
+    });
+
+    // ------------------- Share button -------------------
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+      const url = location.href;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+        }
+      } catch (e) {}
+      const btn = document.getElementById('shareBtn');
+      btn.classList.add('copied');
+      btn.innerHTML = '<span class="glyph">✓</span> Copied';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span class="glyph">⎘</span> Share'; }, 1400);
+    });
+
+    // ------------------- Species toggle (sync with select via UI only) -------------------
+    const speciesToggle = document.getElementById('speciesToggle');
+    speciesToggle.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        speciesToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // also update sample list filter if species changes
+        const isChicken = btn.dataset.species === 'Chicken';
+        document.querySelectorAll('#sampleList .row').forEach(row => {
+          const isChickenSample = row.textContent.toLowerCase().includes('chicken');
+          row.style.display = (isChicken && !isChickenSample) || (!isChicken && isChickenSample) ? 'none' : '';
+        });
+      });
+    });
+
+    // ------------------- Region navigator (mini-map) -------------------
+    function renderMinimap() {
+      const svg = document.getElementById('minimapSVG');
+      const NS = 'http://www.w3.org/2000/svg';
+      const totalLen = 1100;
+      // Ideogram: bands alternating shades per cytogenetic band
+      const bands = [
+        { s: 0,    e: 60,  c: '#d9d9d6' },
+        { s: 60,   e: 110, c: '#a8b3c4' },
+        { s: 110,  e: 160, c: '#5b7099' },
+        { s: 160,  e: 220, c: '#a8b3c4' },
+        { s: 220,  e: 280, c: '#cfd6df' },
+        { s: 280,  e: 340, c: '#a8b3c4' },
+        { s: 340,  e: 420, c: '#5b7099' },
+        { s: 420,  e: 470, c: '#a8b3c4' },
+        { s: 470,  e: 540, c: '#cfd6df' },
+        { s: 540,  e: 600, c: '#a8b3c4' },
+        { s: 600,  e: 680, c: '#d9d9d6' },
+        { s: 680,  e: 740, c: '#5b7099' },
+        { s: 740,  e: 820, c: '#a8b3c4' },
+        { s: 820,  e: 900, c: '#cfd6df' },
+        { s: 900,  e: 960, c: '#a8b3c4' },
+        { s: 960,  e: 1040, c: '#d9d9d6' },
+        { s: 1040, e: 1100, c: '#5b7099' }
+      ];
+      // Tick marks every 5Mb (chr1 ~ 304 Mb total, mapped to 1100px)
+      const chrLenMb = 304;
+      const pxPerMb = totalLen / chrLenMb;
+      const ticks = [];
+      for (let mb = 0; mb <= chrLenMb; mb += 5) {
+        const x = mb * pxPerMb;
+        ticks.push(`<line x1="${x.toFixed(1)}" y1="40" x2="${x.toFixed(1)}" y2="48" stroke="#8a8a8a" stroke-width="0.6"/>`);
+        ticks.push(`<text x="${x.toFixed(1)}" y="58" font-family="JetBrains Mono, monospace" font-size="8" fill="#8a8a8a" text-anchor="middle">${mb}</text>`);
+      }
+      // Mb label header
+      const labels = `<text x="4" y="13" font-family="JetBrains Mono, monospace" font-size="9" fill="#686868">chr1 Mb</text>`;
+      // Current window (1.234-1.456 Mb)
+      const winStart = 1.234 * pxPerMb;
+      const winEnd   = 1.456 * pxPerMb;
+      svg.innerHTML = `
+        ${bands.map(b => `<rect x="${b.s}" y="4" width="${(b.e-b.s)}" height="14" fill="${b.c}"/>`).join('')}
+        ${ticks.join('')}
+        ${labels}
+        <rect id="winRect" x="${winStart.toFixed(1)}" y="0" width="${(winEnd-winStart).toFixed(1)}" height="20" fill="#c0392b" fill-opacity="0.18" stroke="#c0392b" stroke-width="1.4"/>
+      `;
+
+      // Wire drag interaction
+      const winRect = document.getElementById('winRect');
+      let dragging = false, mode = 'move', startX = 0, startWinX = 0, startWinW = 0;
+      function getX(ev) {
+        const rect = svg.getBoundingClientRect();
+        return (ev.clientX - rect.left) / rect.width * 1100;
+      }
+      svg.addEventListener('mousedown', (ev) => {
+        const x = getX(ev);
+        const wx = parseFloat(winRect.getAttribute('x'));
+        const ww = parseFloat(winRect.getAttribute('width'));
+        if (x >= wx - 4 && x <= wx + ww + 4) {
+          dragging = true;
+          if (x < wx + 6) mode = 'left';
+          else if (x > wx + ww - 6) mode = 'right';
+          else mode = 'move';
+          startX = x;
+          startWinX = wx;
+          startWinW = ww;
+          ev.preventDefault();
+        } else {
+          // pan: center the window on click
+          const halfW = ww / 2;
+          const nx = Math.max(0, Math.min(1100 - ww, x - halfW));
+          winRect.setAttribute('x', nx.toFixed(1));
+        }
+      });
+      window.addEventListener('mousemove', (ev) => {
+        if (!dragging) return;
+        const x = getX(ev);
+        const dx = x - startX;
+        let nx = startWinX, nw = startWinW;
+        if (mode === 'move') { nx = Math.max(0, Math.min(1100 - startWinW, startWinX + dx)); }
+        else if (mode === 'left') { nx = Math.max(0, startWinX + dx); nw = Math.max(20, startWinW - dx); if (nw === 20) nx = startWinX + (startWinW - 20); }
+        else { nw = Math.max(20, Math.min(1100 - startWinX, startWinW + dx)); }
+        winRect.setAttribute('x', nx.toFixed(1));
+        winRect.setAttribute('width', nw.toFixed(1));
+      });
+      window.addEventListener('mouseup', () => { dragging = false; });
+    }
+    renderMinimap();
+  </script>
+</body>
+</html>

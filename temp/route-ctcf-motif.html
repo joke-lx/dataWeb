@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dataWeb — CTCF Motif · chr1:5,432,100-5,432,500</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root { --surface:#fafafa; --surface-2:#f0f0f0; --paper:#fff; --ink:#181818; --muted:#686868; --muted-2:#9a9a96; --line:#d9d9d6; --line-2:#e6e6e3; --accent:#c0392b; --accent-dark:#982d22; --accent-soft:#f7e9e7; --mono:"JetBrains Mono",monospace; --sans:"Inter",sans-serif; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--surface); font-family:var(--sans); line-height:1.5; }
+    button,input,select { font:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; }
+    .topbar { height:66px; padding:0 clamp(24px,5vw,76px); display:flex; align-items:center; border-bottom:1px solid var(--line); background:rgba(250,250,250,.96); position:relative; z-index:10; }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.03em; font-size:20px; margin-right:36px; }
+    .brand-mark { width:25px; height:25px; border:1.5px solid var(--accent); border-radius:50%; position:relative; }
+    .brand-mark:before,.brand-mark:after { content:""; position:absolute; background:var(--accent); border-radius:50%; width:5px; height:5px; }
+    .brand-mark:before { left:4px; top:5px; box-shadow:10px 9px 0 var(--accent); }
+    .brand-mark:after { width:12px; height:1px; left:6px; top:12px; transform:rotate(40deg); }
+    nav { display:flex; align-items:center; gap:3px; }
+    nav a { color:#4e4e4e; text-decoration:none; font-size:13px; font-weight:500; padding:8px 11px; border-radius:6px; }
+    nav a:hover { color:var(--accent); background:var(--accent-soft); }
+    nav a.secondary { color:#8a8a87; font-weight:500; font-size:12px; padding:7px 10px; }
+    nav a.secondary.active { color:#fff; background:#5a5a57; }
+    nav a.secondary.active:hover { color:#fff; background:#4a4a47; }
+    .species-toggle { margin-left:auto; display:flex; padding:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:8px; }
+    .species-toggle button { border:0; background:transparent; color:var(--muted); padding:6px 13px; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; }
+    .species-toggle button.active { color:var(--paper); background:var(--accent); box-shadow:0 1px 3px #8f2d2428; }
+
+    /* Region breadcrumb bar */
+    .regionbar { padding:11px clamp(24px,5vw,76px); border-bottom:1px solid var(--line); background:#fdfdfb; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+    .regionbar .crumb { color:var(--muted); font-size:13px; }
+    .regionbar .crumb b { color:var(--ink); font-weight:600; }
+    .regionbar .crumb .sep { color:var(--muted-2); margin:0 7px; }
+    .regionbar .crumb .accent { color:var(--accent); font-family:var(--mono); font-size:12px; }
+    .regionbar .right { margin-left:auto; display:flex; align-items:center; gap:14px; }
+    .regionbar .right .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); }
+    .seg { display:flex; padding:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:7px; }
+    .seg button { border:0; background:transparent; color:var(--muted); padding:5px 12px; border-radius:4px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--sans); }
+    .seg button.active { color:var(--paper); background:var(--accent); box-shadow:0 1px 3px #8f2d2428; }
+    .seg button:not(.active):hover { color:var(--accent); }
+
+    /* Page header */
+    .pagehead { padding:30px clamp(24px,5vw,76px) 18px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; }
+    .pagehead h1 { margin:0 0 6px; font-size:26px; letter-spacing:-.035em; font-weight:650; }
+    .pagehead .sub { color:var(--muted); font-size:13px; }
+    .pagehead .sub .sep { color:var(--muted-2); margin:0 7px; }
+    .pagehead .sub code { font-family:var(--mono); font-size:12px; color:#444; padding:1px 5px; background:var(--surface-2); border-radius:3px; }
+    .headbtns { display:flex; gap:8px; }
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:7px 13px; border-radius:6px; border:1px solid var(--line); background:var(--paper); color:#444; font-weight:600; font-size:12px; cursor:pointer; text-decoration:none; }
+    .btn:hover { border-color:var(--accent); color:var(--accent); }
+    .btn .glyph { font-family:var(--mono); color:var(--accent); font-size:11px; }
+    .btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .btn.primary:hover { background:var(--accent-dark); border-color:var(--accent-dark); color:#fff; }
+    .btn.primary .glyph { color:#fff; }
+
+    /* Main wrap */
+    main { width:min(1320px,calc(100% - 48px)); margin:0 auto 36px; }
+    .twocol { display:grid; grid-template-columns:3fr 2fr; gap:18px; align-items:start; }
+    .panel { background:var(--paper); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .panel-head { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--line); background:#fdfdfb; flex-wrap:wrap; gap:10px; }
+    .panel-head h2 { margin:0; font-size:14px; font-weight:600; letter-spacing:-.01em; }
+    .panel-head .meta { color:var(--muted); font-size:11px; font-family:var(--mono); }
+    .panel-head .meta b { color:var(--ink); font-weight:600; }
+    .panel-body { padding:18px; }
+
+    /* Motif logo panel — left column */
+    .motif-logo-svg { width:100%; height:200px; display:block; background:linear-gradient(180deg,#fff 0%,#faf8f6 100%); border-radius:6px; }
+    .motif-logo-svg text { font-family:var(--mono); font-weight:700; }
+    .consensus-row { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:14px 18px; border-top:1px solid var(--line); background:#fdfdfb; flex-wrap:wrap; }
+    .consensus-row .label { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); margin-right:8px; }
+    .consensus-row code { font-family:var(--mono); font-size:14px; letter-spacing:.18em; color:#222; background:#fff; padding:4px 10px; border:1px solid var(--line); border-radius:5px; }
+    .anchor-pill { display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .anchor-pill .dot { width:9px; height:9px; border-radius:50%; background:var(--accent); display:inline-block; box-shadow:0 0 0 2px rgba(192,57,43,.16); }
+
+    /* Genotype panel — right column */
+    .pop-head { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+    .pop-head .title { font-size:14px; font-weight:600; }
+    .pop-head .title .pop-name { color:var(--accent); font-family:var(--mono); }
+    .pie-block { display:flex; align-items:center; gap:14px; margin-top:14px; }
+    .genotype-pie-svg { width:170px; height:170px; flex:none; }
+    .genotype-legend { display:flex; flex-direction:column; gap:9px; font-size:12px; flex:1; }
+    .genotype-legend-item { display:flex; align-items:center; gap:8px; color:var(--muted); }
+    .genotype-legend-swatch { width:11px; height:11px; border-radius:3px; flex:none; }
+    .genotype-legend-item b { color:var(--ink); font-weight:600; font-family:var(--mono); font-variant-numeric:tabular-nums; margin-left:auto; padding-left:12px; }
+
+    /* SNP table */
+    .snptable { margin-top:14px; border-top:1px solid var(--line); padding-top:14px; }
+    .snptable h4 { margin:0 0 8px; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-family:var(--mono); font-weight:500; }
+    table.snps { width:100%; border-collapse:collapse; font-size:12px; }
+    table.snps th, table.snps td { padding:7px 8px; border-bottom:1px solid var(--line-2); text-align:left; font-family:var(--mono); font-variant-numeric:tabular-nums; }
+    table.snps th { color:var(--muted); font-weight:500; font-size:10px; text-transform:uppercase; letter-spacing:.06em; font-family:var(--mono); border-bottom:1px solid var(--line); }
+    table.snps td.id { color:var(--ink); font-weight:600; }
+    table.snps td.allele-ref { color:#3a7d3a; font-weight:600; }
+    table.snps td.allele-arrow { color:var(--muted-2); }
+    table.snps td.allele-alt { color:#c0392b; font-weight:600; }
+    table.snps td.dist { color:#444; }
+    table.snps tr:last-child td { border-bottom:0; }
+    .allele-pill { display:inline-block; padding:1px 6px; border-radius:4px; font-family:var(--mono); font-weight:600; font-size:11px; }
+    .allele-pill.ref { background:#eaf3eb; color:#2e6b2e; }
+    .allele-pill.alt { background:#fbe7e4; color:#a02818; }
+    .micro-bar { display:inline-block; height:6px; background:var(--surface-2); border-radius:3px; overflow:hidden; vertical-align:middle; margin-left:6px; width:90px; }
+    .micro-bar > span { display:block; height:100%; background:var(--accent); }
+
+    /* SNP × motif position track (full width below two cols) */
+    .snpx-track-panel { margin-top:18px; }
+    .snpx-track-svg { width:100%; height:74px; display:block; background:linear-gradient(180deg,#fff 0%,#faf8f6 100%); border-radius:6px; }
+    .snpx-legend { display:flex; gap:18px; font-size:11px; color:var(--muted); padding:10px 18px; border-top:1px solid var(--line); background:#fdfdfb; flex-wrap:wrap; }
+    .snpx-legend-item { display:flex; align-items:center; gap:6px; }
+    .snpx-legend-item .sw { width:14px; height:2px; background:var(--accent); display:inline-block; }
+    .snpx-legend-item .sw.dashed { background:transparent; border-top:2px dashed var(--muted); }
+    .snpx-legend-item .sw.anchor { background:var(--accent); height:3px; }
+
+    /* Region navigator */
+    .navrow { margin-top:18px; padding:14px 18px; border:1px solid var(--line); border-radius:10px; background:var(--paper); display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .navrow .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); }
+    .navrow input[type=text] { flex:1; min-width:200px; padding:7px 11px; border:1px solid var(--line); border-radius:5px; font-family:var(--mono); font-size:13px; outline:0; background:var(--surface); color:var(--ink); }
+    .navrow input[type=text]:focus { border-color:var(--accent); background:#fff; }
+    .navrow button { padding:7px 14px; border:1px solid var(--line); background:var(--paper); color:#444; border-radius:5px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--sans); }
+    .navrow button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .navrow button.primary:hover { background:var(--accent-dark); border-color:var(--accent-dark); }
+    .navigator-presets { display:flex; gap:6px; flex-wrap:wrap; }
+    .navigator-presets .preset { border:1px solid var(--line); background:#fff; color:#555; border-radius:999px; padding:4px 9px; font-family:var(--mono); font-size:11px; cursor:pointer; }
+    .navigator-presets .preset:hover { border-color:#d49b95; color:var(--accent); }
+
+    /* Footer */
+    footer { border-top:1px solid var(--line); padding:26px clamp(24px,5vw,76px); display:flex; justify-content:space-between; gap:24px; color:var(--muted); font-size:11px; background:var(--surface-2); }
+    footer strong { color:#454545; }
+
+    /* Toast */
+    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:9px 16px; border-radius:6px; font-size:12px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:1000; font-family:var(--mono); }
+    #toast.show { opacity:0.95; }
+
+    @media (max-width:980px) {
+      .twocol { grid-template-columns:1fr; }
+      nav a.secondary { display:none; }
+      nav a.secondary.active { display:inline-block; }
+    }
+    @media (max-width:620px) {
+      .topbar { padding:0 17px; } .brand { margin-right:12px; } .species-toggle button { padding:6px 8px; }
+      .regionbar { padding:11px 17px; }
+      .pagehead { padding:22px 17px 14px; }
+      main { width:calc(100% - 32px); }
+      .pie-block { flex-direction:column; align-items:flex-start; }
+      .genotype-legend-swatch { width:10px; height:10px; }
+      .pop-head, .consensus-row { flex-direction:column; align-items:flex-start; }
+      .navrow { flex-direction:column; align-items:stretch; }
+      .navrow input[type=text] { width:100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>dataWeb</div>
+    <nav aria-label="Primary navigation">
+      <a href="#">Hi-C</a><a href="#">Δ Hi-C</a><a href="#">Tracks</a><a href="#">3D</a><a class="secondary active" href="#">⌁ CTCF Motif</a>
+    </nav>
+    <div class="species-toggle" aria-label="Active species">
+      <button class="active" data-species="Pig">Pig</button><button data-species="Chicken">Chicken</button>
+    </div>
+  </header>
+
+  <section class="regionbar" aria-label="Active region">
+    <div class="crumb"><b>Pig</b><span class="sep">·</span><span><b>chr1:5,432,100</b>–<b>5,432,500</b></span><span class="sep">·</span><span class="accent">anchor @ 5,432,300</span></div>
+    <div class="right">
+      <span class="label">Population</span>
+      <div class="seg" id="popSeg" role="tablist" aria-label="Population">
+        <button class="active" data-pop="global">Global</button>
+        <button data-pop="berkshire">Berkshire</button>
+        <button data-pop="tibetan">Tibetan</button>
+        <button data-pop="f1">F1</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="pagehead">
+    <div>
+      <h1>CTCF motif at active region</h1>
+      <div class="sub">Position Weight Matrix <span class="sep">·</span> consensus <code>CCGCGNGGNGGCAG</code> <span class="sep">·</span> population genotype distribution</div>
+    </div>
+    <div class="headbtns">
+      <button class="btn" data-action="download-pwm"><span class="glyph">↓</span>Download PWM (.csv)</button>
+      <button class="btn" data-action="share"><span class="glyph">⎘</span>Share link</button>
+      <button class="btn primary" data-action="analyze"><span class="glyph">⊕</span>Analyze</button>
+    </div>
+  </section>
+
+  <main>
+    <div class="twocol">
+
+      <!-- LEFT: Motif logo -->
+      <article class="panel" aria-labelledby="motif-head">
+        <header class="panel-head">
+          <h2 id="motif-head">CTCF PWM sequence logo</h2>
+          <span class="meta"><b>chr1:5,432,200</b>–<b>5,432,400</b> · 20 bp · info-content scaled</span>
+        </header>
+        <div class="panel-body" style="padding:14px 18px 6px;">
+          <svg class="motif-logo-svg" id="motifLogoSvg" viewBox="0 0 900 200" preserveAspectRatio="xMidYMid meet" aria-label="CTCF motif sequence logo"></svg>
+        </div>
+        <div class="consensus-row">
+          <div><span class="label">consensus</span><code>CCGCGNGGNGGCAG</code></div>
+          <div class="anchor-pill"><span class="dot"></span>anchor position: 5,432,300 (motif column 8 / 14)</div>
+        </div>
+      </article>
+
+      <!-- RIGHT: Genotype distribution -->
+      <article class="panel" aria-labelledby="geno-head">
+        <header class="panel-head">
+          <h2 id="geno-head">Population genotype distribution</h2>
+          <span class="meta">5 SNPs · n=<b>312</b></span>
+        </header>
+        <div class="panel-body">
+          <div class="pop-head">
+            <div class="title">Population: <span class="pop-name" id="popNameLbl">Global</span></div>
+            <div class="seg" id="popSegInner" role="tablist" aria-label="Population (right)">
+              <button class="active" data-pop="global">Global</button>
+              <button data-pop="berkshire">Berkshire</button>
+              <button data-pop="tibetan">Tibetan</button>
+              <button data-pop="f1">F1</button>
+            </div>
+          </div>
+
+          <div class="pie-block">
+            <svg class="genotype-pie-svg" id="pieSvg" viewBox="0 0 200 200" aria-label="Aggregate genotype distribution"></svg>
+            <div class="genotype-legend" id="pieLegend"></div>
+          </div>
+
+          <div class="snptable">
+            <h4>SNP counts (ref / het / alt)</h4>
+            <table class="snps" id="snpsTable">
+              <thead>
+                <tr>
+                  <th>SNP</th><th>Alleles</th><th>Ref</th><th>Het</th><th>Alt</th><th style="width:40%">Distribution</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- SNP × motif position track -->
+    <section class="panel snpx-track-panel">
+      <header class="panel-head">
+        <h2>SNP positions projected onto motif logo</h2>
+        <span class="meta">5 SNPs aligned to motif columns 4, 7, 11, 14, 17</span>
+      </header>
+      <div class="panel-body" style="padding:14px 18px 0;">
+        <svg class="snpx-track-svg" id="snpxSvg" viewBox="0 0 900 74" preserveAspectRatio="xMidYMid meet" aria-label="SNP positions projected on motif"></svg>
+      </div>
+      <div class="snpx-legend">
+        <div class="snpx-legend-item"><span class="sw"></span>SNP column line</div>
+        <div class="snpx-legend-item"><span class="sw anchor"></span>Anchor column (col 8)</div>
+        <div class="snpx-legend-item"><span class="sw dashed"></span>Ref vs alt</div>
+        <div style="margin-left:auto; color:var(--muted-2);">Drag to zoom · shift-click anchor</div>
+      </div>
+    </section>
+
+    <!-- Region navigator -->
+    <section class="navrow" aria-label="Region navigator">
+      <span class="label">Region</span>
+      <input type="text" id="regionInput" value="pig · chr1:5,432,100-5,432,500" aria-label="Region">
+      <div class="navigator-presets" aria-label="Quick regions">
+        <button class="preset" data-region="chr1:5,432,100-5,432,500">CTCF anchor</button>
+        <button class="preset" data-region="chr3:48,210,000-48,210,400">HBA locus</button>
+        <button class="preset" data-region="chr6:24,807,000-24,807,300">MYH7</button>
+      </div>
+      <button class="primary" id="navGo">Go</button>
+    </section>
+
+  </main>
+
+  <footer><span><strong>dataWeb</strong> · Multi-omics 3D genome browser</span><span id="footStatus">CTCF motif route · species=pig · region=chr1:5,432,100-5,432,500 · pop=global</span></footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ===================== Data: synthetic but biologically plausible =====================
+    // 20 motif columns; PWM 4x20 normalized heights (A,C,G,T)
+    // Designed so specific positions show "tall letter" patterns:
+    //  col 0  -> dominant C (matches CTCF start consensus)
+    //  col 1  -> dominant C
+    //  col 2  -> dominant G
+    //  col 3  -> dominant C
+    //  col 4  -> dominant G (anchor-ish — "G" of "CCGCG")
+    //  col 5  -> dominant N (mixed)
+    //  col 6  -> dominant G
+    //  col 7  -> dominant G (anchor position — CCGCG**N**GG**N**GGCAG)
+    //  col 8  -> dominant N
+    //  col 9  -> dominant G
+    //  col 10 -> dominant G
+    //  col 11 -> mixed
+    //  col 12 -> dominant C
+    //  col 13 -> mixed/weak
+    //  col 14 -> dominant A
+    //  col 15 -> dominant G
+    //  col 16 -> mixed
+    //  col 17 -> weak
+    //  col 18 -> mixed
+    //  col 19 -> mixed
+    //
+    // Each column is a vector of 4 floats (heights that sum to ~1.0 of info-content).
+    const PWM = [
+      [0.06, 0.78, 0.10, 0.06],   // 0  C
+      [0.05, 0.74, 0.10, 0.11],   // 1  C
+      [0.08, 0.10, 0.72, 0.10],   // 2  G
+      [0.06, 0.66, 0.14, 0.14],   // 3  C
+      [0.05, 0.12, 0.70, 0.13],   // 4  G
+      [0.24, 0.18, 0.30, 0.28],   // 5  N
+      [0.07, 0.10, 0.71, 0.12],   // 6  G
+      [0.04, 0.06, 0.86, 0.04],   // 7  G (anchor — most conserved)
+      [0.22, 0.20, 0.30, 0.28],   // 8  N
+      [0.06, 0.10, 0.78, 0.06],   // 9  G
+      [0.05, 0.09, 0.80, 0.06],   // 10 G
+      [0.20, 0.18, 0.40, 0.22],   // 11 N
+      [0.10, 0.55, 0.25, 0.10],   // 12 C
+      [0.16, 0.16, 0.38, 0.30],   // 13 weak
+      [0.54, 0.10, 0.20, 0.16],   // 14 A
+      [0.10, 0.08, 0.74, 0.08],   // 15 G
+      [0.20, 0.18, 0.30, 0.32],   // 16 mixed
+      [0.18, 0.16, 0.36, 0.30],   // 17 weak
+      [0.24, 0.20, 0.32, 0.24],   // 18 mixed
+      [0.22, 0.18, 0.34, 0.26],   // 19 mixed
+    ];
+
+    const CONSENSUS = 'CCGCGNGGNGGCAG'.split(''); // 14 chars (semi-mapped onto 20 cols)
+    const ANCHOR_COL = 7; // 0-indexed: col 8 of motif logo (closest to "anchor @ 5,432,300")
+
+    const BASE_COLORS = { A: '#2e7d32', C: '#1565c0', G: '#f9a825', T: '#e53935' };
+    const BASE_NAMES = ['A', 'C', 'G', 'T'];
+
+    // 5 SNPs each associated with a motif column.  Cols roughly span anchor area.
+    // Population-specific counts (ref_hom, het, alt_hom)
+    // Note: chrx and snp_id are intentionally varied to look realistic
+    const SNP_DEFS = [
+      { id: 'CTCF_SNP_1', col: 3,  pos: 5432234, ref: 'C', alt: 'T', breeds: { global:[126,128,58], berkshire:[42,40,18], tibetan:[31,33,12], f1:[53,55,28] } },
+      { id: 'CTCF_SNP_2', col: 5,  pos: 5432258, ref: 'G', alt: 'A', breeds: { global:[205,80,27],  berkshire:[70,20,10], tibetan:[58,12, 6], f1:[77,48,11] } },
+      { id: 'CTCF_SNP_3', col: 7,  pos: 5432300, ref: 'G', alt: 'C', breeds: { global:[264,42, 6],  berkshire:[90, 8, 2], tibetan:[70, 6, 0], f1:[104,28,4] } }, // anchor — strongly ref-biased
+      { id: 'CTCF_SNP_4', col: 11, pos: 5432367, ref: 'C', alt: 'G', breeds: { global:[144,118,50], berkshire:[54,38, 8], tibetan:[40,28, 8], f1:[50,52,34] } },
+      { id: 'CTCF_SNP_5', col: 15, pos: 5432412, ref: 'A', alt: 'T', breeds: { global:[180,98,34], berkshire:[60,30,10], tibetan:[50,20, 6], f1:[70,48,18] } },
+    ];
+
+    // Bootstrap current state
+    let activePop = 'global';
+
+    // ============================ Motif logo rendering ============================
+    function renderMotifLogo() {
+      const svg = document.getElementById('motifLogoSvg');
+      const W = 900, H = 200;
+      const padX = 14, padTop = 18, padBottom = 36;
+      const innerH = H - padTop - padBottom;
+      const nCols = PWM.length;
+      const colW = (W - padX * 2 - (nCols - 1) * 1) / nCols;
+      const anchorX = padX + ANCHOR_COL * (colW + 1) + colW / 2;
+
+      let html = '';
+
+      // Baseline + light axis
+      html += `<line x1="${padX}" y1="${H - padBottom}" x2="${W - padX}" y2="${H - padBottom}" stroke="#d9d9d6" stroke-width="1" />`;
+
+      // Column index ticks at bottom
+      for (let i = 0; i < nCols; i++) {
+        const x = padX + i * (colW + 1) + colW / 2;
+        html += `<text x="${x}" y="${H - padBottom + 12}" text-anchor="middle" fill="#9a9a96" font-size="9" font-family="JetBrains Mono, monospace">${i+1}</text>`;
+      }
+
+      // Stack per column
+      for (let col = 0; col < nCols; col++) {
+        const entries = BASE_NAMES.map((b, r) => ({ base: b, val: PWM[col][r], color: BASE_COLORS[b] }));
+        // sort tallest to shortest
+        entries.sort((a, b) => b.val - a.val);
+        let yAccum = 0;
+        const x = padX + col * (colW + 1);
+
+        for (const e of entries) {
+          const h = Math.max(e.val * innerH, 2);
+          const y = H - padBottom - yAccum - h;
+          // rect
+          html += `<rect x="${x}" y="${y}" width="${colW}" height="${h}" fill="${e.color}" opacity="0.9" />`;
+          // letter inside only if there's room
+          if (h > 14 && colW > 12) {
+            html += `<text x="${x + colW / 2}" y="${y + h - 3}" text-anchor="middle" font-size="13" fill="#fff">${e.base}</text>`;
+          }
+          yAccum += h;
+        }
+
+        // anchor column highlight
+        if (col === ANCHOR_COL) {
+          html += `<rect x="${x - 1}" y="${padTop - 4}" width="${colW + 2}" height="${innerH + 6}" fill="rgba(192,57,43,0.06)" stroke="#c0392b" stroke-width="1" stroke-dasharray="3 3" rx="2" />`;
+        }
+      }
+
+      // Anchor label marker
+      html += `<line x1="${anchorX}" y1="${padTop - 10}" x2="${anchorX}" y2="${H - padBottom}" stroke="#c0392b" stroke-width="1" stroke-dasharray="2 3" opacity="0.5" />`;
+      html += `<text x="${anchorX}" y="${padTop - 13}" text-anchor="middle" font-size="9" font-family="JetBrains Mono, monospace" fill="#c0392b">anchor</text>`;
+
+      // Y-axis info-content label
+      html += `<text x="${padX - 4}" y="${padTop + 2}" text-anchor="end" font-size="9" font-family="JetBrains Mono, monospace" fill="#9a9a96">2.0</text>`;
+      html += `<text x="${padX - 4}" y="${padTop + innerH * 0.5}" text-anchor="end" font-size="9" font-family="JetBrains Mono, monospace" fill="#9a9a96">1.0</text>`;
+      html += `<text x="${padX - 4}" y="${H - padBottom}" text-anchor="end" font-size="9" font-family="JetBrains Mono, monospace" fill="#9a9a96">0.0</text>`;
+      html += `<text x="${padX}" y="${padTop - 4}" font-size="9" font-family="JetBrains Mono, monospace" fill="#9a9a96">info-content (bits)</text>`;
+
+      svg.innerHTML = html;
+    }
+
+    // ============================ Pie rendering ============================
+    function describeArc(cx, cy, r, startDeg, endDeg) {
+      const rad = (a) => (a - 90) * Math.PI / 180;
+      const s = { x: cx + r * Math.cos(rad(startDeg)), y: cy + r * Math.sin(rad(startDeg)) };
+      const e = { x: cx + r * Math.cos(rad(endDeg)), y: cy + r * Math.sin(rad(endDeg)) };
+      const large = endDeg - startDeg > 180 ? 1 : 0;
+      return `M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y} Z`;
+    }
+
+    function aggregateCounts() {
+      let ref = 0, het = 0, alt = 0;
+      for (const s of SNP_DEFS) {
+        const c = s.breeds[activePop];
+        ref += c[0]; het += c[1]; alt += c[2];
+      }
+      return { ref_hom: ref, het, alt_hom: alt };
+    }
+
+    function renderPie() {
+      const counts = aggregateCounts();
+      const total = counts.ref_hom + counts.het + counts.alt_hom;
+      const data = [
+        { key: 'ref_hom', value: counts.ref_hom, label: 'Ref hom', color: '#9aab9a' },
+        { key: 'het',     value: counts.het,       label: 'Het',     color: '#c0392b' },
+        { key: 'alt_hom', value: counts.alt_hom,   label: 'Alt hom', color: '#f7e9e7' },
+      ];
+      const cx = 100, cy = 100, r = 78;
+      let cur = 0;
+      const slices = data.filter(d => d.value > 0).map(d => {
+        const start = (cur / total) * 360;
+        cur += d.value;
+        const end = (cur / total) * 360;
+        return { ...d, path: describeArc(cx, cy, r, start, end) };
+      });
+
+      const svg = document.getElementById('pieSvg');
+      let html = '';
+      // outer ring
+      for (const s of slices) {
+        const stroke = s.key === 'het' ? '#c0392b' : (s.key === 'ref_hom' ? '#7d8c7d' : '#e8c5c1');
+        html += `<path d="${s.path}" fill="${s.color}" stroke="#fff" stroke-width="1.5" />`;
+      }
+      // center label
+      const pct = ((counts.het / total) * 100).toFixed(0);
+      html += `<circle cx="${cx}" cy="${cy}" r="34" fill="#fff" />`;
+      html += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="20" font-family="JetBrains Mono, monospace" font-weight="600" fill="#c0392b">${pct}%</text>`;
+      html += `<text x="${cx}" y="${cy + 11}" text-anchor="middle" font-size="9" font-family="JetBrains Mono, monospace" fill="#9a9a96">het rate</text>`;
+      svg.innerHTML = html;
+
+      // legend
+      const legend = document.getElementById('pieLegend');
+      legend.innerHTML = data.map(d => `
+        <div class="genotype-legend-item">
+          <span class="genotype-legend-swatch" style="background:${d.color};${d.key==='alt_hom'?'border:1px solid #e8c5c1;':''}"></span>
+          <span>${d.label}</span>
+          <b>${d.value} (${((d.value/total)*100).toFixed(0)}%)</b>
+        </div>
+      `).join('') + `
+        <div class="genotype-legend-item" style="border-top:1px dashed var(--line); padding-top:6px; margin-top:2px;">
+          <span style="font-size:11px;color:var(--muted-2);">total alleles across 5 SNPs · n=${total*2}</span>
+        </div>
+      `;
+    }
+
+    // ============================ SNP table rendering ============================
+    function renderSnpTable() {
+      const tbody = document.querySelector('#snpsTable tbody');
+      const totalForPop = (s) => s.breeds[activePop].reduce((a,b)=>a+b,0);
+      const rows = SNP_DEFS.map(s => {
+        const c = s.breeds[activePop];
+        const t = c[0] + c[1] + c[2];
+        const pct = (n) => ((n / t) * 100).toFixed(0);
+        const refPct = (c[0]/t)*100, hetPct = (c[1]/t)*100, altPct = (c[2]/t)*100;
+        return `
+          <tr>
+            <td class="id">${s.id}</td>
+            <td>
+              <span class="allele-pill ref">${s.ref}</span>
+              <span class="allele-arrow">→</span>
+              <span class="allele-pill alt">${s.alt}</span>
+              <span style="color:var(--muted-2);font-size:10px;margin-left:6px;">col ${s.col+1}${s.id === 'CTCF_SNP_3' ? ' · anchor' : ''}</span>
+            </td>
+            <td class="dist">${c[0]} <span style="color:var(--muted-2);font-size:10px;">(${pct(c[0])}%)</span></td>
+            <td class="dist">${c[1]} <span style="color:var(--muted-2);font-size:10px;">(${pct(c[1])}%)</span></td>
+            <td class="dist">${c[2]} <span style="color:var(--muted-2);font-size:10px;">(${pct(c[2])}%)</span></td>
+            <td>
+              <span style="color:#7d8c7d;font-family:var(--mono);font-size:10px;width:24px;display:inline-block;">${pct(c[0])}</span>
+              <span class="micro-bar"><span style="width:${refPct}%; background:#9aab9a;"></span></span>
+              <br>
+              <span style="color:#c0392b;font-family:var(--mono);font-size:10px;width:24px;display:inline-block;">${pct(c[1])}</span>
+              <span class="micro-bar"><span style="width:${hetPct}%; background:#c0392b;"></span></span>
+              <br>
+              <span style="color:#a86560;font-family:var(--mono);font-size:10px;width:24px;display:inline-block;">${pct(c[2])}</span>
+              <span class="micro-bar"><span style="width:${altPct}%; background:#cba9a3;"></span></span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      tbody.innerHTML = rows;
+    }
+
+    // ============================ SNP × position track ============================
+    function renderSnpxTrack() {
+      const svg = document.getElementById('snpxSvg');
+      const W = 900, H = 74;
+      const padX = 14;
+      const nCols = PWM.length;
+      const colW = (W - padX * 2 - (nCols - 1) * 1) / nCols;
+
+      let html = '';
+
+      // Mini motif background: simple bars at top showing info-content silhouette
+      const topH = 16, mid = 30, base = 50;
+      html += `<line x1="${padX}" y1="${base}" x2="${W - padX}" y2="${base}" stroke="#d9d9d6" stroke-width="1" />`;
+      for (let col = 0; col < nCols; col++) {
+        const x = padX + col * (colW + 1);
+        const totalH = PWM[col].reduce((s, v) => s + v, 0);
+        const norm = Math.min(1, totalH / 2.4); // pseudo info-content
+        const h = norm * (base - topH - 2);
+        const y = base - h;
+        const isAnchor = col === ANCHOR_COL;
+        html += `<rect x="${x}" y="${y}" width="${colW}" height="${h}" fill="${isAnchor ? '#c0392b' : '#e6e6e3'}" opacity="${isAnchor ? 0.6 : 1}" />`;
+        if (colW > 14) {
+          // consensus letter
+          html += `<text x="${x + colW/2}" y="${y + Math.min(h-2, 12)}" text-anchor="middle" font-size="10" fill="#5a5a57" font-weight="600">${CONSENSUS[col] || ''}</text>`;
+        }
+      }
+
+      // SNP markers below
+      for (const s of SNP_DEFS) {
+        const x = padX + s.col * (colW + 1) + colW / 2;
+        const isAnchor = s.col === ANCHOR_COL;
+        // vertical dashed line through mini bars
+        html += `<line x1="${x}" y1="${topH - 2}" x2="${x}" y2="${H - 6}" stroke="${isAnchor ? '#c0392b' : '#9a9a96'}" stroke-width="${isAnchor ? 1.5 : 1}" stroke-dasharray="${isAnchor ? '3 2' : '2 2'}" opacity="${isAnchor ? 1 : 0.6}" />`;
+        // dual-letter marker
+        html += `<g transform="translate(${x}, ${H - 18})">
+          <rect x="-13" y="0" width="12" height="14" fill="#9aab9a" rx="2" />
+          <text x="-7" y="10" text-anchor="middle" font-size="10" font-family="JetBrains Mono, monospace" font-weight="700" fill="#fff">${s.ref}</text>
+          <rect x="1" y="0" width="12" height="14" fill="${isAnchor ? '#c0392b' : '#cba9a3'}" rx="2" />
+          <text x="7" y="10" text-anchor="middle" font-size="10" font-family="JetBrains Mono, monospace" font-weight="700" fill="#fff">${s.alt}</text>
+        </g>`;
+        // SNP ID label
+        html += `<text x="${x}" y="${H - 0}" text-anchor="middle" font-size="8.5" font-family="JetBrains Mono, monospace" fill="#7a7a77">${s.id.replace('CTCF_SNP_','s')}</text>`;
+      }
+      svg.innerHTML = html;
+    }
+
+    // ============================ Population segmented control ============================
+    function setPopulation(pop) {
+      activePop = pop;
+      const nameMap = { global: 'Global', berkshire: 'Berkshire', tibetan: 'Tibetan', f1: 'F1' };
+      // sync both seg controls
+      document.querySelectorAll('.seg').forEach(seg => {
+        seg.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.pop === pop));
+      });
+      document.getElementById('popNameLbl').textContent = nameMap[pop];
+      renderPie();
+      renderSnpTable();
+      // update URL (mock) and footer
+      const u = new URL(window.location.href);
+      u.searchParams.set('population', pop);
+      history.replaceState(null, '', u);
+      document.getElementById('footStatus').textContent = `CTCF motif route · species=pig · region=chr1:5,432,100-5,432,500 · pop=${pop}`;
+    }
+
+    document.querySelectorAll('.seg').forEach(seg => {
+      seg.addEventListener('click', event => {
+        const b = event.target.closest('button[data-pop]');
+        if (!b) return;
+        setPopulation(b.dataset.pop);
+      });
+    });
+
+    // ============================ Topbar species toggle ============================
+    const toggles = [...document.querySelectorAll('.species-toggle button')];
+    function setSpecies(species) {
+      toggles.forEach(button => button.classList.toggle('active', button.dataset.species === species));
+      // mock: switching species would invalidate region & pop
+      showToast(`Species set to ${species}`);
+    }
+    toggles.forEach(button => button.addEventListener('click', () => setSpecies(button.dataset.species)));
+
+    // ============================ Head buttons (mock) ============================
+    document.querySelectorAll('.headbtns [data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const a = btn.dataset.action;
+        if (a === 'download-pwm') showToast('Generating PWM.csv (20 × 4 matrix, 312 columns)');
+        else if (a === 'share') showToast('Link copied: ?species=pig&chr=chr1&start=5432100&end=5432500&sample=Brain_BF3&population=' + activePop);
+        else if (a === 'analyze') showToast('Analyze would open the comparison route against ' + activePop);
+      });
+    });
+
+    // ============================ Region navigator ============================
+    document.querySelectorAll('.navigator-presets .preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('regionInput').value = `pig · ${btn.dataset.region}`;
+      });
+    });
+    document.getElementById('navGo').addEventListener('click', () => {
+      showToast('Loading ' + document.getElementById('regionInput').value);
+    });
+
+    // ============================ Toast ============================
+    const toast = document.getElementById('toast');
+    let toastTimer = null;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    // ============================ Boot ============================
+    renderMotifLogo();
+    renderSnpxTrack();
+    setPopulation('global');
+
+    // Sync URL with default state on first paint
+    try {
+      const u = new URL(window.location.href);
+      if (!u.searchParams.get('species')) {
+        u.searchParams.set('species', 'pig');
+        u.searchParams.set('chr', 'chr1');
+        u.searchParams.set('start', '5432100');
+        u.searchParams.set('end', '5432500');
+        u.searchParams.set('sample', 'Brain_BF3');
+        u.searchParams.set('population', activePop);
+        history.replaceState(null, '', u);
+      } else {
+        const pop = u.searchParams.get('population');
+        if (pop && ['global','berkshire','tibetan','f1'].includes(pop)) setPopulation(pop);
+      }
+    } catch (_) {}
+
+  </script>
+</body>
+</html>
