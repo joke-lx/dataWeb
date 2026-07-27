@@ -1,0 +1,361 @@
+/* Sub-tab bar — grouped chip selector inside TracksRoute */
+
+.subtab-bar {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-1);
+  border-bottom: var(--track-separator) solid var(--color-border);
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.subtab-group {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.subtab-group + .subtab-group {
+  margin-left: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--color-border);
+}
+
+.subtab-group-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--color-text-tertiary);
+  margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.subtab-chip {
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: var(--track-separator) solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease;
+  font-family: inherit;
+}
+
+.subtab-chip:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+.subtab-chip--active {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+}
+
+/* ---------- Track-bound sample header (sibling of Lane) ---------- */
+
+.track-sample-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: 6px var(--space-3);
+  background: var(--color-surface-1);
+  border: var(--track-separator) solid var(--color-border);
+  border-radius: 3px;
+  position: relative;
+  /* Sit at the top of the lane's 1fr column inside `.route-content`. */
+  width: 100%;
+}
+
+.track-sample-header__title {
+  font-size: var(--font-size-small);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.track-sample-header .sample-picker-row {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---------- Sample picker for multi-sample bigwig overlay ---------- */
+
+.sample-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.sample-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.sample-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 6px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+  background: var(--color-surface-2);
+  border: var(--track-separator) solid var(--color-border);
+  border-left: 3px solid var(--color-border);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.sample-chip--active {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+}
+
+.sample-chip--loading {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.sample-chip__swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.sample-chip__id {
+  font-variant-numeric: tabular-nums;
+}
+
+.sample-chip__remove {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  opacity: 0.7;
+}
+
+.sample-chip__remove:hover {
+  opacity: 1;
+}
+
+.sample-picker-empty {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--color-text-tertiary);
+}
+
+.sample-picker-trigger {
+  padding: 3px 10px;
+  font-size: 11px;
+  background: var(--color-surface-1);
+  color: var(--color-text-primary);
+  border: var(--track-separator) solid var(--color-border);
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sample-picker-trigger:hover {
+  background: var(--color-surface-2);
+}
+
+.sample-picker {
+  position: absolute;
+  z-index: 50;
+  top: 100%;
+  left: var(--space-3);
+  margin-top: 4px;
+  width: 360px;
+  max-width: calc(100vw - 2 * var(--space-3));
+  background: var(--color-surface-1);
+  border: var(--track-separator) solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.sample-picker__body {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sample-picker__hint {
+  font-style: italic;
+  color: var(--color-text-tertiary);
+  padding: var(--space-2) 0;
+}
+
+.sample-picker__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sample-picker__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sample-picker__footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px var(--space-3);
+  border-top: var(--track-separator) solid var(--color-border);
+  background: var(--color-surface-2);
+}
+
+.sample-picker__footer-spacer {
+  flex: 1 1 auto;
+}
+
+.sample-picker__btn {
+  font-size: 11px;
+  padding: 3px 10px;
+  border: var(--track-separator) solid var(--color-border);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.sample-picker__btn--ghost {
+  background: var(--color-surface-1);
+  color: var(--color-text-secondary);
+}
+
+.sample-picker__btn--ghost:hover {
+  background: var(--color-bg);
+}
+
+.sample-picker__btn--ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sample-picker__btn--primary {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent);
+}
+
+.sample-picker__btn--primary:hover {
+  filter: brightness(1.05);
+}
+
+/* Loop track — allows the overlay row to sit between two lanes */
+
+.loop-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--track-separator);
+  width: 100%;
+}
+
+.loop-track__overlay {
+  background: var(--color-surface-1);
+  border-bottom: var(--track-separator) solid var(--color-border);
+}
+
+/* CTCF Motif route — two-column layout */
+
+.ctcf-motif-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--color-bg);
+}
+
+.ctcf-motif-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--space-3);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.ctcf-motif-panel {
+  background: var(--color-surface-1);
+  border: var(--track-separator) solid var(--color-border);
+  border-radius: 4px;
+  padding: var(--space-3);
+  min-height: 200px;
+}
+
+.ctcf-motif-panel h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-title);
+  color: var(--color-text-primary);
+}
+
+/* Sequence logo SVG */
+
+.motif-logo-svg {
+  width: 100%;
+  height: 180px;
+  display: block;
+}
+
+.motif-logo-svg text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* Genotype pie */
+
+.genotype-pie-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.genotype-pie-svg {
+  width: 200px;
+  height: 200px;
+}
+
+.genotype-legend {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.genotype-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.genotype-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}

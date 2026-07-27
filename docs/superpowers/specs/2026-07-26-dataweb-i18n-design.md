@@ -182,7 +182,7 @@ react-intl `IntlProvider` configured with:
 | Component | I18nToggle click → URL change | React Testing Library + URL spy |
 | Component | useAppIntl returns correct string per locale | render with Provider |
 | Integration | All routes re-render in zh-CN | Manual E2E |
-| CI | Lint missing en keys | Script: grep all `formatMessage({id: '...'})` → find `en.json` missing → fail if >0 |
+| CI | Lint missing en keys | Script: grep all `formatMessage({id: '...'})` static calls → find `en.json` missing → fail if >0. Dynamic ids (e.g. template-string key) not covered by static grep; catch them via onError console.warn at startup instead. |
 
 ## 6. Rollback
 

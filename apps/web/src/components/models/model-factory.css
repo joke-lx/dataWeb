@@ -1,0 +1,96 @@
+/* ModelFactory fallback UI: skeleton + missing-model placeholder. */
+
+.model-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  min-height: 240px;
+}
+
+.model-skeleton[data-type="3d"] {
+  gap: var(--space-4);
+}
+
+/* Generic pulse animation for skeleton elements */
+@keyframes skeleton-pulse {
+  0%   { opacity: 0.55; }
+  50%  { opacity: 0.85; }
+  100% { opacity: 0.55; }
+}
+
+.model-skeleton > * {
+  background: var(--color-surface-2, #f0f0f0);
+  border-radius: 6px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+/* Vertical-lane shape (hic / differential / tracks) */
+.model-skeleton .skeleton-lane {
+  height: 60px;
+  width: 100%;
+}
+
+/* 3D panels shape (three stacked rows) */
+.model-skeleton[data-type="3d"] .skeleton-row {
+  height: 220px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+/* CTCF motif shape (logo + pie) */
+.model-skeleton .skeleton-block--tall {
+  height: 200px;
+  width: 60%;
+}
+
+.model-skeleton .skeleton-block--wide {
+  height: 240px;
+  width: 35%;
+  align-self: flex-end;
+}
+
+/* ── MissingModelFallback ── */
+
+.model-missing {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-4);
+  margin: var(--space-3);
+  background: var(--color-surface-1, #fafafa);
+  border: 1px solid var(--color-divider-strong, #c8c8c8);
+  border-radius: 6px;
+}
+
+.model-missing__badge {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-accent-soft, #f7e9e7);
+  color: var(--color-accent, #c0392b);
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.model-missing__body strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-text-primary, #1a1a1a);
+}
+
+.model-missing__body p {
+  margin: 0;
+  font-size: var(--font-size-small, 12px);
+  color: var(--color-text-secondary, #555);
+}
+
+.model-missing__body code {
+  font-family: var(--font-mono, monospace);
+  background: var(--color-surface-2, #f0f0f0);
+  padding: 0 4px;
+  border-radius: 2px;
+}

@@ -1,0 +1,27 @@
+.i18n-toggle {
+  display: flex;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-right: 6px;
+}
+
+.i18n-toggle button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: color 0.12s, background 0.12s;
+}
+
+.i18n-toggle button.active {
+  color: white;
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgba(143, 45, 36, 0.16);
+}

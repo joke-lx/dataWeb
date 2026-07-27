@@ -1,6 +1,8 @@
 import type { JSX } from 'react';
 import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+
+import { useAppIntl } from '../../i18n';
 import { fetchSamples } from '../../api/client';
 import type { Sample } from '../../api/types';
 import { useSamples } from '../../store/samples';
@@ -30,6 +32,7 @@ function SampleItem({ sample }: { sample: Sample }): JSX.Element {
 }
 
 export function LeftRail(): JSX.Element {
+  const { t } = useAppIntl();
   const setSamples = useSamples((s) => s.setSamples);
 
   const { data, isLoading, error } = useQuery({
@@ -55,16 +58,16 @@ export function LeftRail(): JSX.Element {
   return (
     <aside className="left-rail">
       <div className="left-rail__title">
-        样本 ({data ? data.length : 0})
+        {t('leftRail.samplesCount', { count: data ? data.length : 0 })}
       </div>
 
       {isLoading && (
-        <div className="left-rail__state">加载中…</div>
+        <div className="left-rail__state">{t('leftRail.loading')}</div>
       )}
 
       {error instanceof Error && (
         <div className="left-rail__state left-rail__state--error">
-          加载失败: {error.message}
+          {t('leftRail.loadError', { message: error.message })}
         </div>
       )}
 

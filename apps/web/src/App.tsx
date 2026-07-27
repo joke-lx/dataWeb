@@ -2,11 +2,12 @@ import type { JSX } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { AppShell } from './components/shell/AppShell';
-import { HicRoute } from './routes/HicRoute';
-import { DifferentialHicRoute } from './routes/DifferentialHicRoute';
-import { TracksRoute } from './routes/TracksRoute';
-import { ThreeDChromatinRoute } from './routes/ThreeDChromatinRoute';
-import { CtcfMotifRoute } from './routes/CtcfMotifRoute';
+import { HicRoute } from './routes/hic';
+import { DifferentialHicRoute } from './routes/differential';
+import { TracksRoute } from './routes/tracks';
+import { ThreeDChromatinRoute } from './routes/3d';
+import { HomeRoute } from './routes/home';
+import { CtcfMotifRoute } from './routes/ctcf-motif';
 import { LEGACY_REDIRECTS, ROUTES } from './routes/registry';
 import './routes/route.css';
 
@@ -41,7 +42,7 @@ export function App(): JSX.Element {
             <Route key={from} path={from} element={<Navigate to={to} replace />} />
           ))}
 
-          <Route path="/" element={<Navigate to={DEFAULT_PATH} replace />} />
+          <Route path="/" element={<HomeRoute />} />
           <Route path="*" element={<Navigate to={DEFAULT_PATH} replace />} />
         </Routes>
       </AppShell>
