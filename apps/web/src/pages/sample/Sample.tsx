@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import type { Sample } from '../../api/types';
 import { ModelFactory } from '../../components/models';
@@ -7,6 +7,8 @@ import type { ModelType } from '../../components/models';
 import { RouteShell } from '../../components/route/RouteShell';
 import { TracksModel } from '../../components/models/tracks';
 import { TrackSampleHeader } from '../../components/models/tracks/TrackSampleHeader';
+import { GeneLane } from '../../components/models/differential/GeneLane';
+import { Log2Heatmap } from '../../components/models/differential/Log2Heatmap';
 import { useD3Zoom } from '../../hooks/useD3Zoom';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { useTrackSampleSelection } from '../../hooks/useTrackSampleSelection';
@@ -25,13 +27,13 @@ const MODEL_TYPES: Record<SampleTab, string> = {
 
 export function Sample(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  const [params] = useSearchParams();
-  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const { t } = useAppIntl();
   const { samples, isLoading } = useSampleCatalog();
   const setActive = useSamples((state) => state.setActive);
   const setSamples = useSamples((state) => state.setSamples);
   const viewport = useViewport();
+  const partnerId = params.get('vs');
   const [tab, setTab] = useState<SampleTab>((params.get('tab') as SampleTab) || 'hic');
   const [showSamples, setShowSamples] = useState(false);
   const [showComparePicker, setShowComparePicker] = useState(false);
@@ -41,6 +43,11 @@ export function Sample(): JSX.Element {
   const comparePopoverRef = useRef<HTMLDivElement>(null);
   useD3Zoom(viewerRef);
   const sample = useMemo(() => samples?.find((item) => item.id === id), [samples, id]);
+  const partner = useMemo(
+    () => (partnerId ? samples?.find((item) => item.id === partnerId) : undefined),
+    [samples, partnerId],
+  );
+  const isCompareMode = Boolean(partnerId && partner && sample && partnerId !== sample.id);
 
   // --- Tracks sub-tab business logic ---
   const trackType = (params.get('type') ?? 'ab') as TrackId;
@@ -131,39 +138,90 @@ export function Sample(): JSX.Element {
   if (isLoading) return <main className="route-page"><div className="route-content">{t('common.loading')}</div></main>;
   if (!sample) return <main className="route-page"><div className="model-missing"><strong>{t('sample.notFound.title')}</strong><p>{t('sample.notFound.description', { id: id ?? '' })}</p></div></main>;
 
+  // Compare mode requires both samples to exist; treat as off if partner is missing.
+  const compareActive = isCompareMode && partner;
+
   const region = `${viewport.chr}:${viewport.start.toLocaleString()}-${viewport.end.toLocaleString()}`;
-  const subtitle = `${sample.species} · ${sample.tissue} · ${sample.breed} · ${sample.sex} · ${sample.dev_stage}`;
+  const subtitle = compareActive && partner
+    ? `${sample.tissue} vs ${partner.tissue} · ${sample.species} · ${sample.breed} vs ${partner.breed} · ${region}`
+    : `${sample.species} · ${sample.tissue} · ${sample.breed} · ${sample.sex} · ${sample.dev_stage}`;
 
   const navigateToCompare = (targetId: string) => {
     setShowComparePicker(false);
-    navigate(`/compare/${sample.id}/${targetId}`);
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('vs', targetId);
+        return next;
+      },
+      { replace: false },
+    );
   };
+
+  const exitCompare = () => {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('vs');
+        return next;
+      },
+      { replace: false },
+    );
+  };
+
+  const title = compareActive && partner
+    ? `${sample.id} vs ${partner.id}`
+    : `${sample.id} — ${sample.tissue} (${sample.species})`;
 
   return (
     <RouteShell
-      title={`${sample.id} — ${sample.tissue} (${sample.species})`}
+      title={title}
       subtitle={subtitle}
-      breadcrumb={`${sample.species} › ${sample.tissue} › ${sample.id}`}
-      actions={null}
+      breadcrumb={
+        compareActive && partner
+          ? `${sample.species} › ${sample.tissue} › ${sample.id} vs ${partner.id}`
+          : `${sample.species} › ${sample.tissue} › ${sample.id}`
+      }
+      actions={
+        compareActive && partner ? (
+          <div className="sample-actions">
+            <button type="button" onClick={exitCompare} aria-label={t('sample.compare.closeButton')}>
+              {t('sample.compare.closeButton')} ×
+            </button>
+          </div>
+        ) : null
+      }
       toolbar={
         <div className="sample-toolbar">
           <div className="sample-picker"><button type="button" onClick={() => setShowSamples((open) => !open)}>{t('sample.actions.changeSample')} ▾</button>
             {showSamples && <div className="sample-picker__menu">{(samples ?? []).map((item) => <Link key={item.id} to={`/sample/${item.id}`} onClick={() => setShowSamples(false)}>{item.id}<small>{item.tissue} · {item.breed}</small></Link>)}</div>}
           </div>
-          <div className="sample-tabs" role="tablist">
-            {TABS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={tab === item}
-                className={tab === item ? 'active' : ''}
-                onClick={() => setTab(item)}
-              >
-                {t(`sample.tabs.${item}`)}
+          {!compareActive && (
+            <div className="sample-tabs" role="tablist">
+              {TABS.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === item}
+                  className={tab === item ? 'active' : ''}
+                  onClick={() => setTab(item)}
+                >
+                  {t(`sample.tabs.${item}`)}
+                </button>
+              ))}
+            </div>
+          )}
+          {compareActive && (
+            <div className="sample-tabs sample-tabs--compare" role="tablist">
+              <button type="button" role="tab" aria-selected={true} className="active">
+                {sample.id}
               </button>
-            ))}
-          </div>
+              <button type="button" role="tab" aria-selected={true} className="active">
+                vs {partner.id}
+              </button>
+            </div>
+          )}
           {canCompare && <div className="sample-picker">
             <button
               type="button"
@@ -220,7 +278,12 @@ export function Sample(): JSX.Element {
     >
       <div className="sample-region">{region} · {t('stage.binLabel', { bin: viewport.bin.toLocaleString() })}</div>
       <div ref={viewerRef} className="sample-viewer">
-        {tab === 'tracks' ? (
+        {compareActive && partner ? (
+          <>
+            <Log2Heatmap sampleA={sample.id} sampleB={partner.id} />
+            <GeneLane sampleId={sample.id} />
+          </>
+        ) : tab === 'tracks' ? (
           <>
             {overlaySampleIds && (
               <TrackSampleHeader

@@ -1,9 +1,0 @@
-.compare-modes { display: flex; gap: 4px; padding: 0; }
-.compare-modes button { padding: 6px 12px; border: 0; background: var(--color-surface-2); color: var(--color-text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; border-radius: 14px; }
-.compare-modes button:hover { color: var(--color-text-primary); }
-.compare-modes button[aria-selected="true"] { background: var(--color-accent); color: var(--color-text-on-accent); }
-.compare-actions { display: flex; gap: var(--space-2); }
-.compare-actions button { padding: 6px 10px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface-1); color: var(--color-text-primary); font-size: 12px; cursor: pointer; }
-.compare-actions button:hover { border-color: var(--color-accent); color: var(--color-accent); }
-.compare-note { padding: var(--space-3) var(--space-4); background: var(--color-surface-2); color: var(--color-text-secondary); font-size: var(--font-size-small); }
-.compare-navigator { padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-border); text-align: center; font-size: var(--font-size-tiny); color: var(--color-text-tertiary); }
