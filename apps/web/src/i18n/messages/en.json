@@ -1,5 +1,6 @@
 {
   "nav.home": "Home",
+  "nav.samples": "Samples",
   "nav.hic": "Hi-C",
   "nav.differential": "Δ Hi-C",
   "nav.tracks": "Tracks",
@@ -110,5 +111,9 @@
 
   "site.title": "dataWeb — Multi-omics 3D Genome Browser",
   "site.footer.disclaimer": "dataWeb · Multi-omics 3D genome browser",
-  "site.footer.noUpload": "Public-data viewer only — no personalised data analysis or uploads."
+  "site.footer.noUpload": "Public-data viewer only — no personalised data analysis or uploads.",
+
+  "samples.title": "Browse samples",
+  "samples.subtitle": "Pick a sample to view its multi-omics data",
+  "samples.error": "Failed to load: {message}"
 }

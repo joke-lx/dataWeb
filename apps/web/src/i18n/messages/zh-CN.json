@@ -1,5 +1,6 @@
 {
   "nav.home": "首页",
+  "nav.samples": "样本",
   "nav.hic": "Hi-C",
   "nav.differential": "差异 Hi-C",
   "nav.tracks": "轨道",
@@ -115,5 +116,9 @@
 
   "site.title": "dataWeb — 多组学三维基因组浏览器",
   "site.footer.disclaimer": "dataWeb · 多组学三维基因组浏览器",
-  "site.footer.noUpload": "仅限公开数据浏览 — 不支持个性化数据分析或上传。"
+  "site.footer.noUpload": "仅限公开数据浏览 — 不支持个性化数据分析或上传。",
+
+  "samples.title": "浏览样本",
+  "samples.subtitle": "选择一个样本查看其多组学数据",
+  "samples.error": "加载失败: {message}"
 }
