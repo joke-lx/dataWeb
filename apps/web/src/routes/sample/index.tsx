@@ -118,111 +118,76 @@ export function SampleRoute(): JSX.Element {
       actions={<div className="sample-actions">
         <div className="sample-picker"><button type="button" onClick={() => setShowSamples((open) => !open)}>{t('sample.actions.changeSample')} ▾</button>
           {showSamples && <div className="sample-picker__menu">{(samples ?? []).map((item) => <Link key={item.id} to={`/sample/${item.id}`} onClick={() => setShowSamples(false)}>{item.id}<small>{item.tissue} · {item.breed}</small></Link>)}</div>}</div>
-        <div className="sample-picker">
-          <button
-            type="button"
-            ref={compareButtonRef}
-            aria-haspopup="dialog"
-            aria-expanded={showComparePicker}
-            disabled={!canCompare}
-            onClick={() => setShowComparePicker((open) => !open)}
-          >
-            {t('sample.actions.compareWith')} ▾
-          </button>
-          {showComparePicker && (
-            <div
-              className="sample-picker__menu compare-picker"
-              ref={comparePopoverRef}
-              role="dialog"
-              aria-label={t('sample.comparePicker.title')}
+      </div>}
+      toolbar={
+        <div className="sample-toolbar">
+          <div className="sample-tabs" role="tablist">
+            {TABS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={tab === item}
+                className={tab === item ? 'active' : ''}
+                onClick={() => setTab(item)}
+              >
+                {t(`sample.tabs.${item}`)}
+              </button>
+            ))}
+          </div>
+          {canCompare && <div className="sample-picker">
+            <button
+              type="button"
+              ref={compareButtonRef}
+              aria-haspopup="dialog"
+              aria-expanded={showComparePicker}
+              disabled={!canCompare}
+              onClick={() => setShowComparePicker((open) => !open)}
             >
+              {t('sample.actions.compareWith')} ▾
+            </button>
+            {showComparePicker && <div className="compare-picker" ref={comparePopoverRef} role="dialog" aria-label={t('sample.comparePicker.title')}>
               {!canCompare ? (
                 <div className="compare-picker__empty">{t('sample.comparePicker.empty')}</div>
               ) : (
                 <>
                   <div className="compare-picker__head">
-                    <div className="compare-picker__title">
-                      {t('sample.comparePicker.title')} <em>{sample.id}</em>
-                    </div>
-                    <button
-                      type="button"
-                      className="compare-picker__dismiss"
-                      aria-label="close"
-                      onClick={() => setShowComparePicker(false)}
-                    >▴</button>
+                    <div className="compare-picker__title">{t('sample.comparePicker.title')} <em>{sample.id}</em></div>
+                    <button type="button" className="compare-picker__dismiss" aria-label="close" onClick={() => setShowComparePicker(false)}>▴</button>
                   </div>
-
                   <div className="compare-picker__body">
                     <div className="compare-picker__search">
                       <svg className="compare-picker__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <circle cx="11" cy="11" r="7" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
                       </svg>
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder={t('sample.comparePicker.search')}
-                        autoFocus
-                      />
+                      <input type="text" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t('sample.comparePicker.search')} autoFocus />
                     </div>
-
-                    <h4 className="compare-picker__section">
-                      <span className="compare-picker__meta-dot" aria-hidden="true"></span>
-                      {t('sample.comparePicker.suggested')}
-                    </h4>
-                    {filteredSuggested.length === 0 ? (
-                      <div className="compare-picker__empty-section">—</div>
-                    ) : (
-                      filteredSuggested.map((other) => (
-                        <button
-                          key={other.id}
-                          type="button"
-                          className="compare-picker__chip"
-                          onClick={() => navigateToCompare(other.id)}
-                        >
-                          <span className="compare-picker__chip-id">{other.id}</span>
-                          <span className="compare-picker__chip-tag">{t('sample.comparePicker.sameBreed')}</span>
-                          <span className="compare-picker__chip-arrow" aria-hidden="true">→</span>
-                        </button>
-                      ))
-                    )}
-
-                    <h4 className="compare-picker__section">
-                      {t('sample.comparePicker.allSamples', { count: allSamples.length })}
-                    </h4>
+                    <h4 className="compare-picker__section"><span className="compare-picker__meta-dot" aria-hidden="true" />{t('sample.comparePicker.suggested')}</h4>
+                    {filteredSuggested.length === 0 ? <div className="compare-picker__empty-section">—</div> : filteredSuggested.map((other) => (
+                      <button key={other.id} type="button" className="compare-picker__chip" onClick={() => navigateToCompare(other.id)}>
+                        <span className="compare-picker__chip-id">{other.id}</span>
+                        <span className="compare-picker__chip-tag">{t('sample.comparePicker.sameBreed')}</span>
+                        <span className="compare-picker__chip-arrow" aria-hidden="true">→</span>
+                      </button>
+                    ))}
+                    <h4 className="compare-picker__section">{t('sample.comparePicker.allSamples', { count: allSamples.length })}</h4>
                     <div className="compare-picker__list">
                       {allSamples.map((other) => (
-                        <div
-                          key={other.id}
-                          role="button"
-                          tabIndex={0}
-                          className="compare-picker__row"
-                          onClick={() => navigateToCompare(other.id)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              navigateToCompare(other.id);
-                            }
-                          }}
-                        >
+                        <div key={other.id} role="button" tabIndex={0} className="compare-picker__row" onClick={() => navigateToCompare(other.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigateToCompare(other.id); } }}>
                           <span className="compare-picker__row-id">{other.id}</span>
-                          <span className="compare-picker__row-meta">
-                            {other.tissue} · {other.breed} · {other.sex}
-                          </span>
+                          <span className="compare-picker__row-meta">{other.tissue} · {other.breed} · {other.sex}</span>
                         </div>
                       ))}
                     </div>
                   </div>
-
                   <div className="compare-picker__foot">{t('sample.comparePicker.helper')}</div>
                 </>
               )}
-            </div>
-          )}
+            </div>}
+          </div>}
         </div>
-      </div>}
-      toolbar={<div className="sample-tabs" role="tablist">{TABS.map((item) => <button key={item} type="button" role="tab" aria-selected={tab === item} className={tab === item ? 'active' : ''} onClick={() => setTab(item)}>{t(`sample.tabs.${item}`)}</button>)}</div>}
+      }
     >
       <div className="sample-region">{region} · {t('stage.binLabel', { bin: viewport.bin.toLocaleString() })}</div>
       <div ref={viewerRef} className="sample-viewer">
