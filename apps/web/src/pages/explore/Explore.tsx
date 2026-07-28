@@ -4,7 +4,22 @@ import { Link, useParams } from 'react-router-dom';
 import { RouteShell } from '../../components/route/RouteShell';
 import { useAppIntl } from '../../i18n';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
+import { ModelFactory } from '../../components/models';
+import type { ModelType } from '../../components/models';
 import './explore.css';
+
+/**
+ * Viewer-type values that have a real ModelFactory component. The URL
+ * `viewerType` param must be one of these for the preview to render the
+ * actual model — anything else falls back to the placeholder.
+ *
+ * Typed as `readonly string[]` (not `Set<ModelType>`) because the
+ * runtime MODEL_REGISTRY contains a `'tracks'` key that the exported
+ * `ModelType` union does not include — a pre-existing inconsistency
+ * that this file does not need to solve. The lookup below uses
+ * `String.prototype.includes`, so widening to `string` is safe.
+ */
+const VALID_TYPES: readonly string[] = ['hic', 'tracks', '3d', 'ctcf-motif'];
 
 /**
  * Viewer-type landing page. Each viewer (hic / tracks / 3d / ctcfMotif)
@@ -30,14 +45,28 @@ export function Explore(): JSX.Element {
     [samples],
   );
 
+  const defaultSample = sortedSamples[0];
+
   const meta = EXPLORE_META[viewerType] ?? EXPLORE_META.hic;
+
+  const canRenderModel =
+    defaultSample !== undefined && VALID_TYPES.includes(viewerType);
 
   return (
     <RouteShell title={meta.title} subtitle={meta.subtitle}>
       {/* ── Visual preview + legend ── */}
       <div className="explore-preview">
         <div className="explore-preview__visual">
-          {meta.preview ?? <DefaultPreview viewer={viewerType} />}
+          {canRenderModel && defaultSample ? (
+            <>
+              <div className="explore-preview__sample-label">
+                {t('explore.preview.sampleLabel', { id: defaultSample.id })}
+              </div>
+              <ModelFactory type={viewerType as ModelType} />
+            </>
+          ) : (
+            meta.preview ?? <DefaultPreview viewer={viewerType} />
+          )}
         </div>
         <div className="explore-preview__legend">
           <h3>{t('explore.legend.title')}</h3>

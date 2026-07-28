@@ -123,5 +123,6 @@
   "explore.legend.ctcf.logo": "序列 logo —— 字母高度 = 每个位置的信息量。",
   "explore.legend.ctcf.pie": "群体等位基因频率（ref / het / alt）于锚点处。",
   "explore.legend.ctcf.anchor": "锚点位置 —— 投影到 motif logo 上的竖线。",
-  "explore.samples.heading": "选择一个样本查看其真实数据（共 {count} 个）"
+  "explore.samples.heading": "选择一个样本查看其真实数据（共 {count} 个）",
+  "explore.preview.sampleLabel": "正在展示: {id}"
 }

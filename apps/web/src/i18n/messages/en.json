@@ -123,5 +123,6 @@
   "explore.legend.ctcf.logo": "Sequence logo — letter height = information content at each position.",
   "explore.legend.ctcf.pie": "Population allele frequency (ref / het / alt) at the anchor.",
   "explore.legend.ctcf.anchor": "Anchor position — vertical line projected onto the motif logo.",
-  "explore.samples.heading": "Pick a sample to view its real data ({count} available)"
+  "explore.samples.heading": "Pick a sample to view its real data ({count} available)",
+  "explore.preview.sampleLabel": "Showing: {id}"
 }
