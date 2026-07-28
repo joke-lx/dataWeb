@@ -4,6 +4,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import type { Sample } from '../../api/types';
 import { ModelFactory } from '../../components/models';
 import type { ModelType } from '../../components/models';
+import { Popover } from '../../components/popover/Popover';
 import { RouteShell } from '../../components/route/RouteShell';
 import { TracksModel } from '../../components/models/tracks';
 import { TrackSampleHeader } from '../../components/models/tracks/TrackSampleHeader';
@@ -35,12 +36,8 @@ export function Sample(): JSX.Element {
   const viewport = useViewport();
   const partnerId = params.get('vs');
   const [tab, setTab] = useState<SampleTab>((params.get('tab') as SampleTab) || 'hic');
-  const [showSamples, setShowSamples] = useState(false);
-  const [showComparePicker, setShowComparePicker] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const viewerRef = useRef<HTMLDivElement>(null);
-  const compareButtonRef = useRef<HTMLButtonElement>(null);
-  const comparePopoverRef = useRef<HTMLDivElement>(null);
   useD3Zoom(viewerRef);
   const sample = useMemo(() => samples?.find((item) => item.id === id), [samples, id]);
   const partner = useMemo(
@@ -73,28 +70,6 @@ export function Sample(): JSX.Element {
 
   useEffect(() => { if (samples) setSamples(samples); }, [samples, setSamples]);
   useEffect(() => { if (sample) setActive(sample.id); }, [sample, setActive]);
-
-  useEffect(() => {
-    if (!showComparePicker) return undefined;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        comparePopoverRef.current && !comparePopoverRef.current.contains(target) &&
-        compareButtonRef.current && !compareButtonRef.current.contains(target)
-      ) {
-        setShowComparePicker(false);
-      }
-    };
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setShowComparePicker(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [showComparePicker]);
 
   const candidates = useMemo(
     () => (samples ?? []).filter((item) => item.id !== sample?.id),
@@ -147,7 +122,6 @@ export function Sample(): JSX.Element {
     : `${sample.species} · ${sample.tissue} · ${sample.breed} · ${sample.sex} · ${sample.dev_stage}`;
 
   const navigateToCompare = (targetId: string) => {
-    setShowComparePicker(false);
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -193,9 +167,24 @@ export function Sample(): JSX.Element {
       }
       toolbar={
         <div className="sample-toolbar">
-          <div className="sample-picker"><button type="button" onClick={() => setShowSamples((open) => !open)}>{t('sample.actions.changeSample')} ▾</button>
-            {showSamples && <div className="sample-picker__menu">{(samples ?? []).map((item) => <Link key={item.id} to={`/sample/${item.id}`} onClick={() => setShowSamples(false)}>{item.id}<small>{item.tissue} · {item.breed}</small></Link>)}</div>}
-          </div>
+          <Popover
+            width={240}
+            trigger={(open) => (
+              <button type="button" className="sample-picker-trigger" onClick={open}>
+                {t('sample.actions.changeSample')} ▾
+              </button>
+            )}
+          >
+            {(close) => (
+              <div className="sample-picker__menu">
+                {(samples ?? []).map((item) => (
+                  <Link key={item.id} to={`/sample/${item.id}`} onClick={close}>
+                    {item.id}<small>{item.tissue} · {item.breed}</small>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </Popover>
           {!compareActive && (
             <div className="sample-tabs" role="tablist">
               {TABS.map((item) => (
@@ -222,25 +211,25 @@ export function Sample(): JSX.Element {
               </button>
             </div>
           )}
-          {canCompare && <div className="sample-picker">
-            <button
-              type="button"
-              ref={compareButtonRef}
-              aria-haspopup="dialog"
-              aria-expanded={showComparePicker}
-              disabled={!canCompare}
-              onClick={() => setShowComparePicker((open) => !open)}
+          {canCompare && (
+            <Popover
+              width={400}
+              className="compare-picker"
+              trigger={(open) => (
+                <button
+                  type="button"
+                  className="sample-picker-trigger"
+                  disabled={!canCompare}
+                  onClick={open}
+                >
+                  {t('sample.actions.compareWith')} ▾
+                </button>
+              )}
             >
-              {t('sample.actions.compareWith')} ▾
-            </button>
-            {showComparePicker && <div className="compare-picker" ref={comparePopoverRef} role="dialog" aria-label={t('sample.comparePicker.title')}>
-              {!canCompare ? (
-                <div className="compare-picker__empty">{t('sample.comparePicker.empty')}</div>
-              ) : (
+              {() => (
                 <>
                   <div className="compare-picker__head">
                     <div className="compare-picker__title">{t('sample.comparePicker.title')} <em>{sample.id}</em></div>
-                    <button type="button" className="compare-picker__dismiss" aria-label="close" onClick={() => setShowComparePicker(false)}>▴</button>
                   </div>
                   <div className="compare-picker__body">
                     <div className="compare-picker__search">
@@ -271,8 +260,8 @@ export function Sample(): JSX.Element {
                   <div className="compare-picker__foot">{t('sample.comparePicker.helper')}</div>
                 </>
               )}
-            </div>}
-          </div>}
+            </Popover>
+          )}
         </div>
       }
     >
