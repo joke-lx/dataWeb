@@ -17,3 +17,4 @@ apps/web/vite.config.js
 !.env.example
 /data
 apps/*/data
+.claude/worktrees/
