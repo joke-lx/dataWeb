@@ -12,7 +12,6 @@ export function TopBar(): JSX.Element {
       <Link to="/" className="topbar__brand">dataWeb</Link>
       <nav className="topbar-nav topbar-nav--main" aria-label={t('nav.home')}>
         <Link to="/" className="topbar-btn">{t('nav.home')}</Link>
-        <Link to="/samples" className="topbar-btn">{t('nav.samples')}</Link>
       </nav>
       <I18nToggle />
     </header>

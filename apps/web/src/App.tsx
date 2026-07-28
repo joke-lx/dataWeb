@@ -5,7 +5,7 @@ import { AppShell } from './components/shell/AppShell';
 import { CompareRoute } from './routes/compare';
 import { HomeRoute } from './routes/home';
 import { SampleRoute } from './routes/sample';
-import { SamplesRoute } from './routes/samples';
+import { SpeciesRoute } from './routes/species';
 import { LEGACY_REDIRECTS } from './routes/registry';
 import './routes/route.css';
 
@@ -15,7 +15,7 @@ export function App(): JSX.Element {
       <AppShell>
         <Routes>
           <Route path="/" element={<HomeRoute />} />
-          <Route path="/samples" element={<SamplesRoute />} />
+          <Route path="/species/:species" element={<SpeciesRoute />} />
           <Route path="/sample/:id" element={<SampleRoute />} />
           <Route path="/compare/:a/:b" element={<CompareRoute />} />
           {Object.entries(LEGACY_REDIRECTS).map(([from, to]) => (

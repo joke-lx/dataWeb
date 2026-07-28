@@ -1,6 +1,5 @@
 {
   "nav.home": "首页",
-  "nav.samples": "样本",
   "nav.hic": "Hi-C",
   "nav.differential": "差异 Hi-C",
   "nav.tracks": "轨道",
@@ -23,11 +22,6 @@
   "home.search.placeholder": "输入样本编号，例如 Brain_BF3",
   "home.comparison.title": "比较模式",
   "home.comparison.subtitle": "选择兼容的公开数据集进行对比探索",
-  "home.comparison.tissue.title": "组织间比较",
-  "home.species.pig.sampleCount": "样本数",
-  "home.species.pig.tissueCount": "组织数",
-  "home.species.pig.breedCount": "品种数",
-  "home.species.chicken.latinName": "鸡 (Gallus gallus)",
   "home.comparison.tissue.title": "组织间比较",
   "home.comparison.tissue.description": "比较不同器官间的染色质结构和信号轨道。",
   "home.comparison.breed.title": "品种间比较",
@@ -118,7 +112,8 @@
   "site.footer.disclaimer": "dataWeb · 多组学三维基因组浏览器",
   "site.footer.noUpload": "仅限公开数据浏览 — 不支持个性化数据分析或上传。",
 
-  "samples.title": "浏览样本",
-  "samples.subtitle": "选择一个样本查看其多组学数据",
-  "samples.error": "加载失败: {message}"
+  "species.title": "样本",
+  "species.subtitle": "选择一个样本查看其多组学数据",
+  "species.error": "加载失败: {message}",
+  "species.emptyForSpecies": "该物种暂无样本数据。"
 }

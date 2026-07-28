@@ -33,7 +33,7 @@ export function HomeRoute(): JSX.Element {
           </form>
 
           <nav className="home-quick-links" aria-label="Quick entry points">
-            <a className="home-quick-link" href="/samples" title="Browse a sample">
+            <a className="home-quick-link" href="/species/pig" title="Browse a sample">
               <span className="home-quick-link__glyph">▦</span>{t('nav.hic')}
             </a>
             <a className="home-quick-link" href="/compare/Brain_BF3/Liver_BF3" title="Compare two samples">
@@ -56,7 +56,7 @@ export function HomeRoute(): JSX.Element {
                 <h3>Pig</h3>
                 <p className="home-species-card__desc">{t('home.species.pig.description')}</p>
               </div>
-              <a className="home-btn" href="/samples">{t('home.species.browse')}</a>
+              <a className="home-btn" href="/species/pig">{t('home.species.browse')}</a>
             </div>
             <div className="home-species-card__stats">
               <div className="home-species-card__stat"><b>6</b><span>{t('home.species.pig.sampleCount')}</span></div>
@@ -71,7 +71,7 @@ export function HomeRoute(): JSX.Element {
                 <h3>Chicken</h3>
                 <p className="home-species-card__desc">{t('home.species.chicken.description')}</p>
               </div>
-              <a className="home-btn" href="/samples">{t('home.species.browse')}</a>
+              <a className="home-btn" href="/species/chicken">{t('home.species.browse')}</a>
             </div>
             <div className="home-species-card__stats">
               <div className="home-species-card__stat"><b>TBD</b><span>{t('home.species.pig.sampleCount')}</span></div>
