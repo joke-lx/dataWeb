@@ -14,11 +14,11 @@ import {
 import './plotly-track.css';
 
 interface PlotlyTrackProps {
-  /** Plotly trace definitions (may be empty for shape-only tracks). */
+  /** Plotly trace 定义（纯形状轨道可为空）。 */
   data: PlotlyBuild['data'];
-  /** Plotly layout. `height` is injected from the prop below. */
+  /** Plotly 布局。`height` 由下面的 prop 注入。 */
   layout: Partial<PlotlyLayout>;
-  /** Lane height in pixels. */
+  /** Lane 像素高度。 */
   height: number;
 }
 
@@ -62,7 +62,7 @@ export function PlotlyTrack({
         try {
           Plotly.purge(el);
         } catch {
-          /* element already removed */
+          /* 元素已被移除 */
         }
       });
     };
@@ -79,7 +79,7 @@ export function PlotlyTrack({
         try {
           void Plotly.Plots.resize(el);
         } catch {
-          /* noop */
+          /* 不做处理 */
         }
       });
     });

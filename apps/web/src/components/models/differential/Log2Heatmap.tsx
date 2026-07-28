@@ -16,13 +16,14 @@
  *   且我们不希望进入 react-query 的全局缓存——单次 viewer 生命周期内即可
  * - vmin/vmax 默认 ±1 是 symmetric log2 约定；后端如果返回更小范围会自动收紧
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
 import {
   fetchDifferentialHic,
   type HicMatrixResponse,
 } from '../../../api/client';
+import { useD3Zoom } from '../../../hooks/useD3Zoom';
 import { useViewport } from '../../../store/viewport';
 import { ColormapBar } from '../../render-kit/hic/ColormapBar';
 import { HiCMatrix2D } from '../../render-kit/hic/HiCMatrix2D';
@@ -43,6 +44,8 @@ interface Log2HeatmapProps {
  * 颜色采用白中心发散（rdbu），正值偏红、负值偏蓝、零附近接近白色。
  */
 export function Log2Heatmap({ sampleA, sampleB }: Log2HeatmapProps): JSX.Element {
+  const zoomRef = useRef<HTMLDivElement>(null);
+  useD3Zoom(zoomRef);
   const viewport = useViewport();
   const [matrix, setMatrix] = useState<HicMatrixResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -85,7 +88,7 @@ export function Log2Heatmap({ sampleA, sampleB }: Log2HeatmapProps): JSX.Element
         colorMap="rdbu"
         horizontal
       />
-      <div className="diff-heatmap-container">
+      <div className="diff-heatmap-container" ref={zoomRef}>
         <HiCMatrix2D
           sampleA={sampleA}
           sampleB={sampleB}

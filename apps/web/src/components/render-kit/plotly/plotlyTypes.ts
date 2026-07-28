@@ -2,10 +2,9 @@
  * 定义 render-kit 构建与驱动 Plotly 图形所需的最小结构类型，并封装运行时动态导入。
  * 宽松索引签名保留 Plotly 扩展能力，显式常用字段则为轨道构建器提供类型检查与自动补全。
  */
-// Minimal structural types for the Plotly figures we build. Kept intentionally
-// loose (with index signatures) so the builders do not depend on plotly.js's
-// absent first-party type bundle, while still giving callers autocomplete for
-// the fields we set.
+// 我们构建的 Plotly figure 的最小结构类型。有意保持宽松
+//（带索引签名），使构建器不依赖 plotly.js 缺失的第一方类型包，
+// 同时仍然为调用者提供常用字段的自动补全。
 
 /**
  * render-kit 会生成的 Plotly trace 最小结构。

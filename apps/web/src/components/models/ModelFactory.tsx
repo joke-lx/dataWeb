@@ -29,18 +29,17 @@ interface ModelFactoryProps {
 }
 
 /**
- * ModelFactory — unified entry point for all viewer models.
+ * ModelFactory — 所有 viewer 模型的统一入口。
  *
- * Usage: `<ModelFactory type="hic" />`
+ * 用法: `<ModelFactory type="hic" />`
  *
- * Resolves `type` against the MODEL_REGISTRY, renders the matching
- * model component lazily with a Suspense fallback.
+ * 根据 MODEL_REGISTRY 解析 `type`，在 Suspense fallback 中懒加载
+ * 匹配的模型组件。
  *
- * Behavior on unknown `type`:
- *  - Dev: throws so the bug surfaces immediately during development.
- *  - Prod: renders `<MissingModelFallback />` so users see a friendly
- *    placeholder instead of a blank page.
- */
+ * 未知 `type` 时的行为：
+ *  - Dev：抛错，让 bug 在开发期间立即暴露。
+ *  - Prod：渲染 `<MissingModelFallback />`，让用户看到友好的占位
+ *    而不是空白页。 */
 export function ModelFactory({ type, ...props }: ModelFactoryProps): JSX.Element {
   const Component = MODEL_REGISTRY[type];
 

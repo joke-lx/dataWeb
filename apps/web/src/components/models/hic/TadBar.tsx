@@ -15,9 +15,9 @@ import '../../render-kit/lane.css';
 const TAD_LANE_HEIGHT = 120;
 
 interface TadBarProps {
-  /** Override the active sample. */
+  /** 覆盖当前样本。 */
   sampleId?: string;
-  /** Override the lane height in pixels. */
+  /** 覆盖 lane 像素高度。 */
   height?: number;
 }
 

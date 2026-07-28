@@ -67,16 +67,22 @@ const ORGAN_PARAMS: Record<
     markers: [{ t: 0.55, color: 0x808080 }],
   },
   brain: {
-    seed: 41,
-    steps: 74,
-    markers: [{ t: 0.5, color: 0x808080 }],
+    seed: 53,
+    steps: 80,
+    markers: [
+      { t: 0.12, color: 0x459f52 },  // green (enhancer)
+      { t: 0.27, color: 0x459f52 },
+      { t: 0.42, color: 0x808080 },  // grey (promoter)
+      { t: 0.63, color: 0x459f52 },
+      { t: 0.78, color: 0x808080 },
+    ],
   },
 };
 
 // 防止 enhancer 数量爆炸；超过即截断，避免 GPU 顶点数失控
 const ENHANCER_LIMIT = 6;
-// loop 弧的管半径：比主 tube 细很多（0.034 vs 0.008），形成视觉层级
-const LOOP_TUBE_RADIUS = 0.008;
+// loop 弧的管半径：与主 tube 一致（0.034），形成统一的视觉层级
+const LOOP_TUBE_RADIUS = 0.034;
 
 // ─────── deterministic PRNG / math (mirrors chromatin3d.html:29-51) ─────────
 //
@@ -329,28 +335,67 @@ export function ThreeDChromatin({
         enhancer.position.copy(enhancerPos);
         interactionGroup.add(enhancer);
 
-        // spanBp（PEI 跨度）越大 → 弧越高（更长的连接在视觉上更"拱起"）
+        // spanBp（PEI 跨度）越大 → 弧越高
         const spanBp = Math.max(0, record.end - record.start);
         const arcHeight = 0.4 + Math.min(1.2, spanBp / 100_000);
+        // 确定性抖动：使弧线在 3D 空间中扭曲，不再像平面抛物线
+        const jitter = (pt: number, axis: number, mag: number) => {
+          // 简单 hash，同 seed 永远同值
+          const h = ((index * 7919 + pt * 137 + axis * 31) * 2654435761) >>> 0;
+          return ((h / 4294967296) - 0.5) * mag;
+        };
         const mid = new THREE.Vector3(
-          (promoterPos.x + enhancerPos.x) / 2,
-          (promoterPos.y + enhancerPos.y) / 2 + arcHeight,
-          (promoterPos.z + enhancerPos.z) / 2,
+          (promoterPos.x + enhancerPos.x) / 2 + jitter(0, 0, 0.2),
+          (promoterPos.y + enhancerPos.y) / 2 + arcHeight + jitter(0, 1, 0.2),
+          (promoterPos.z + enhancerPos.z) / 2 + jitter(0, 2, 0.2),
         );
-        // 用 promoter → mid → enhancer 三点构造 Catmull-Rom 弧
+        // 5 个控制点 + 3D 抖动让弧线自然：promoter → q1 → mid → q3 → enhancer
+        const q1 = new THREE.Vector3(
+          (promoterPos.x * 3 + enhancerPos.x) / 4 + jitter(1, 0, 0.15),
+          (promoterPos.y * 3 + enhancerPos.y) / 4 + arcHeight * 0.6 + jitter(1, 1, 0.15),
+          (promoterPos.z * 3 + enhancerPos.z) / 4 + jitter(1, 2, 0.15),
+        );
+        const q3 = new THREE.Vector3(
+          (promoterPos.x + enhancerPos.x * 3) / 4 + jitter(2, 0, 0.15),
+          (promoterPos.y + enhancerPos.y * 3) / 4 + arcHeight * 0.6 + jitter(2, 1, 0.15),
+          (promoterPos.z + enhancerPos.z * 3) / 4 + jitter(2, 2, 0.15),
+        );
         const arcCurve = new THREE.CatmullRomCurve3(
-          [promoterPos.clone(), mid, enhancerPos.clone()],
+          [promoterPos.clone(), q1, mid, q3, enhancerPos.clone()],
           false,
           'catmullrom',
           0.5,
         );
         const arcGeo = new THREE.TubeGeometry(arcCurve, 32, LOOP_TUBE_RADIUS, 6, false);
+
+        // 采样 tube 彩虹渐变的颜色：用与 tube 着色一致的公式
+        // 使弧线两端接到 tube 时颜色匹配，视觉上自然融合
+        const tubeColorAt = (pos: THREE.Vector3): THREE.Color => {
+          const t = Math.min(1, Math.max(0, (pos.length() + 1.25) / 2.5));
+          return rainbow(1 - t);
+        };
+        const colStart = tubeColorAt(promoterPos);
+        const colEnd = tubeColorAt(enhancerPos);
+        const arcLenSq = promoterPos.distanceToSquared(enhancerPos) || 1;
+        const colors = new Float32Array(arcGeo.attributes.position.count * 3);
+        const posAttr = arcGeo.attributes.position;
+        const sv = new THREE.Vector3();
+        for (let i = 0; i < posAttr.count; i += 1) {
+          sv.fromBufferAttribute(posAttr, i);
+          const t = Math.max(0, Math.min(1,
+            sv.clone().sub(promoterPos).dot(enhancerPos.clone().sub(promoterPos)) / arcLenSq,
+          ));
+          const c = colStart.clone().lerp(colEnd, t);
+          colors[i * 3] = c.r;
+          colors[i * 3 + 1] = c.g;
+          colors[i * 3 + 2] = c.b;
+        }
+        arcGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
         const arcMat = new THREE.MeshStandardMaterial({
-          color: 0xb8b8b8,
+          vertexColors: true,
           metalness: 0,
-          roughness: 0.8,
-          transparent: true,
-          opacity: 0.45,
+          roughness: 0.7,
         });
         interactionGroup.add(new THREE.Mesh(arcGeo, arcMat));
       });

@@ -30,15 +30,15 @@ import { SvLane } from './SvLane';
 import { TadBar } from './TadBar';
 
 interface TracksModelProps {
-  /** The active sub-tab id (e.g. 'rna_seq', 'ab', 'tad', ...) */
+  /** 当前活跃的 sub-tab id（如 'rna_seq', 'ab', 'tad' 等） */
   tab: TrackId;
-  /** Current single-sample id (used for non-bigwig tracks) */
+  /** 当前单样本 id（非 bigwig 轨道使用） */
   sampleId: string;
-  /** Auxiliary track ids to render below the main track */
+  /** 主轨道下方渲染的辅助轨道 id 列表 */
   aux: TrackId[];
-  /** Multi-sample ids for bigwig overlay (undefined for non-bigwig tabs) */
+  /** 多样本 bigwig 叠加的样本 id 列表（非 bigwig tab 时为 undefined） */
   overlaySampleIds?: string[];
-  /** Multi-sample metadata for coloring */
+  /** 多样本元数据（用于着色） */
   overlayMeta?: Sample[];
 }
 

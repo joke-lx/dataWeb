@@ -80,7 +80,7 @@ export function LeftRail(): JSX.Element {
     queryFn: () => fetchSamples('pig'),
   });
 
-  // Sync fetched samples into the store so other components can read them.
+  // 将拉取的样本同步到 store，供其他组件读取。
   useEffect(() => {
     if (data) setSamples(data);
   }, [data, setSamples]);

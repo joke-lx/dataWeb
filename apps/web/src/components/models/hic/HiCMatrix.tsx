@@ -2,12 +2,13 @@
  * Hi-C 模型的业务轨道容器，负责把样本与基因组视口转换为矩阵查询，并组合色标和通用 WebGL 渲染器。
  * 它刻意留在 models 层：数据获取、分箱策略和默认样本属于业务决策，而像素绘制下沉到 render-kit。
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { fetchHicMatrix, type HicMatrixResponse } from '../../../api/client';
 import { useActiveSample } from '../../../hooks/useActiveSample';
+import { useD3Zoom } from '../../../hooks/useD3Zoom';
 import { useViewport } from '../../../store/viewport';
 import { ColormapBar, type ColormapName } from '../../render-kit/hic/ColormapBar';
 import { HiCMatrix2D } from '../../render-kit/hic/HiCMatrix2D';
@@ -17,9 +18,9 @@ const MAX_MATRIX_DIM = 512;
 const HIC_LANE_HEIGHT = 480;
 
 interface HiCMatrixProps {
-  /** Override the active sample. */
+  /** 覆盖当前样本。 */
   sampleId?: string;
-  /** Override the lane height in pixels. */
+  /** 覆盖 lane 像素高度。 */
   height?: number;
 }
 
@@ -33,6 +34,8 @@ export function HiCMatrix({
   sampleId: sampleIdOverride,
   height = HIC_LANE_HEIGHT,
 }: HiCMatrixProps): JSX.Element {
+  const zoomRef = useRef<HTMLDivElement>(null);
+  useD3Zoom(zoomRef);
   const viewport = useViewport();
   const activeSample = useActiveSample();
   const sampleId = sampleIdOverride ?? activeSample ?? 'Brain_BF3';
@@ -91,17 +94,19 @@ export function HiCMatrix({
           colorMap={colorMap}
           onChange={setColorMap}
         />
-        <HiCMatrix2D
-          sampleId={sampleId}
-          data={data}
-          loading={isLoading}
-          error={error}
-          colorMap={colorMap}
-          vmin={data?.vmin}
-          vmax={data?.vmax}
-          bin={hicBin}
-          height={height - 32}
-        />
+        <div ref={zoomRef} style={{ flex: '1 1 auto', minWidth: 0, minHeight: 0 }}>
+          <HiCMatrix2D
+            sampleId={sampleId}
+            data={data}
+            loading={isLoading}
+            error={error}
+            colorMap={colorMap}
+            vmin={data?.vmin}
+            vmax={data?.vmax}
+            bin={hicBin}
+            height={height - 32}
+          />
+        </div>
       </div>
     </div>
   );

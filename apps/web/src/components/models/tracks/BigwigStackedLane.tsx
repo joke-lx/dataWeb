@@ -108,7 +108,7 @@ export function BigwigStacked({
     };
   });
 
-  // Single-sample → single bigwig; ≥2 samples → demo-style stacked slices.
+  // 单样本 → 单个 bigwig；≥2 样本 → demo 风格叠加切片。
   // lane 高度随样本数增长：每片最少 70px，固定 30px 余量（顶部标题 + 底部 margin）。
   const stackedLaneHeight =
     series.length === 1

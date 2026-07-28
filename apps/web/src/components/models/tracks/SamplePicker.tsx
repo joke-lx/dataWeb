@@ -50,11 +50,11 @@ export function SamplePicker({
   onApply,
   onCancel,
 }: SamplePickerProps): JSX.Element {
-  // Seed draft from committed selection.
+  // 从已提交的选择初始化草稿。
   const [draft, setDraft] = useState<string[]>(() => sampleIds);
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
-  // Group by tissue (Muscle → Liver → Brain → Unknown at the end).
+  // 按 tissue 分组（Muscle → Liver → Brain → 其它在后）。
   // 按 tissue 分组并固定排序顺序（Muscle > Liver > Brain > 其它），
   // 组内再按 sample id 字典序排序——和 SamplePickerButton chip 行展示一致。
   const grouped = useMemo<Array<[string, Sample[]]>>(() => {
@@ -79,7 +79,7 @@ export function SamplePicker({
     return entries.sort((a, b) => rank(a[0]) - rank(b[0]));
   }, [allSamples]);
 
-  // Click-outside + Escape close.
+  // 点击外部 + Escape 关闭。
   useEffect(() => {
     const onDown = (e: MouseEvent): void => {
       const el = popoverRef.current;
@@ -105,7 +105,7 @@ export function SamplePicker({
     );
   };
 
-  // Stop wheel/mousedown from reaching d3-zoom attached to `.app-shell__main`.
+  // 阻止冒泡到外层 d3-zoom，否则在 popover 里滚轮/拖拽会平移基因组视口。
   // 阻止冒泡到外层 d3-zoom，否则在 popover 里滚轮/拖拽会平移基因组视口。
   const stopD3 = (e: ReactMouseEvent | ReactWheelEvent): void => {
     e.stopPropagation();

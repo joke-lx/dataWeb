@@ -32,7 +32,7 @@ interface HiCMatrix2DDifferentialProps {
   data?: HicMatrixResponse;
   loading?: boolean;
   error?: Error | null;
-  /** Differential colormap is fixed (diffRdBu); this prop is ignored but accepted for API symmetry. */
+  /** 差异矩阵色图固定（diffRdBu）；保留此 prop 仅为 API 对称，实际会被忽略。 */
   colorMap?: 'rdbu' | 'viridis';
   vmin?: number;
   vmax?: number;
@@ -102,7 +102,7 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
     bin,
     height = 480,
   } = props;
-  // Differential mode forces the white-centered diverging colormap (shader index 2).
+  // 差异模式强制使用白色中心发散色图（shader index 2）。
   const effectiveColorMapIndex: 0 | 1 | 2 | 3 =
     variant === 'differential' ? 2 : colorMap === 'viridis' ? 1 : colorMap === 'ref' ? 3 : 0;
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -124,8 +124,8 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
 
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
-    // Hi-C matrices are intrinsically square — use min(width, height) so
-    // the rendered quad stays square regardless of lane width vs. height.
+    // Hi-C 矩阵本质上是方形的——取 min(width, height) 保证渲染的四边形
+    // 无论 lane 宽高比如何都保持正方形。
     const side = Math.max(1, Math.min(rect.width, rect.height));
     const drawingSide = Math.max(1, Math.round(side * dpr));
     if (canvas.width !== drawingSide) canvas.width = drawingSide;
@@ -186,10 +186,9 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
       return;
     }
 
-    // Use NEAREST filtering for the data texture to preserve crisp bin-level
-    // pixels. LINEAR would blur adjacent bins, making the matrix look muddy.
-    // The reference hic.html uses the same NEAREST approach for the matrix
-    // texture (only the LUT gets LINEAR interpolation).
+    // 数据纹理使用 NEAREST 过滤以保持清晰的 bin 级像素。
+    // LINEAR 会模糊相邻 bin，使矩阵看起来模糊不清。
+    // 参考 hic.html 对矩阵纹理也采用 NEAREST（只有 LUT 使用 LINEAR 插值）。
     gl.getExtension('OES_texture_float_linear');
 
     let vertex: WebGLShader | null = null;
@@ -261,9 +260,8 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
     render();
   }, [render]);
 
-  // Re-render when viewport changes (zoom/pan). The Lane's query refetch handles
-  // texture updates, but we also need to redraw the quad with the current
-  // vmin/vmax and recompute the square side after the new data lands.
+  // 视口变化（缩放/平移）时重新渲染。Lane 的 query refetch 负责更新纹理，
+  // 但我们还需要用当前的 vmin/vmax 重绘四边形并在新数据到达后重新计算正方形边长。
   useEffect(() => {
     render();
   }, [

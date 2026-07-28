@@ -81,18 +81,18 @@ export interface SubTab {
  * 改这里会同时改变 `<SubTabBar />` 上的分组和 `<TracksModel />` 的渲染。
  */
 export const SUB_TABS: SubTab[] = [
-  // Sequencing
+  // 测序（Sequencing）
   { id: 'rna_seq', group: 'sequencing', label: 'RNA-seq',  aux: ['tad', 'gene'] },
   { id: 'h3k4me3', group: 'sequencing', label: 'H3K4me3',  aux: ['tad', 'gene'] },
   { id: 'h3k27ac', group: 'sequencing', label: 'H3K27ac',  aux: ['tad', 'gene'] },
-  // Structure
+  // 结构（Structure）
   { id: 'ab',      group: 'structure',  label: 'AB Index', aux: ['tad', 'gene'] },
   { id: 'is',      group: 'structure',  label: 'IS',       aux: ['tad', 'gene'] },
   { id: 'tad',     group: 'structure',  label: 'TAD',      aux: ['gene'] },
   { id: 'pei',     group: 'structure',  label: 'PEI',      aux: ['tad', 'gene'] },
   { id: 'loop',    group: 'structure',  label: 'Loops',    aux: ['gene'] },
   { id: 'sv',      group: 'structure',  label: 'SV',       aux: ['tad', 'gene'] },
-  // Gene
+  // 基因（Gene）
   { id: 'gene',    group: 'gene',       label: 'Gene',     aux: [] },
 ];
 

@@ -24,11 +24,11 @@ import '../../render-kit/lane.css';
 const BIGWIG_LANE_HEIGHT = 180;
 
 interface BigwigLaneProps {
-  /** Active sample id. */
+  /** 当前样本 id。 */
   sampleId: string;
-  /** Track name (e.g. "rna_seq"). */
+  /** Track 名（如 "rna_seq"）。 */
   trackName: string;
-  /** Override the lane height in pixels. */
+  /** 覆盖 lane 像素高度。 */
   height?: number;
 }
 

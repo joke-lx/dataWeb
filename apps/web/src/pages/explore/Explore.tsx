@@ -22,6 +22,12 @@ import './explore.css';
  * `String.prototype.includes`, so widening to `string` is safe.
  */
 const VALID_TYPES = new Set<string>(['hic', 'tracks', '3d', 'ctcf-motif']);
+// URL /explore/:viewerType 用的是 ctcfMotif（驼峰），但 MODEL_REGISTRY key 是 ctcf-motif。
+// 一个 key 两套命名 — 在 URL param 层转换。
+function normalizeViewerType(raw: string): string {
+  if (raw === 'ctcfMotif') return 'ctcf-motif';
+  return raw;
+}
 
 /**
  * Viewer-type landing page. Each viewer (hic / tracks / 3d / ctcfMotif)
@@ -39,7 +45,8 @@ const VALID_TYPES = new Set<string>(['hic', 'tracks', '3d', 'ctcf-motif']);
  */
 export function Explore(): JSX.Element {
   const { t } = useAppIntl();
-  const { viewerType = 'hic' } = useParams<{ viewerType: string }>();
+  const { viewerType: rawType = 'hic' } = useParams<{ viewerType: string }>();
+  const viewerType = normalizeViewerType(rawType);
   const { samples } = useSampleCatalog();
 
   const sortedSamples = useMemo(
@@ -49,7 +56,10 @@ export function Explore(): JSX.Element {
 
   const defaultSample = sortedSamples[0];
 
-  const meta = EXPLORE_META[viewerType] ?? EXPLORE_META.hic;
+  // URL param 的 viewerType 经过 normalize 后是连字符格式（ctcf-motif），
+  // 但 EXPLORE_META 的 key 是驼峰格式（ctcfMotif）。做一次映射。
+  const exploreKey = viewerType === 'ctcf-motif' ? 'ctcfMotif' : viewerType;
+  const meta = EXPLORE_META[exploreKey] ?? EXPLORE_META.hic;
 
   const canRenderModel =
     defaultSample !== undefined && VALID_TYPES.has(viewerType);

@@ -10,12 +10,12 @@
  *
  * 关键状态机：
  *   - 单一 sample → 展示 sub-tab（hic / tracks / 3d / ctcfMotif）
- *   - compare 模式（?vs= 合法 partner）→ 锁定为 Differential 视图
+ *   - compare 模式（?vs= 合法 partner）→ 标签页切换可用，每个 tab 渲染对比视图
  *
  * 注意：CSS 改动见 `sample.css`（不在本注释任务范围）。
  */
 
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import type { Sample } from '../../api/types';
@@ -27,14 +27,15 @@ import { TracksModel } from '../../components/models/tracks';
 import { TrackSampleHeader } from '../../components/models/tracks/TrackSampleHeader';
 import { GeneLane } from '../../components/models/differential/GeneLane';
 import { Log2Heatmap } from '../../components/models/differential/Log2Heatmap';
-import { useD3Zoom } from '../../hooks/useD3Zoom';
+import { ThreeDChromatin } from '../../components/models/3d/ThreeDChromatin';
+import { CtcfModel } from '../../components/models/ctcf-motif';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
+import type { TrackId } from '../../components/models/tracks/trackSpec';
 import { useTrackSampleSelection } from '../../hooks/useTrackSampleSelection';
 import { useAppIntl } from '../../i18n';
 import { useSamples } from '../../store/samples';
 import { useViewport } from '../../store/viewport';
 import { SUB_TABS, TRACK_CATALOG } from '../../components/models/tracks/trackSpec';
-import type { TrackId } from '../../components/models/tracks/trackSpec';
 import './sample.css';
 
 /** sub-tab 枚举：hic / tracks / 3d / ctcfMotif。 */
@@ -46,6 +47,14 @@ type SampleTab = (typeof TABS)[number];
 const MODEL_TYPES: Record<SampleTab, ModelType> = {
   hic: 'hic', tracks: 'tracks' as never, '3d': '3d', ctcfMotif: 'ctcf-motif',
 };
+
+/** Sample.tissue → ThreeDChromatin organ prop */
+function tissueToOrgan(tissue: string): 'liver' | 'muscle' | 'brain' {
+  const lower = tissue.toLowerCase();
+  if (lower.includes('liver')) return 'liver';
+  if (lower.includes('muscle')) return 'muscle';
+  return 'brain';
+}
 
 /**
  * Sample 路由组件。
@@ -68,8 +77,6 @@ export function Sample(): JSX.Element {
   // 兜底 default 'hic'，避免初次渲染时拿到无效值。
   const [tab, setTab] = useState<SampleTab>((params.get('tab') as SampleTab) || 'hic');
   const [searchQuery, setSearchQuery] = useState('');
-  const viewerRef = useRef<HTMLDivElement>(null);
-  useD3Zoom(viewerRef);
   const sample = useMemo(() => samples?.find((item) => item.id === id), [samples, id]);
   const partner = useMemo(
     () => (partnerId ? samples?.find((item) => item.id === partnerId) : undefined),
@@ -227,32 +234,20 @@ export function Sample(): JSX.Element {
               </div>
             )}
           </Popover>
-          {!compareActive && (
-            <div className="sample-tabs" role="tablist">
-              {TABS.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === item}
-                  className={tab === item ? 'active' : ''}
-                  onClick={() => setTab(item)}
-                >
-                  {t(`sample.tabs.${item}`)}
-                </button>
-              ))}
-            </div>
-          )}
-          {compareActive && (
-            <div className="sample-tabs sample-tabs--compare" role="tablist">
-              <button type="button" role="tab" aria-selected={true} className="active">
-                {sample.id}
+          <div className="sample-tabs" role="tablist">
+            {TABS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={tab === item}
+                className={tab === item ? 'active' : ''}
+                onClick={() => setTab(item)}
+              >
+                {t(`sample.tabs.${item}`)}
               </button>
-              <button type="button" role="tab" aria-selected={true} className="active">
-                vs {partner.id}
-              </button>
-            </div>
-          )}
+            ))}
+          </div>
           {canCompare && (
             <Popover
               width={400}
@@ -282,21 +277,27 @@ export function Sample(): JSX.Element {
                       <input type="text" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t('sample.comparePicker.search')} autoFocus />
                     </div>
                     <h4 className="compare-picker__section"><span className="compare-picker__meta-dot" aria-hidden="true" />{t('sample.comparePicker.suggested')}</h4>
-                    {filteredSuggested.length === 0 ? <div className="compare-picker__empty-section">—</div> : filteredSuggested.map((other) => (
-                      <button key={other.id} type="button" className="compare-picker__chip" onClick={() => navigateToCompare(other.id)}>
-                        <span className="compare-picker__chip-id">{other.id}</span>
-                        <span className="compare-picker__chip-tag">{t('sample.comparePicker.sameBreed')}</span>
-                        <span className="compare-picker__chip-arrow" aria-hidden="true">→</span>
-                      </button>
-                    ))}
+                    {filteredSuggested.length === 0 ? <div className="compare-picker__empty-section">—</div> : filteredSuggested.map((other) => {
+                      const isSelected = other.id === partnerId;
+                      return (
+                        <button key={other.id} type="button" className={'compare-picker__chip' + (isSelected ? ' compare-picker__chip--selected' : '')} onClick={() => isSelected ? exitCompare() : navigateToCompare(other.id)}>
+                          <span className="compare-picker__chip-id">{other.id}</span>
+                          {isSelected ? <span className="compare-picker__chip-tag">✓</span> : <span className="compare-picker__chip-tag">{t('sample.comparePicker.sameBreed')}</span>}
+                          <span className="compare-picker__chip-arrow" aria-hidden="true">{isSelected ? '×' : '→'}</span>
+                        </button>
+                      );
+                    })}
                     <h4 className="compare-picker__section">{t('sample.comparePicker.allSamples', { count: allSamples.length })}</h4>
                     <div className="compare-picker__list">
-                      {allSamples.map((other) => (
-                        <div key={other.id} role="button" tabIndex={0} className="compare-picker__row" onClick={() => navigateToCompare(other.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigateToCompare(other.id); } }}>
-                          <span className="compare-picker__row-id">{other.id}</span>
-                          <span className="compare-picker__row-meta">{other.tissue} · {other.breed} · {other.sex}</span>
-                        </div>
-                      ))}
+                      {allSamples.map((other) => {
+                        const isSelected = other.id === partnerId;
+                        return (
+                          <div key={other.id} role="button" tabIndex={0} className={'compare-picker__row' + (isSelected ? ' compare-picker__row--selected' : '')} onClick={() => isSelected ? exitCompare() : navigateToCompare(other.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); isSelected ? exitCompare() : navigateToCompare(other.id); } }}>
+                            <span className="compare-picker__row-id">{other.id}</span>
+                            <span className="compare-picker__row-meta">{other.tissue} · {other.breed} · {other.sex}{isSelected ? ' · ✓' : ''}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   <div className="compare-picker__foot">{t('sample.comparePicker.helper')}</div>
@@ -308,16 +309,10 @@ export function Sample(): JSX.Element {
       }
     >
       <div className="sample-region">{region} · {t('stage.binLabel', { bin: viewport.bin.toLocaleString() })}</div>
-      <div ref={viewerRef} className="sample-viewer">
-        {/* compare 模式：固定显示 Log2Heatmap + GeneLane，忽略 sub-tab */}
-        {compareActive && partner ? (
+      <div className="sample-viewer">
+        {tab === 'tracks' ? (
           <>
-            <Log2Heatmap sampleA={sample.id} sampleB={partner.id} />
-            <GeneLane sampleId={sample.id} />
-          </>
-        ) : tab === 'tracks' ? (
-          <>
-            {overlaySampleIds && (
+            {!compareActive && overlaySampleIds && (
               <TrackSampleHeader
                 title={TRACK_CATALOG[trackSubTab.id].title}
                 sampleIds={overlaySampleIds}
@@ -326,14 +321,57 @@ export function Sample(): JSX.Element {
                 isCatalogLoading={isLoading}
               />
             )}
-            <TracksModel
-              tab={trackSubTab.id}
-              sampleId={sample.id}
-              aux={trackAux}
-              overlaySampleIds={overlaySampleIds}
-              overlayMeta={overlayMeta}
-            />
+            {compareActive && partner ? (
+              <div className="compare-tracks">
+                <div className="compare-tracks__block">
+                  <span className="compare-label">{sample.id}</span>
+                  <TracksModel tab={trackSubTab.id} sampleId={sample.id} aux={trackAux} />
+                </div>
+                <div className="compare-tracks__block">
+                  <span className="compare-label">{partner.id}</span>
+                  <TracksModel tab={trackSubTab.id} sampleId={partner.id} aux={trackAux} />
+                </div>
+              </div>
+            ) : (
+              <TracksModel
+                tab={trackSubTab.id}
+                sampleId={sample.id}
+                aux={trackAux}
+                overlaySampleIds={overlaySampleIds}
+                overlayMeta={overlayMeta}
+              />
+            )}
           </>
+        ) : compareActive && partner ? (
+          /* 对比模式：按 tab 渲染对应比较视图 */
+          tab === 'hic' ? (
+            <>
+              <Log2Heatmap sampleA={sample.id} sampleB={partner.id} />
+              <GeneLane sampleId={sample.id} />
+            </>
+          ) : tab === '3d' ? (
+            <div className="compare-3d">
+              <div className="compare-3d__panel">
+                <ThreeDChromatin organ={tissueToOrgan(sample.tissue)} sampleId={sample.id} />
+                <span className="compare-label">{sample.id}</span>
+              </div>
+              <div className="compare-3d__panel">
+                <ThreeDChromatin organ={tissueToOrgan(partner.tissue)} sampleId={partner.id} />
+                <span className="compare-label">{partner.id}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="compare-ctcf">
+              <div className="compare-ctcf__panel">
+                <span className="compare-label">{sample.id}</span>
+                <CtcfModel />
+              </div>
+              <div className="compare-ctcf__panel">
+                <span className="compare-label">{partner.id}</span>
+                <CtcfModel />
+              </div>
+            </div>
+          )
         ) : (
           <ModelFactory type={MODEL_TYPES[tab]} />
         )}

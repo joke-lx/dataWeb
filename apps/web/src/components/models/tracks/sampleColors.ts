@@ -13,9 +13,9 @@
  */
 
 export interface SampleColor {
-  /** Stroke color for the trace line. */
+  /** trace 线的描边色。 */
   line: string;
-  /** Fill color for `fill: 'tozeroy'` (already includes alpha). */
+  /** `fill: 'tozeroy'` 使用的填充色（已包含 alpha）。 */
   fill: string;
 }
 
@@ -39,7 +39,7 @@ const PALETTE: Record<string, SampleColor> = {
 
 // 中性灰兜底：catalog 里没收录的 tissue（Unknown / Pituitary / ...）走这里。
 const FALLBACK: SampleColor = {
-  // Neutral gray for tissues outside the catalog.
+  // catalog 未收录 tissue 的中性灰兜底。
   line: '#666666',
   fill: 'rgba(102, 102, 102, 0.60)',
 };

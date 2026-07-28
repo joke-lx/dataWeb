@@ -22,7 +22,7 @@ import type {
   Species,
 } from './types';
 
-const API_BASE = ''; // proxied via vite
+const API_BASE = ''; // 通过 vite 代理
 
 /** 一条结构变异（structural variant）记录，对应 `/api/sv` 响应。 */
 export interface SVRecord {

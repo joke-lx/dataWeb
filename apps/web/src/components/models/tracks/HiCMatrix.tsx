@@ -27,9 +27,9 @@ const MAX_MATRIX_DIM = 512;
 const HIC_LANE_HEIGHT = 480;
 
 interface HiCMatrixProps {
-  /** Override the active sample. */
+  /** 覆盖当前样本。 */
   sampleId?: string;
-  /** Override the lane height in pixels. */
+  /** 覆盖 lane 像素高度。 */
   height?: number;
 }
 

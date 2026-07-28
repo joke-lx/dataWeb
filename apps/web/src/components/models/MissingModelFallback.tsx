@@ -21,13 +21,12 @@ interface MissingModelFallbackProps {
 }
 
 /**
- * MissingModelFallback — prod-friendly placeholder shown when
- * `ModelFactory` is asked to render a `type` that isn't registered.
+ * MissingModelFallback — 生产环境模型缺失时的友好降级占位。
  *
- * In dev this branch is unreachable (we throw instead). In prod it
- * keeps the page from going blank so the user sees a useful message
- * while ops fix the missing registration.
- */
+ * 当 `ModelFactory` 被要求渲染一个未注册的 `type` 时渲染。
+ *
+ * 在 dev 中这个分支不可达（直接抛错）。在生产中它防止页面空白，
+ * 让用户看到有用的提示，同时运维可以修复缺失的注册。 */
 export function MissingModelFallback({ type }: MissingModelFallbackProps): JSX.Element {
   return (
     // role="alert" 让屏幕阅读器立刻播报，给辅助技术用户同样可感知。

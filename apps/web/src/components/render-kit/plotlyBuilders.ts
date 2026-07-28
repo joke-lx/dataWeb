@@ -7,7 +7,7 @@ import type { SVRecord } from '../../api/client';
 import type { Viewport } from '../../store/viewport';
 import type { PlotlyBuild, PlotlyData, PlotlyLayout } from './plotly/plotlyTypes';
 
-/** Read a CSS custom property from :root, falling back when unset/empty. */
+/** 从 :root 读取 CSS 自定义属性，未设置/为空时回退。 */
 function cssVar(name: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
   const value = getComputedStyle(document.documentElement)
@@ -16,7 +16,7 @@ function cssVar(name: string, fallback: string): string {
   return value || fallback;
 }
 
-/** Append an alpha channel to a `#rrggbb` color (returns rgba() for safety). */
+/** 给 #rrggbb 颜色追加 alpha 通道（返回 rgba() 更安全）。 */
 function withAlpha(color: string, alpha: number): string {
   if (color.startsWith('#') && color.length === 7) {
     const r = Number.parseInt(color.slice(1, 3), 16);

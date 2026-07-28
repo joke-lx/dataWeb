@@ -16,20 +16,18 @@ import { useSearchParams } from 'react-router-dom';
 import { useActiveSample } from './useActiveSample';
 
 /**
- * URL-driven selection of sample ids for the multi-sample overlay on the
- * `/tracks` route's bigwig track.
+ * `/tracks` 路由的 bigwig track 上多样本叠加选择的 URL 驱动 hook。
  *
- * Semantics (URL `?samples=`):
- *   - **absent**    → fallback to `[active ?? 'Brain_BF3']` (first render)
- *   - `samples=`   → explicit empty (no samples selected)
- *   - `samples=A,B,C` → canonical sorted list `['A','B','C']`
+ * 语义（URL `?samples=`）：
+ *   - **缺失**    → 回退到 `[active ?? 'Brain_BF3']`（首次渲染）
+ *   - `samples=`   → 显式空（未选择任何样本）
+ *   - `samples=A,B,C` → 规范排序列表 `['A','B','C']`
  *
- * The hook is the *single* source of truth for the picker — no mirror in
- * the global `samples` store. This keeps `active` (used by Hi-C / 3D /
- * Differential) and the overlay selection fully decoupled.
+ * 本 hook 是 picker 的*唯一*真理源——不在全局 `samples` store 中镜像。
+ * 这使 `active`（由 Hi-C / 3D / Differential 使用）与叠加选择完全解耦。
  *
- * `setter` uses the callback form of `setParams` so any sibling keys
- * (`type`, future keys) are preserved across updates.
+ * `setter` 使用 `setParams` 的回调形式，以便在更新时保留所有 sibling 键
+ *（`type` 以及未来的键）。
  */
 export function useTrackSampleSelection(): {
   sampleIds: string[];

@@ -29,26 +29,26 @@ import './route.css';
  * @property children    路由主体内容（通常是 `<ModelFactory type="..." />`）
  */
 interface RouteShellProps {
-  /** Main page title (h2). */
+  /** 主页面标题 (h2). */
   title: string;
-  /** Optional subtitle/description below the title. */
+  /** 可选：标题下方的副标题/描述. */
   subtitle?: string;
-  /** Optional actions shown on the right of the page header. */
+  /** 可选：显示在页面 header 右侧的操作按钮. */
   actions?: ReactNode;
-  /** Optional toolbar (controls row below page header). */
+  /** 可选：工具栏（页面 header 下方的控件行）. */
   toolbar?: ReactNode;
-  /** Region breadcrumb override (defaults from viewport). */
+  /** Region breadcrumb 覆盖值（缺省从 viewport 推导）. */
   breadcrumb?: string;
   children: ReactNode;
 }
 
 /**
- * RouteShell — shared layout template for all viewer routes.
+ * RouteShell — 所有 viewer 路由的通用布局模板。
  *
- * Provides the standard `.route-page` > `.route-header` + `.route-content`
- * frame with consistent padding, typography, and responsive behavior.
+ * 提供标准的 `.route-page` > `.route-header` + `.route-content`
+ * 框架，具有一致的 padding、排版和响应式行为。
  *
- * Usage:
+ * 用法:
  * ```tsx
  * <RouteShell title={t('hic.viewer.title')} subtitle={desc} actions={<ShareBtn />}>
  *   <HicModel />

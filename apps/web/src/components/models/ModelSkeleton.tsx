@@ -22,15 +22,13 @@ interface ModelSkeletonProps {
 }
 
 /**
- * ModelSkeleton — type-aware loading placeholder for model chunks.
+ * ModelSkeleton — 模型 chunk 加载时的 type-aware 占位符。
  *
- * Mimics the visual shape of each model so the user perceives continuity
- * during Suspense fallbacks rather than "Loading…" stubs.
- */
+ * 模拟每个模型的视觉形状，让用户在 Suspense fallback 期间感受到
+ * 连续性，而不是看到 "Loading…" 标记。 */
 export function ModelSkeleton({ type }: ModelSkeletonProps): JSX.Element {
-  // Pick a layout based on the model type. Each model gets a shape that
-  // roughly matches its eventual rendered form so the transition feels
-  // stable instead of a layout jump.
+  // 根据模型类型选择布局。每个模型得到一个与其最终渲染形态大致匹配的
+  // 形状，让过渡感觉稳定而不是布局跳动。
   // 3D viewer：三个堆叠的横向条，暗示「立体多视角」的层次。
   if (type === '3d') {
     return (
@@ -51,7 +49,7 @@ export function ModelSkeleton({ type }: ModelSkeletonProps): JSX.Element {
     );
   }
   // hic, differential, tracks 共享「垂直 lane 堆叠」形态。
-  // hic, differential, tracks all share a vertical-lane layout.
+  // hic, differential, tracks 共享「垂直 lane 堆叠」形态。
   return (
     <div className="model-skeleton" data-type="lanes">
       <div className="skeleton-lane" />

@@ -22,13 +22,13 @@ import { SamplePicker } from './SamplePicker';
 import './tracks.css';
 
 interface SamplePickerButtonProps {
-  /** Currently selected sample ids (URL canonical, sorted). */
+  /** 当前选中的样本 id 列表（URL 规范，已排序）。 */
   sampleIds: string[];
-  /** Replace the selection with `next` (single source of truth = URL). */
+  /** 将选中集合替换为 next（单一数据源 = URL）。 */
   onChange: (next: string[]) => void;
-  /** Full sample catalog for grouping + chip labels. May be empty while loading. */
+  /** 完整样本目录（用于分组 + chip 标签）。加载中时可能为空。 */
   allSamples: Sample[];
-  /** Show a skeleton chip when true (catalog hasn't loaded yet). */
+  /** 为 true 时显示骨架 chip（catalog 尚未加载完）。 */
   isCatalogLoading: boolean;
 }
 
@@ -48,7 +48,7 @@ export function SamplePickerButton({
 }: SamplePickerButtonProps): JSX.Element {
   const [open, setOpen] = useState(false);
 
-  // Resolve selected samples → their tissue → colors for the chip-row swatches.
+  // 把 URL 中的 id 列表映射回 Sample 对象，跳过 catalog 还没载入的项。
   // 把 URL 中的 id 列表映射回 Sample 对象，跳过 catalog 还没载入的项。
   const selected = useMemo<Sample[]>(() => {
     return sampleIds
@@ -56,9 +56,7 @@ export function SamplePickerButton({
       .filter((s): s is Sample => s !== undefined);
   }, [sampleIds, allSamples]);
 
-  // Stop wheel/mousedown from leaking to the d3-zoom handler attached to
-  // `.app-shell__main` (see apps/web/src/hooks/useD3Zoom.ts:23-35).
-  // Without this, scrolling the picker would pan/zoom the genome viewport.
+  // 阻止冒泡到 d3-zoom——否则在 popover 里滚轮或按下会触发基因组视口平移。
   // 阻止冒泡到 d3-zoom——否则在 popover 里滚轮或按下会触发基因组视口平移。
   const stopD3 = (e: ReactMouseEvent | WheelEvent): void => {
     e.stopPropagation();
