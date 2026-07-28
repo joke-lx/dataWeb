@@ -107,6 +107,13 @@
   "species.subtitle": "Pick a sample to view its multi-omics data",
   "species.error": "Failed to load: {message}",
   "species.emptyForSpecies": "No samples available for this species yet.",
+  "species.menu.tissues": "Tissues",
+  "species.menu.all": "All",
+  "species.menu.breeds": "Breeds",
+  "species.search.placeholder": "Search sample ID, tissue or breed…",
+  "species.sort.id": "Sort by ID",
+  "species.sort.breed": "Sort by breed",
+  "species.sort.tissue": "Sort by tissue",
 
   "explore.legend.title": "Data legend",
   "explore.legend.hic.axis": "Genomic position (bp) along the chromosome; values log-scaled.",

@@ -107,6 +107,13 @@
   "species.subtitle": "选择一个样本查看其多组学数据",
   "species.error": "加载失败: {message}",
   "species.emptyForSpecies": "该物种暂无样本数据。",
+  "species.menu.tissues": "组织",
+  "species.menu.all": "全部",
+  "species.menu.breeds": "品种",
+  "species.search.placeholder": "搜索样本 ID、组织或品种…",
+  "species.sort.id": "按 ID 排序",
+  "species.sort.breed": "按品种排序",
+  "species.sort.tissue": "按组织排序",
 
   "explore.legend.title": "图例说明",
   "explore.legend.hic.axis": "染色体上的基因组位置（bp），值取对数刻度。",

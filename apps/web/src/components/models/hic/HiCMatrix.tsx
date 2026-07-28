@@ -4,7 +4,7 @@
  */
 import { useRef, useState } from 'react';
 import type { JSX } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { fetchHicMatrix, type HicMatrixResponse } from '../../../api/client';
 import { useActiveSample } from '../../../hooks/useActiveSample';
@@ -69,6 +69,7 @@ export function HiCMatrix({
         viewport.end,
         hicBin,
       ),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

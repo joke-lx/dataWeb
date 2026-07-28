@@ -12,7 +12,7 @@
  * 架构位置：aux 路径上唯一的 bigwig lane；主轨道走 `BigwigStacked`。
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBigwig } from '../../../api/client';
@@ -71,6 +71,7 @@ export function BigwigLane({
         bins,
       ),
     enabled: !!trackName,
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

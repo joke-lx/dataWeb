@@ -83,21 +83,23 @@ export function CtcfModel(): JSX.Element {
 
   return (
     <div className="ctcf-motif-content">
-      {/* 每块面板独立的三态分支：loading > error > success */}
-      {motifLoading && <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.loadingMotif')}</p></div>}
-      {motifError && <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.error', { message: motifError })}</p></div>}
-      {motif && !motifLoading && !motifError && (
-        <CtcfMotifLogo
-          matrix={motif.matrix}
-          consensus={motif.consensus}
-        />
-      )}
+      {/* Motif: 有数据就显示，加载中不闪白 */}
+      {motif ? (
+        <CtcfMotifLogo matrix={motif.matrix} consensus={motif.consensus} />
+      ) : motifLoading ? (
+        <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.loadingMotif')}</p></div>
+      ) : motifError ? (
+        <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.error', { message: motifError })}</p></div>
+      ) : null}
 
-      {genoLoading && <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.loadingGenotype')}</p></div>}
-      {genoError && <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.error', { message: genoError })}</p></div>}
-      {geno && !genoLoading && !genoError && (
+      {/* Genotype: 不依赖 viewport，初始化后不闪 */}
+      {geno ? (
         <CtcfGenotypePie records={geno.records} />
-      )}
+      ) : genoLoading ? (
+        <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.loadingGenotype')}</p></div>
+      ) : genoError ? (
+        <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.error', { message: genoError })}</p></div>
+      ) : null}
     </div>
   );
 }

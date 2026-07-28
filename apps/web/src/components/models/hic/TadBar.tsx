@@ -2,7 +2,7 @@
  * Hi-C 模型中的 TAD 区间业务轨道，连接视口感知的数据查询与通用 Plotly 形状渲染能力。
  * 该文件存在于 models 层，以集中默认样本、缓存键和后端 track 名称，避免这些约定泄漏到 render-kit。
  */
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';
@@ -45,6 +45,7 @@ export function TadBar({
     ],
     queryFn: () =>
       fetchBed<'tad'>(resolvedSample, 'tad', viewport.chr, viewport.start, viewport.end),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

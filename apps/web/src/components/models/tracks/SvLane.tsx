@@ -11,7 +11,7 @@
  * 架构位置：tracks 模型目录下的"单样本 SV"lane。
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchSV, type SVRecord } from '../../../api/client';
@@ -53,6 +53,7 @@ export function SvLane({
     ],
     queryFn: () =>
       fetchSV(sampleId, viewport.chr, viewport.start, viewport.end),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

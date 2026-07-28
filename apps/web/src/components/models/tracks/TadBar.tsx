@@ -11,7 +11,7 @@
  * 架构位置：tracks 模型目录下的"单样本 TAD"lane。
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';
@@ -55,6 +55,7 @@ export function TadBar({
     ],
     queryFn: () =>
       fetchBed<'tad'>(resolvedSample, 'tad', viewport.chr, viewport.start, viewport.end),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

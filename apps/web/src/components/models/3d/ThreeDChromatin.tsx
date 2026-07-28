@@ -22,7 +22,7 @@
  */
 import { useEffect, useRef } from 'react';
 import type { JSX } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import * as THREE from 'three';
 
 import { fetchBed } from '../../../api/client';
@@ -238,6 +238,7 @@ export function ThreeDChromatin({
       return fetchBed<'pei'>(id, 'pei', viewport.chr, viewport.start, viewport.end);
     },
     enabled: sampleId !== undefined,
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

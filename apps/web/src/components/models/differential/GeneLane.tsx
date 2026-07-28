@@ -14,7 +14,7 @@
  * - 与 tracks/ 下的 GeneLane 形态几乎相同，刻意不抽到 shared/ 以避免无意义的耦合
  *   （两个 viewer 的高度/lane 容器 class 等细节可能独立演化）
  */
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';
@@ -58,6 +58,7 @@ export function GeneLane({
     ],
     queryFn: () =>
       fetchBed<'gene'>(resolvedSample, 'gene', viewport.chr, viewport.start, viewport.end),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

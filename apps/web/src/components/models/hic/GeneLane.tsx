@@ -2,7 +2,7 @@
  * Hi-C 模型中的基因注释业务轨道，按当前视口请求 BED 数据，再交给通用 Plotly 构建器与渲染器。
  * 单独保留该适配层，是为了让 render-kit 不依赖样本、查询键或后端轨道命名等业务知识。
  */
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';
@@ -45,6 +45,7 @@ export function GeneLane({
     ],
     queryFn: () =>
       fetchBed<'gene'>(resolvedSample, 'gene', viewport.chr, viewport.start, viewport.end),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

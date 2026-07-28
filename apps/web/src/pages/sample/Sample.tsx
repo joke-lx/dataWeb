@@ -15,7 +15,7 @@
  * 注意：CSS 改动见 `sample.css`（不在本注释任务范围）。
  */
 
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import type { Sample } from '../../api/types';
@@ -29,6 +29,7 @@ import { GeneLane } from '../../components/models/differential/GeneLane';
 import { Log2Heatmap } from '../../components/models/differential/Log2Heatmap';
 import { ThreeDChromatin } from '../../components/models/3d/ThreeDChromatin';
 import { CtcfModel } from '../../components/models/ctcf-motif';
+import { useDragPan } from '../../hooks/useDragPan';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import type { TrackId } from '../../components/models/tracks/trackSpec';
 import { useTrackSampleSelection } from '../../hooks/useTrackSampleSelection';
@@ -54,6 +55,13 @@ function tissueToOrgan(tissue: string): 'liver' | 'muscle' | 'brain' {
   if (lower.includes('liver')) return 'liver';
   if (lower.includes('muscle')) return 'muscle';
   return 'brain';
+}
+
+/** 拖拽平移容器：包裹需要水平拖拽平移的 viewer（tracks / CTCF） */
+function DragPanContainer({ children }: { children: React.ReactNode }): JSX.Element {
+  const ref = useRef<HTMLDivElement>(null);
+  useDragPan(ref);
+  return <div ref={ref} className="drag-pan-container">{children}</div>;
 }
 
 /**
@@ -311,7 +319,7 @@ export function Sample(): JSX.Element {
       <div className="sample-region">{region} · {t('stage.binLabel', { bin: viewport.bin.toLocaleString() })}</div>
       <div className="sample-viewer">
         {tab === 'tracks' ? (
-          <>
+          <DragPanContainer>
             {!compareActive && overlaySampleIds && (
               <TrackSampleHeader
                 title={TRACK_CATALOG[trackSubTab.id].title}
@@ -341,7 +349,7 @@ export function Sample(): JSX.Element {
                 overlayMeta={overlayMeta}
               />
             )}
-          </>
+          </DragPanContainer>
         ) : compareActive && partner ? (
           /* 对比模式：按 tab 渲染对应比较视图 */
           tab === 'hic' ? (
@@ -361,17 +369,23 @@ export function Sample(): JSX.Element {
               </div>
             </div>
           ) : (
-            <div className="compare-ctcf">
-              <div className="compare-ctcf__panel">
-                <span className="compare-label">{sample.id}</span>
-                <CtcfModel />
+            <DragPanContainer>
+              <div className="compare-ctcf">
+                <div className="compare-ctcf__panel">
+                  <span className="compare-label">{sample.id}</span>
+                  <CtcfModel />
+                </div>
+                <div className="compare-ctcf__panel">
+                  <span className="compare-label">{partner.id}</span>
+                  <CtcfModel />
+                </div>
               </div>
-              <div className="compare-ctcf__panel">
-                <span className="compare-label">{partner.id}</span>
-                <CtcfModel />
-              </div>
-            </div>
+            </DragPanContainer>
           )
+        ) : tab === 'ctcfMotif' ? (
+          <DragPanContainer>
+            <ModelFactory type="ctcf-motif" />
+          </DragPanContainer>
         ) : (
           <ModelFactory type={MODEL_TYPES[tab]} />
         )}

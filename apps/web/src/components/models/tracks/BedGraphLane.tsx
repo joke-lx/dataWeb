@@ -12,7 +12,7 @@
  * 通过 `<TracksModel />` 按 kind 分派时调用。
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';
@@ -60,6 +60,7 @@ export function BedGraphLane({
     ],
     queryFn: () =>
       fetchBed<'ab'>(sampleId, 'ab', viewport.chr, viewport.start, viewport.end),
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 

@@ -15,7 +15,7 @@
  * 在主轨道 `kind === 'bigwig'` 分支调用。
  */
 
-import { useQueries } from '@tanstack/react-query';
+import { keepPreviousData, useQueries } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBigwig } from '../../../api/client';
@@ -87,7 +87,8 @@ export function BigwigStacked({
           bins,
         ),
       enabled: !!trackName,
-      staleTime: 30_000,
+      placeholderData: keepPreviousData,
+    staleTime: 30_000,
     })),
   });
 
