@@ -10,7 +10,8 @@
     'statusbar';
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  /* No overflow:hidden here — let children manage their own scroll.
+     The TopBar / StatusBar have fixed heights and don't grow. */
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-ui);
@@ -19,7 +20,7 @@
 
 .app-shell__main {
   grid-area: main;
-  overflow: hidden;
+  overflow: hidden; /* viewer routes rely on internal scroll; overflow is set per-route */
   position: relative;
   min-height: 0;
 }

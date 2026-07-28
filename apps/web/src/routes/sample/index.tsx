@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ModelFactory } from '../../components/models';
 import { RouteShell } from '../../components/route/RouteShell';
+import { useD3Zoom } from '../../hooks/useD3Zoom';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { useAppIntl } from '../../i18n';
 import { useSamples } from '../../store/samples';
@@ -26,6 +27,8 @@ export function SampleRoute(): JSX.Element {
   const viewport = useViewport();
   const [tab, setTab] = useState<SampleTab>((params.get('tab') as SampleTab) || 'hic');
   const [showSamples, setShowSamples] = useState(false);
+  const viewerRef = useRef<HTMLDivElement>(null);
+  useD3Zoom(viewerRef);
   const sample = useMemo(() => samples?.find((item) => item.id === id), [samples, id]);
 
   useEffect(() => { if (samples) setSamples(samples); }, [samples, setSamples]);
@@ -49,7 +52,9 @@ export function SampleRoute(): JSX.Element {
       toolbar={<div className="sample-tabs" role="tablist">{TABS.map((item) => <button key={item} type="button" role="tab" aria-selected={tab === item} className={tab === item ? 'active' : ''} onClick={() => setTab(item)}>{t(`sample.tabs.${item}`)}</button>)}</div>}
     >
       <div className="sample-region">{region} · {t('stage.binLabel', { bin: viewport.bin.toLocaleString() })}</div>
-      <ModelFactory type={MODEL_TYPES[tab]} />
+      <div ref={viewerRef} className="sample-viewer">
+        <ModelFactory type={MODEL_TYPES[tab]} />
+      </div>
       <div className="sample-navigator">{t('sample.regionNavigator')}</div>
     </RouteShell>
   );

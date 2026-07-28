@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ModelFactory } from '../../components/models';
 import { RouteShell } from '../../components/route/RouteShell';
+import { useD3Zoom } from '../../hooks/useD3Zoom';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { useAppIntl } from '../../i18n';
 import { useSamples } from '../../store/samples';
@@ -27,6 +28,8 @@ export function CompareRoute(): JSX.Element {
   const setSamples = useSamples((state) => state.setSamples);
   const setActive = useSamples((state) => state.setActive);
   const viewport = useViewport();
+  const viewerRef = useRef<HTMLDivElement>(null);
+  useD3Zoom(viewerRef);
   const [mode, setMode] = useState<CompareMode>('tissue');
 
   const sampleA = useMemo(() => samples?.find((item) => item.id === a), [samples, a]);
@@ -52,7 +55,9 @@ export function CompareRoute(): JSX.Element {
       </div>}
       toolbar={<div className="compare-modes" role="tablist">{COMPARISON_MODES.map((item) => <button key={item} type="button" role="tab" aria-selected={mode === item} className={mode === item ? 'active' : ''} onClick={() => setMode(item)}>{t(`compare.mode.${item}`)}</button>)}</div>}
     >
-      <ModelFactory type={activeViewer} />
+      <div ref={viewerRef} className="compare-viewer">
+        <ModelFactory type={activeViewer} />
+      </div>
       {activeViewer === 'differential' && <div className="compare-note">{t('compare.viewer.differentialNote', { a: sampleA.id, b: sampleB.id })}</div>}
       {activeViewer !== 'differential' && <div className="compare-note">{t('compare.viewer.comingSoon', { mode: tissueLabel })}</div>}
       <div className="compare-navigator">{t('sample.regionNavigator')}</div>
