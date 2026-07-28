@@ -1,6 +1,7 @@
 {
   "nav.home": "Home",
   "nav.tracks": "Tracks",
+  "nav.tracks.hic": "Hi-C",
   "nav.3d": "3D",
   "nav.ctcfMotif": "CTCF Motif",
 
@@ -105,5 +106,22 @@
   "species.title": "Samples",
   "species.subtitle": "Pick a sample to view its multi-omics data",
   "species.error": "Failed to load: {message}",
-  "species.emptyForSpecies": "No samples available for this species yet."
+  "species.emptyForSpecies": "No samples available for this species yet.",
+
+  "explore.legend.title": "Data legend",
+  "explore.legend.hic.axis": "Genomic position (bp) along the chromosome; values log-scaled.",
+  "explore.legend.hic.colorScale": "Contact frequency — log₁₀ of observed reads per bin pair.",
+  "explore.legend.hic.diagonal": "Self-ligation signal; rises sharply with Hi-C library quality.",
+  "explore.legend.hic.offDiagonal": "Long-range contacts — distance-dependent decay indicates 3D proximity.",
+  "explore.legend.tracks.bigwig": "Continuous signal (RNA-seq, H3K4me3, H3K27ac) over the region.",
+  "explore.legend.tracks.bedgraph": "Discrete scores (AB index, insulation) — TAD boundaries are visible as drops.",
+  "explore.legend.tracks.tad": "TAD rectangle — topologically associating domain, ~0.2–2 Mb.",
+  "explore.legend.tracks.gene": "Gene model — exons (thick) and introns (thin line with arrows).",
+  "explore.legend.threeD.tube": "Catmull-Rom path of the random-walk backbone, color-graded by index.",
+  "explore.legend.threeD.sphere": "Marker position along the path — promoter (gray) or enhancer (green).",
+  "explore.legend.threeD.arc": "PEI enhancer arc connecting the promoter to a distal enhancer.",
+  "explore.legend.ctcf.logo": "Sequence logo — letter height = information content at each position.",
+  "explore.legend.ctcf.pie": "Population allele frequency (ref / het / alt) at the anchor.",
+  "explore.legend.ctcf.anchor": "Anchor position — vertical line projected onto the motif logo.",
+  "explore.samples.heading": "Pick a sample to view its real data ({count} available)"
 }

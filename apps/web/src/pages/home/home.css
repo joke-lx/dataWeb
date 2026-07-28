@@ -154,6 +154,47 @@
   background: var(--accent-dark, #982d22);
 }
 
+/* ── Quick links (explore by viewer type) ── */
+
+.home-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.home-quick-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #444;
+  background: transparent;
+  border: 1px solid transparent;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 550;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.home-quick-link:hover {
+  background: var(--paper, #fff);
+  border-color: var(--line, #d9d9d6);
+  color: var(--accent, #c0392b);
+}
+
+.home-quick-link--secondary {
+  opacity: 0.75;
+}
+
+.home-quick-link__glyph {
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  color: var(--accent, #c0392b);
+  font-size: 11px;
+}
+
 /* ── Section ── */
 
 .home-section {

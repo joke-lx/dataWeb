@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 const Home = lazy(() => import('../pages/home/Home').then((module) => ({ default: module.Home })));
 const Species = lazy(() => import('../pages/species/Species').then((module) => ({ default: module.Species })));
 const Sample = lazy(() => import('../pages/sample/Sample').then((module) => ({ default: module.Sample })));
+const Explore = lazy(() => import('../pages/explore/Explore').then((module) => ({ default: module.Explore })));
 
 const PageFallback = () => <div className="route-loading">Loading…</div>;
 
@@ -13,6 +14,7 @@ export function AppRoutes(): JSX.Element {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/species/:species" element={<Species />} />
+        <Route path="/explore/:viewerType" element={<Explore />} />
         <Route path="/sample/:id" element={<Sample />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -1,6 +1,7 @@
 {
   "nav.home": "首页",
   "nav.tracks": "轨道",
+  "nav.tracks.hic": "Hi-C",
   "nav.3d": "3D",
   "nav.ctcfMotif": "CTCF 基序",
 
@@ -105,5 +106,22 @@
   "species.title": "样本",
   "species.subtitle": "选择一个样本查看其多组学数据",
   "species.error": "加载失败: {message}",
-  "species.emptyForSpecies": "该物种暂无样本数据。"
+  "species.emptyForSpecies": "该物种暂无样本数据。",
+
+  "explore.legend.title": "图例说明",
+  "explore.legend.hic.axis": "染色体上的基因组位置（bp），值取对数刻度。",
+  "explore.legend.hic.colorScale": "接触频率 —— log₁₀ 观察读数 / bin 对。",
+  "explore.legend.hic.diagonal": "自连环化信号，Hi-C 文库质量高时显著上升。",
+  "explore.legend.hic.offDiagonal": "长程接触 —— 随距离衰减表示三维接近度。",
+  "explore.legend.tracks.bigwig": "连续信号（RNA-seq、H3K4me3、H3K27ac）覆盖区域。",
+  "explore.legend.tracks.bedgraph": "离散分数（AB 指数、绝缘分数）—— TAD 边界处出现下降。",
+  "explore.legend.tracks.tad": "TAD 矩形 —— 拓扑关联结构域，~0.2–2 Mb。",
+  "explore.legend.tracks.gene": "基因模型 —— 外显子（粗）与内含子（带箭头细线）。",
+  "explore.legend.threeD.tube": "随机游走骨架的 Catmull-Rom 路径，按下标渐变着色。",
+  "explore.legend.threeD.sphere": "路径上的标记位点 —— 启动子（灰）或增强子（绿）。",
+  "explore.legend.threeD.arc": "PEI 增强子弧，连接启动子与远端增强子。",
+  "explore.legend.ctcf.logo": "序列 logo —— 字母高度 = 每个位置的信息量。",
+  "explore.legend.ctcf.pie": "群体等位基因频率（ref / het / alt）于锚点处。",
+  "explore.legend.ctcf.anchor": "锚点位置 —— 投影到 motif logo 上的竖线。",
+  "explore.samples.heading": "选择一个样本查看其真实数据（共 {count} 个）"
 }

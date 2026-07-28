@@ -1,14 +1,34 @@
+/**
+ * BigwigStacked —— 多样本 bigwig 的 Plotly 构建器。
+ *
+ * 这个文件**不是** React 组件（注意 `.ts` 后缀），只暴露：
+ *  1. `BigwigSeries` 类型——"一个样本的 bigwig 切片"数据结构；
+ *  2. `buildBigwigStacked` 函数——把 N 个 series 拼成一张共享 x 轴、各自 y 轴的 Plotly 图。
+ *
+ * 几何与 demo 对齐（`docx/refrences/demo/tracks_offline.html`）：
+ *  - 每个样本一份水平切片（独立 y 轴），切片间 gap 固定 `0.012 * height`；
+ *  - 第一片顶部 padding `0.055 * height`，最后一片贴齐底部 margin；
+ *  - 右侧 (`xref:'paper' x=1.005`)：样本 id，色匹配；
+ *  - 左侧 (`xref:'paper' x=-0.09`)：组名旋转 −90°，跨整组垂直居中；
+ *  - 高亮 band (`xref:'x' yref:'paper'`) 跨整栈垂直范围。
+ *
+ * 与 `buildBigwigOverlay`（单 y 轴 + N trace）的差异：这是 demo 风格（多切片），
+ * `<BigwigStackedLane />` 在 N≥2 时选它；N=1 退回到 `buildBigwig`。
+ *
+ * 架构位置：业务算法（非 UI）放在 tracks 模型目录里，与 `<BigwigStackedLane />`
+ * 配套使用，不抽到 render-kit（因为它的 layout 语义和"tracks 演示"绑定）。
+ */
+
 import type { PlotlyBuild, PlotlyData, PlotlyLayout } from '../../render-kit/plotly/plotlyTypes';
 import { baseLayout } from '../../render-kit/plotlyBuilders';
 import type { Viewport } from '../../../store/viewport';
 
 /**
- * Per-sample bigwig series — one entry per sample id in a multi-sample
- * lane. Used by `buildBigwigStacked` (N horizontal slices) and the older
- * `buildBigwigOverlay` (N traces sharing one y-axis).
+ * 单样本 bigwig 序列：在 `buildBigwigStacked`（N 横向切片）和
+ * 旧版 `buildBigwigOverlay`（N trace 共享 y 轴）里都会用到。
  */
 export interface BigwigSeries {
-  /** Sample id, surfaced as the trace name for the right-side legend. */
+  /** 样本 id，作为右侧 legend / 标注的 trace 名。 */
   id: string;
   values: Float32Array | undefined;
   line: string;
@@ -16,29 +36,16 @@ export interface BigwigSeries {
 }
 
 /**
- * Multi-sample bigwig layout: each sample gets its own horizontal slice
- * (independent y-axis) inside a single Plotly figure that shares one
- * genomic x-axis across all slices. This mirrors
+ * 多样本 bigwig 布局生成器：每个样本一个水平切片（独立 y 轴），
+ * 共享一个基因组 x 轴。
  *
- * Slice geometry (top → bottom):
- *   - Even gaps of `0.012 * height` between slices (matches demo).
- *   - First slice has top padding `0.055 * height`; last slice ends flush
- *     with the bottom margin.
- *
- * Annotations:
- *   - Right side (`xref:'paper' x=1.005`): sample id, color-matched.
- *   - Left side  (`xref:'paper' x=-0.09`): group name rotated −90°,
- *     vertically centred across the whole stack so the label spans the
- *     lanes that belong to the same group.
- *
- * Highlight bands (`xref:'paper'` shapes) span the full vertical extent of
- * the stack. The x-axis is shared across slices so zooming and pan keep
- * every slice aligned.
- *
- * Note: the original `buildBigwigOverlay` (single y-axis, N traces) is
- * still exported for any future caller that prefers overlay semantics.
- * Today the `/tracks` route uses `buildBigwigStacked` for N≥2 and falls
- * back to `buildBigwig` for N=1.
+ * @param series 各样本的 bigwig series（顺序 = 显示顺序，从上到下）
+ * @param viewport 当前视口（chr/start/end）
+ * @param _title 故意不渲染——演示风格布局用左侧 group label + 右侧 sample label
+ *               表达身份；保留参数是为了让 Lane 调用方不用按 lane kind 分叉。
+ * @param height 图总高（像素）
+ * @param groupLabel 左侧旋转组名
+ * @param highlightBands 可选高亮区间（x 轴单位），跨整栈垂直范围
  */
 export function buildBigwigStacked(
   series: BigwigSeries[],
