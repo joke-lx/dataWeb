@@ -2,7 +2,7 @@ import type { JSX, ReactNode } from 'react';
 
 import { useAppIntl } from '../../i18n';
 import { useViewport } from '../../store/viewport';
-import '../../routes/route.css';
+import './route.css';
 
 interface RouteShellProps {
   /** Main page title (h2). */

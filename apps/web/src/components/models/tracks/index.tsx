@@ -1,8 +1,8 @@
 import type { JSX } from 'react';
 
 import type { Sample } from '../../../api/types';
-import type { TrackId } from '../../../routes/trackSpec';
-import { TRACK_CATALOG } from '../../../routes/trackSpec';
+import type { TrackId } from './trackSpec';
+import { TRACK_CATALOG } from './trackSpec';
 import { BedGraphLane } from './BedGraphLane';
 import { BigwigLane } from './BigwigLane';
 import { BigwigStacked } from './BigwigStackedLane';

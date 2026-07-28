@@ -1,6 +1,6 @@
 /** Track descriptor — config for a single genomic track lane. */
 
-import type { BedKind } from '../api/types';
+import type { BedKind } from '../../../api/types';
 
 export type TrackId =
   | 'hic' | 'rna_seq' | 'h3k4me3' | 'h3k27ac'

@@ -6,7 +6,7 @@ import { CompareRoute } from './routes/compare';
 import { HomeRoute } from './routes/home';
 import { SampleRoute } from './routes/sample';
 import { SpeciesRoute } from './routes/species';
-import './routes/route.css';
+import './components/route/route.css';
 
 export function App(): JSX.Element {
   return (

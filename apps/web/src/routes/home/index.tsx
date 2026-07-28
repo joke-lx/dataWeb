@@ -1,8 +1,7 @@
 import { type JSX } from 'react';
 
 import { useAppIntl } from '../../i18n';
-import '../route.css';
-import '../home.css';
+import './home.css';
 
 const COMPARISON_MODES = ['tissue', 'breed', 'cross', 'developmental'] as const;
 

@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 
-import type { SubTab } from '../../../routes/trackSpec';
-import { GROUP_LABELS, TRACK_CATALOG } from '../../../routes/trackSpec';
+import type { SubTab } from './trackSpec';
+import { GROUP_LABELS, TRACK_CATALOG } from './trackSpec';
 import './tracks.css';
 
 export interface SubTabBarProps {

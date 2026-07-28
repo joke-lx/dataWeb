@@ -13,8 +13,8 @@ import { useTrackSampleSelection } from '../../hooks/useTrackSampleSelection';
 import { useAppIntl } from '../../i18n';
 import { useSamples } from '../../store/samples';
 import { useViewport } from '../../store/viewport';
-import { SUB_TABS, TRACK_CATALOG } from '../trackSpec';
-import type { TrackId } from '../trackSpec';
+import { SUB_TABS, TRACK_CATALOG } from '../../components/models/tracks/trackSpec';
+import type { TrackId } from '../../components/models/tracks/trackSpec';
 import './sample.css';
 
 const TABS = ['hic', 'tracks', '3d', 'ctcfMotif'] as const;

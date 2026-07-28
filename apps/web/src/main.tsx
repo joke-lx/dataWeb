@@ -9,7 +9,7 @@ import { i18nStore, setLocale, useAppSelector } from './i18n/store';
 import enMessages from './i18n/messages/en.json';
 import zhMessages from './i18n/messages/zh-CN.json';
 import { detectLocaleFromUrl } from './i18n/url/localeFromUrl';
-import './routes/route.css';
+import './components/route/route.css';
 import './styles/reset.css';
 import './styles/tokens.css';
 
