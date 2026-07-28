@@ -6,7 +6,6 @@ import { CompareRoute } from './routes/compare';
 import { HomeRoute } from './routes/home';
 import { SampleRoute } from './routes/sample';
 import { SpeciesRoute } from './routes/species';
-import { LEGACY_REDIRECTS } from './routes/registry';
 import './routes/route.css';
 
 export function App(): JSX.Element {
@@ -18,9 +17,6 @@ export function App(): JSX.Element {
           <Route path="/species/:species" element={<SpeciesRoute />} />
           <Route path="/sample/:id" element={<SampleRoute />} />
           <Route path="/compare/:a/:b" element={<CompareRoute />} />
-          {Object.entries(LEGACY_REDIRECTS).map(([from, to]) => (
-            <Route key={from} path={from} element={<Navigate to={to} replace />} />
-          ))}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>

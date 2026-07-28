@@ -15,25 +15,15 @@ export const ROUTES: RouteSpec[] = [
 ];
 
 /**
- * Old URLs → new sample-first / compare-first URL targets.
- * Used by ``App.tsx`` to emit ``<Navigate replace>`` routes so
- * bookmarks and external links continue to work.
+ * Old URL targets — kept as empty for now. The catch-all `*` route in
+ * ``App.tsx`` redirects anything unmapped to ``/`` so the user lands
+ * on the home page and navigates through the proper hierarchy.
+ *
+ * Do NOT add per-sample hardcoded redirects here (e.g. ``/hic -> /sample/Brain_BF3``).
+ * Those are engineering anti-patterns: they pin a specific sample, defeat
+ * the sample-first navigation, and silently misroute if a sample is removed
+ * or renamed. Real legacy URLs would be cross-sample, generic
+ * (e.g. ``/hic -> /species/pig``), and even those should be added only
+ * with explicit user intent — never as placeholders.
  */
-export const LEGACY_REDIRECTS: Record<string, string> = {
-  '/differential-hic': '/compare/Brain_BF3/Liver_BF3',
-  '/ab-index': '/sample/Brain_BF3?type=ab',
-  '/insulation-score': '/sample/Brain_BF3?type=is',
-  '/tad': '/sample/Brain_BF3?type=tad',
-  '/pei': '/sample/Brain_BF3?type=pei',
-  '/ctcf-loops': '/sample/Brain_BF3?type=loop',
-  '/rna-seq': '/sample/Brain_BF3?type=rna_seq',
-  '/h3k4me3': '/sample/Brain_BF3?type=h3k4me3',
-  '/h3k27ac': '/sample/Brain_BF3?type=h3k27ac',
-  '/sv': '/sample/Brain_BF3?type=sv',
-  '/gene': '/sample/Brain_BF3?type=gene',
-  '/hic': '/sample/Brain_BF3',
-  '/tracks': '/sample/Brain_BF3?tab=tracks',
-  '/3d': '/sample/Brain_BF3?tab=3d',
-  '/ctcf-motif': '/sample/Brain_BF3?tab=ctcfMotif',
-  '/differential': '/compare/Brain_BF3/Liver_BF3',
-};
+export const LEGACY_REDIRECTS: Record<string, string> = {};
