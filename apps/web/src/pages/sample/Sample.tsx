@@ -23,7 +23,7 @@ const MODEL_TYPES: Record<SampleTab, string> = {
   hic: 'hic', tracks: 'tracks', '3d': '3d', ctcfMotif: 'ctcf-motif',
 };
 
-export function SampleRoute(): JSX.Element {
+export function Sample(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -247,3 +247,5 @@ export function SampleRoute(): JSX.Element {
     </RouteShell>
   );
 }
+
+export default Sample;

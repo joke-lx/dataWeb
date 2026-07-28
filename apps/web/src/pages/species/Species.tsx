@@ -12,7 +12,7 @@ import './species.css';
  * species in the URL param. Reachable only from the home page species
  * cards — never a top-level nav target.
  */
-export function SpeciesRoute(): JSX.Element {
+export function Species(): JSX.Element {
   const { t } = useAppIntl();
   const { species: speciesId = 'pig' } = useParams<{ species: string }>();
   const { samples, isLoading, error } = useSampleCatalog();
@@ -70,4 +70,4 @@ export function SpeciesRoute(): JSX.Element {
   );
 }
 
-export default SpeciesRoute;
+export default Species;

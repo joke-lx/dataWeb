@@ -5,7 +5,7 @@ import './home.css';
 
 const COMPARISON_MODES = ['tissue', 'breed', 'cross', 'developmental'] as const;
 
-export function HomeRoute(): JSX.Element {
+export function Home(): JSX.Element {
   const { t } = useAppIntl();
 
   return (
@@ -106,3 +106,5 @@ export function HomeRoute(): JSX.Element {
     </main>
   );
 }
+
+export default Home;

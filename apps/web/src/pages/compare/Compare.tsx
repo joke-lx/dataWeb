@@ -20,7 +20,7 @@ const MODE_VIEWERS: Record<CompareMode, 'differential' | 'hic'> = {
   developmental: 'hic',
 };
 
-export function CompareRoute(): JSX.Element {
+export function Compare(): JSX.Element {
   const { a, b } = useParams<{ a: string; b: string }>();
   const navigate = useNavigate();
   const { t } = useAppIntl();
@@ -64,3 +64,5 @@ export function CompareRoute(): JSX.Element {
     </RouteShell>
   );
 }
+
+export default Compare;
