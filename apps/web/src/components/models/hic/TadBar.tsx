@@ -1,3 +1,7 @@
+/**
+ * Hi-C 模型中的 TAD 区间业务轨道，连接视口感知的数据查询与通用 Plotly 形状渲染能力。
+ * 该文件存在于 models 层，以集中默认样本、缓存键和后端 track 名称，避免这些约定泄漏到 render-kit。
+ */
 import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -18,8 +22,10 @@ interface TadBarProps {
 }
 
 /**
- * TAD (Topologically Associating Domain) boundary bar — full-height
- * rectangles spanning each domain interval along the genome axis.
+ * 渲染与当前基因组视口同步的 TAD 区间轨道。
+ *
+ * @param props - 可选的样本覆盖值与 lane 像素高度；未传样本时使用 Hi-C 默认样本。
+ * @returns 将每个 domain 映射为全高矩形，并带异步状态提示的 Plotly 轨道。
  */
 export function TadBar({
   sampleId,
@@ -29,6 +35,7 @@ export function TadBar({
   const resolvedSample = sampleId ?? 'Brain_BF3';
 
   const { data, isLoading, error } = useQuery<TadRecord[]>({
+    // 将完整视口纳入键，避免平移或缩放时沿用旧窗口的 domain 边界。
     queryKey: [
       'tadBar',
       resolvedSample,

@@ -1,3 +1,18 @@
+/**
+ * SamplePickerButton —— 多样本叠加的"快速操作"控件。
+ *
+ * 职责：
+ *  - 在轨道头部显示当前已选样本的 chip 行（每个 chip 左侧带 tissue 颜色）；
+ *  - "×"按钮立即移除单个样本（绕过草稿，直接 onChange → URL）；
+ *  - "+ Add sample" 按钮切换 popover 显示状态（嵌入 `<SamplePicker />`）。
+ *
+ * 两条移除路径：
+ *  - chip 行 × —— 立即生效（适合"移除单个"快操作）；
+ *  - Picker 的 Apply —— 批量生效（适合"探索多个候选"）。
+ *
+ * 架构位置：被 `<TrackSampleHeader />` 调用，是 chip 行 + 弹层的容器。
+ */
+
 import { useMemo, useState } from 'react';
 import type { JSX, MouseEvent as ReactMouseEvent } from 'react';
 
@@ -18,14 +33,12 @@ interface SamplePickerButtonProps {
 }
 
 /**
- * Header control for the multi-sample overlay:
- * - A `+ Add sample` button opens the `SamplePicker` popover.
- * - Each currently selected sample is rendered as a chip with an × button
- *   that fires `onChange` immediately on click (no draft state, no Apply).
+ * 多样本叠加头部控件：chip 行 + 弹层触发器。
  *
- * The full Picker (multi-select draft + Cancel/Apply) handles the case
- * where the user is exploring many options; the chip-row × handles the
- * fast "remove one" case.
+ * @param sampleIds 已选样本 id 列表（URL 单一来源）
+ * @param onChange 替换样本集合的回调（直接写 URL）
+ * @param allSamples 完整样本目录（用于 tissue 分组与 chip 颜色）
+ * @param isCatalogLoading true 时显示骨架 chip
  */
 export function SamplePickerButton({
   sampleIds,
@@ -36,6 +49,7 @@ export function SamplePickerButton({
   const [open, setOpen] = useState(false);
 
   // Resolve selected samples → their tissue → colors for the chip-row swatches.
+  // 把 URL 中的 id 列表映射回 Sample 对象，跳过 catalog 还没载入的项。
   const selected = useMemo<Sample[]>(() => {
     return sampleIds
       .map((id) => allSamples.find((s) => s.id === id))
@@ -45,6 +59,7 @@ export function SamplePickerButton({
   // Stop wheel/mousedown from leaking to the d3-zoom handler attached to
   // `.app-shell__main` (see apps/web/src/hooks/useD3Zoom.ts:23-35).
   // Without this, scrolling the picker would pan/zoom the genome viewport.
+  // 阻止冒泡到 d3-zoom——否则在 popover 里滚轮或按下会触发基因组视口平移。
   const stopD3 = (e: ReactMouseEvent | WheelEvent): void => {
     e.stopPropagation();
   };

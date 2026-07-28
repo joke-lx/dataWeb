@@ -1,3 +1,23 @@
+/**
+ * SamplePicker —— 多样本叠加用的多选 popover。
+ *
+ * 职责：
+ *  - 接收「URL 已提交」的多样本 id 列表作为种子，构建本地 `draft`（草稿态）；
+ *  - 点击 chip 仅切换 draft 成员，**不发起任何网络请求**；
+ *  - 用户点 Apply 才把 draft 通过 `onApply` 写回 URL（单一 source of truth = URL）。
+ *
+ * 关键交互：
+ *  - Cancel / Esc / 点击外部 → 丢弃 draft，关闭；
+ *  - Clear all → 清空 draft（仍需 Apply 才生效）；
+ *  - Apply → `onApply(draft)`，由父级写回 URL。
+ *
+ * 目录：
+ *  - 已知 tissue 分组排序：Muscle → Liver → Brain → 其它；
+ *  - 未知 / URL 里不存在的 id 仍保留在 draft 里（防止加载短暂窗口内被静默删除）。
+ *
+ * 架构位置：作为 `<SamplePickerButton />` 的内部细节存在；自身不再被路由直接使用。
+ */
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX, MouseEvent as ReactMouseEvent, WheelEvent as ReactWheelEvent } from 'react';
 
@@ -16,24 +36,13 @@ interface SamplePickerProps {
 }
 
 /**
- * Multi-select popover for sample overlay. Opens with a draft initialized
- * to the current `sampleIds`; clicking a chip toggles its membership in
- * the draft (no network requests fire until Apply).
+ * 多选样本 popover。带草稿（draft）状态，与"已生效到 URL 的样本集合"
+ * 解耦，确保"探索多个样本但不立即污染 URL"。
  *
- * Footer:
- *   - Cancel: discard draft
- *   - Clear:  empty the draft (still requires Apply to commit)
- *   - Apply:  write the draft back through `onApply`
- *
- * Keyboard:
- *   - Escape closes the popover (treated as Cancel)
- *   - Click outside also closes (treated as Cancel)
- *
- * Catalog edge cases:
- *   - If `allSamples` is empty (still loading), the body shows a small
- *     hint and disables the chips.
- *   - Unknown ids from the URL survive in the draft so deep-links aren't
- *     silently purged during the brief loading window.
+ * @param sampleIds 当前 URL 中已生效的样本 id（按字典序排序）
+ * @param allSamples 完整样本目录；空数组 = 尚未加载完
+ * @param onApply 把草稿写回 URL 的回调
+ * @param onCancel 关闭并丢弃草稿的回调
  */
 export function SamplePicker({
   sampleIds,
@@ -46,6 +55,8 @@ export function SamplePicker({
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
   // Group by tissue (Muscle → Liver → Brain → Unknown at the end).
+  // 按 tissue 分组并固定排序顺序（Muscle > Liver > Brain > 其它），
+  // 组内再按 sample id 字典序排序——和 SamplePickerButton chip 行展示一致。
   const grouped = useMemo<Array<[string, Sample[]]>>(() => {
     const order: string[] = [];
     const map = new Map<string, Sample[]>();
@@ -95,6 +106,7 @@ export function SamplePicker({
   };
 
   // Stop wheel/mousedown from reaching d3-zoom attached to `.app-shell__main`.
+  // 阻止冒泡到外层 d3-zoom，否则在 popover 里滚轮/拖拽会平移基因组视口。
   const stopD3 = (e: ReactMouseEvent | ReactWheelEvent): void => {
     e.stopPropagation();
   };

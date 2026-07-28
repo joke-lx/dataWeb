@@ -1,5 +1,10 @@
+/**
+ * render-kit 中与业务无关的矩阵色标组件，展示数值范围并在标准模式下提供色图切换。
+ * 标准与差异视图共用此处的视觉约定，避免各模型复制渐变色、刻度方向和交互限制。
+ */
 import type { JSX } from 'react';
 
+/** 可由标准 Hi-C 色标选择器切换的色图标识。 */
 export type ColormapName = 'rdbu' | 'viridis' | 'ref';
 
 interface ColormapBarProps {
@@ -22,6 +27,12 @@ const GRADIENTS: Record<ColormapName, string> = {
 const DIFFERENTIAL_GRADIENT =
   'linear-gradient(to right, #6e5693, #6b5da4, #a9a2ce, #fdf7fe, #f7d2d8, #f0848d, #d51031)';
 
+/**
+ * 展示矩阵数值范围，并按模式决定是否允许用户切换色图。
+ *
+ * @param props - 数值上下界、当前色图、模式以及可选的方向和变更回调。
+ * @returns 标准模式的纵向可选色标，或差异模式使用的横向固定色标。
+ */
 export function ColormapBar({
   vmin,
   vmax,

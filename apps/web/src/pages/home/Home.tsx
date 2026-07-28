@@ -30,15 +30,6 @@ export function Home(): JSX.Element {
               {t('common.search')}
             </button>
           </form>
-
-          <nav className="home-quick-links" aria-label="Quick entry points">
-            <a className="home-quick-link" href="/species/pig" title="Browse a sample">
-              <span className="home-quick-link__glyph">▦</span>{t('nav.hic')}
-            </a>
-            <a className="home-quick-link" href="/sample/Brain_BF3?vs=Liver_BF3" title="Compare two samples">
-              <span className="home-quick-link__glyph">Δ</span>{t('nav.differential')}
-            </a>
-          </nav>
         </div>
       </section>
 

@@ -1,3 +1,17 @@
+/**
+ * HiCMatrix —— Hi-C 接触矩阵 lane（tracks 模型专用）。
+ *
+ * 职责：
+ *  - 拉取当前视口范围内的 Hi-C 矩阵；
+ *  - 自适应选择合适的 bin 大小（不超过 `MAX_MATRIX_DIM`）；
+ *  - 渲染 ColormapBar + WebGL 渲染的 `<HiCMatrix2D />`。
+ *
+ * 与 hic 模型下的同名组件视觉一致——本组件是 tracks 模型目录下的独立副本，
+ * 避免跨模型共享（详见 ref1 决策）。
+ *
+ * 架构位置：被 `<LoopTrack />` 直接调用；track 路由里走 `kind: 'hic'` 间接走 LoopTrack。
+ */
+
 import { useState } from 'react';
 import type { JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -20,10 +34,13 @@ interface HiCMatrixProps {
 }
 
 /**
- * Hi-C matrix lane — colormap selector + WebGL-rendered 2D heatmap.
+ * Hi-C 接触矩阵 lane：左侧 ColormapBar + WebGL 渲染的 2D 热图。
  *
- * Owns its own viewport-aware query (so the matrix bin follows zoom) and
- * delegates rendering to the WebGL-backed `HiCMatrix2D`.
+ * bin 自适应：保证矩阵像素不超过 `MAX_MATRIX_DIM`，bin 向上对齐到 1000 的倍数
+ * （匹配后端 cache key 的离散化粒度）。
+ *
+ * @param sampleId 覆盖默认 sample（缺省走 activeSample，再缺省 Brain_BF3）
+ * @param height lane 高度（默认 480px，LoopTrack 用 320px）
  */
 export function HiCMatrix({
   sampleId: sampleIdOverride,
@@ -33,15 +50,20 @@ export function HiCMatrix({
   const activeSample = useActiveSample();
   const sampleId = sampleIdOverride ?? activeSample ?? 'Brain_BF3';
 
+  // 局部 colormap 状态：本 lane 内的 colormap 选择不写 URL，
+  // 与 sample / viewport 等 URL-canonical state 解耦。
   const [colorMap, setColorMap] = useState<ColormapName>('ref');
 
   const viewportWidth = viewport.end - viewport.start;
   const targetBin = Math.ceil(viewportWidth / MAX_MATRIX_DIM);
+  // bin 必须不小于当前 viewport 自带的 bin（防止过采样），同时向上对齐 1000 倍数
+  // ——后端按这个粒度缓存，命中 cache 比精确粒度更省时。
   const hicBin = Math.max(
     viewport.bin,
     Math.ceil(targetBin / 1000) * 1000,
   );
 
+  // hicBin 进 queryKey → zoom 触发不同 bin 时重新拉数据。
   const { data, isLoading, error } = useQuery<HicMatrixResponse>({
     queryKey: [
       'hic',

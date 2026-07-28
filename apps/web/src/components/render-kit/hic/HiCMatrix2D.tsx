@@ -1,3 +1,7 @@
+/**
+ * render-kit 中可复用的 Hi-C 二维矩阵渲染基件，统一处理 WebGL 生命周期、纹理上传、色图选择与光标映射。
+ * 它同时服务标准矩阵和差异矩阵，只接收已解析的数据；这种边界使模型层决定“画什么”，本文件专注“如何高效绘制”。
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
@@ -38,6 +42,18 @@ interface HiCMatrix2DDifferentialProps {
 
 type HiCMatrix2DProps = HiCMatrix2DStandardProps | HiCMatrix2DDifferentialProps;
 
+/**
+ * 按差异矩阵接口约定请求并解码紧凑的 float32 二进制响应。
+ *
+ * @param sampleA - 差异计算的基准样本。
+ * @param sampleB - 与基准样本比较的目标样本。
+ * @param chr - 查询染色体。
+ * @param start - 视口起点；发送前向下取整以覆盖左边界。
+ * @param end - 视口终点；发送前向上取整以覆盖右边界。
+ * @param bin - 期望分辨率，规范为至少 1 bp 的整数。
+ * @returns 解码后的行优先矩阵、二维形状与服务端计算的颜色范围。
+ * @throws 响应失败或服务端返回非 float32 数据时抛出错误。
+ */
 async function fetchDifferentialHic(
   sampleA: string,
   sampleB: string,
@@ -68,6 +84,12 @@ async function fetchDifferentialHic(
 
 export { fetchDifferentialHic };
 
+/**
+ * 使用 WebGL2 绘制标准或差异 Hi-C 矩阵，并把鼠标位置投影到全局基因组光标。
+ *
+ * @param props - 判别联合配置：标准模式提供单样本，差异模式提供样本对；两者共享矩阵、范围、bin 与高度。
+ * @returns 管理 canvas、加载元信息及可见错误状态的矩阵宿主元素。
+ */
 export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
   const {
     variant = 'standard',
@@ -196,6 +218,7 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
     programRef.current = program;
 
     const positions = new Float32Array([
+      // 两个三角形覆盖完整裁剪空间，矩阵采样和色图转换全部留给 fragment shader。
       -1, -1, 1, -1, -1, 1,
       -1, 1, 1, -1, 1, 1,
     ]);
@@ -284,6 +307,7 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
         const localX = event.clientX - rect.left;
         const stageContent = event.currentTarget.closest('.stage-content');
         const stageRect = stageContent?.getBoundingClientRect();
+        // bp 使用矩阵局部坐标，而十字线 x 使用舞台坐标；二者分离才能同时对齐数据与跨轨道覆盖层。
         const stageX = event.clientX - (stageRect?.left ?? rect.left);
         const bp = pxToBp(localX, viewport, rect.width);
         useCursor.getState().setCursor(stageX, bp, 'hic');

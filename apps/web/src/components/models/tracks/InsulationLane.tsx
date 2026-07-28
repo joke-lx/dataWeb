@@ -1,3 +1,14 @@
+/**
+ * InsulationLane —— Insulation Score（边界强度）轨道。
+ *
+ * 职责：
+ *  - 拉取 `'is'` bedGraph 数据；
+ *  - 委托 `buildInsulationScore` 生成 Plotly：平滑曲线 + 淡填充（与 demo 对齐）。
+ *
+ * 架构位置：tracks 模型目录下的"单样本 IS"lane，由 `<TracksModel />` 在
+ * `kind === 'is'` 分支调用。
+ */
+
 import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -18,7 +29,12 @@ interface InsulationLaneProps {
 }
 
 /**
- * Insulation score lane — smooth line with a faint fill (matches demo.html).
+ * Insulation Score 轨道：平滑曲线 + 淡填充（与 demo.html 视觉一致）。
+ *
+ * @param sampleId 当前样本 id
+ * @param trackName track 名（目前固定 `'is'`）
+ * @param title 标题
+ * @param height lane 高度（默认 150px）
  */
 export function InsulationLane({
   sampleId,
@@ -28,6 +44,7 @@ export function InsulationLane({
 }: InsulationLaneProps): JSX.Element {
   const viewport = useViewport();
 
+  // viewport 进 queryKey → 平移/缩放触发 refetch；30s staleTime 抑制高频抖动。
   const { data, isLoading, error } = useQuery<BedGraphRecord[]>({
     queryKey: [
       'is',

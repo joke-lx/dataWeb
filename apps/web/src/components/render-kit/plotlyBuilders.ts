@@ -1,3 +1,7 @@
+/**
+ * 将基因组领域数据转换为 Plotly figure 的通用算法层，供多个业务模型共享一致的坐标、配色和轨道布局。
+ * 本文件不发起查询也不持有 React 状态；它存在于 render-kit，是为了让模型组件只处理数据来源而不重复图形构造规则。
+ */
 import type { BedGraphRecord, GeneRecord, PeiRecord, TadRecord } from '../../api/types';
 import type { SVRecord } from '../../api/client';
 import type { Viewport } from '../../store/viewport';
@@ -34,9 +38,13 @@ interface BaseLayoutOpts {
 }
 
 /**
- * Shared layout shell so every track lines up on the same genomic x-scale and
- * inherits the demo.html aesthetic: tight margins, compact title, light grid,
- * transparent background so the lane surface shows through.
+ * 构造所有线性基因组轨道共享的 Plotly 布局骨架。
+ *
+ * @param viewport - 决定统一基因组 x 轴范围的当前视口。
+ * @param title - 轨道内显示的紧凑标题。
+ * @param height - Plotly 画布的像素高度。
+ * @param opts - 轴、形状与边距覆盖项，用于保留不同轨道的表达需求。
+ * @returns 具有透明背景和统一轴样式的布局对象。
  */
 export function baseLayout(
   viewport: Viewport,
@@ -83,7 +91,15 @@ export function baseLayout(
   return layout;
 }
 
-/** RNA-seq / histone mark signal track (filled area curve, positive direction). */
+/**
+ * 将等距采样的连续信号构造成正向面积轨道。
+ *
+ * @param values - 覆盖视口的等距信号值；缺失时生成空轨道。
+ * @param viewport - 用于把数组索引还原为基因组坐标的视口。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 可直接交给 PlotlyTrack 的 trace 与布局。
+ */
 export function buildBigwig(
   values: Float32Array | undefined,
   viewport: Viewport,
@@ -119,7 +135,15 @@ export function buildBigwig(
   };
 }
 
-/** AB compartment index: signed curve with red (A) above zero, blue (B) below. */
+/**
+ * 将有符号 bedGraph 信号拆成 A/B compartment 填充，并叠加连续轮廓线。
+ *
+ * @param records - 可能包含多条染色体的 bedGraph 记录。
+ * @param viewport - 提供目标染色体与统一 x 轴范围。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 零线上下分色的 Plotly figure。
+ */
 export function buildBedGraph(
   records: BedGraphRecord[] | undefined,
   viewport: Viewport,
@@ -178,7 +202,15 @@ export function buildBedGraph(
   };
 }
 
-/** Insulation score: smooth line with a faint fill (matches demo.html). */
+/**
+ * 构造带零值参考线的 insulation score 平滑信号轨道。
+ *
+ * @param records - 可能包含多条染色体的 insulation 记录。
+ * @param viewport - 决定筛选染色体和可见范围的视口。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 带轻量面积填充的 Plotly figure。
+ */
 export function buildInsulationScore(
   records: BedGraphRecord[] | undefined,
   viewport: Viewport,
@@ -218,7 +250,15 @@ export function buildInsulationScore(
   };
 }
 
-/** TAD domains: full-height rectangles spanning each domain interval. */
+/**
+ * 把 TAD 区间映射为占满轨道高度的 domain 矩形。
+ *
+ * @param records - TAD 边界记录。
+ * @param viewport - 用于筛选染色体并对齐横轴的视口。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 以 layout shapes 表达、无需 trace 的 Plotly figure。
+ */
 export function buildTadBar(
   records: TadRecord[] | undefined,
   viewport: Viewport,
@@ -251,7 +291,15 @@ export function buildTadBar(
   };
 }
 
-/** PEI anchors: quadratic arcs from interval start to end spanning the lane. */
+/**
+ * 把成对锚点区间构造成跨越 lane 的二次曲线弧。
+ *
+ * @param records - promoter-enhancer interaction 区间。
+ * @param viewport - 用于保留与当前窗口相交记录的视口。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 以 SVG path shapes 表达的 Plotly figure。
+ */
 export function buildPei(
   records: PeiRecord[] | undefined,
   viewport: Viewport,
@@ -282,7 +330,15 @@ export function buildPei(
   };
 }
 
-/** Structural variants: per-kind coloured markers labelled DEL/DUP/INV/TRA. */
+/**
+ * 将结构变异放置为按类别着色且带标签的区间中心标记。
+ *
+ * @param records - DEL、DUP、INV 或 TRA 记录。
+ * @param viewport - 用于裁剪不可见变异并统一横轴的视口。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 使用单一 marker trace 的 Plotly figure。
+ */
 export function buildSv(
   records: SVRecord[] | undefined,
   viewport: Viewport,
@@ -324,7 +380,15 @@ export function buildSv(
   };
 }
 
-/** Gene annotation: intron backbones + exon rectangles, stacked across rows. */
+/**
+ * 聚合同一基因的片段，并生成错行排列的内含子骨架与外显子矩形。
+ *
+ * @param records - 按片段提供的基因注释记录。
+ * @param viewport - 用于筛选染色体并对齐横轴的视口。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 以 layout shapes 表达的四行基因模型 figure。
+ */
 export function buildGene(
   records: GeneRecord[] | undefined,
   viewport: Viewport,
@@ -341,6 +405,8 @@ export function buildGene(
     exons: Array<{ start: number; end: number }>;
   }
   const byGene = new Map<string, GeneAccum>();
+  // 输入通常是一行一个片段；先按 gene_name 合并，才能画出一条完整内含子骨架，
+  // 同时仍保留每个 exon 的独立边界。
   for (const r of records ?? []) {
     if (r.chrom !== viewport.chr) continue;
     const existing = byGene.get(r.gene_name);
@@ -357,6 +423,8 @@ export function buildGene(
   }
 
   const rows = 4;
+  // 固定少量视觉行并循环分配，优先保持 lane 高度稳定；密集区域允许横向重叠，
+  // 而不是让模型数量驱动页面高度无限增长。
   const topPad = 0.06;
   const usable = 0.88;
   const rowHeight = usable / rows;

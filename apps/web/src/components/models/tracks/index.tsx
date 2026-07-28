@@ -1,3 +1,19 @@
+/**
+ * Tracks 模型入口 —— `/tracks` 路由对应的 ModelFactory 组件。
+ *
+ * 职责：
+ *  - 接收当前 sub-tab（来自路由参数 `tab`）、单样本 id、aux 辅助轨道列表，
+ *    以及 bigwig 多样本叠加所需的多样本 id 与样本元数据；
+ *  - 根据 `TRACK_CATALOG[tab].kind` 把"主轨道"分派到对应 Lane 组件
+ *    （BigwigStacked / BedGraphLane / InsulationLane / PeiLane / TadBar / GeneLane / BigwigLane）；
+ *  - 再依次为每个 aux id 渲染辅助 Lane；
+ *  - `loop` 是特例：跳过本分派逻辑，直接交给 `<LoopTrack />`（Hi-C + CTCF loops 叠加）。
+ *
+ * 架构位置：作为 `tracks` 模型目录的业务组合层，只负责"按 kind 调度，
+ * 不关心具体 lane 怎么画"——渲染细节（Plotly 数据、坐标系、tooltip）
+ * 全部委托给 `render-kit/plotlyBuilders` 与各 Lane 组件。
+ */
+
 import type { JSX } from 'react';
 
 import type { Sample } from '../../../api/types';
@@ -26,6 +42,15 @@ interface TracksModelProps {
   overlayMeta?: Sample[];
 }
 
+/**
+ * Tracks 模型组合组件：渲染主轨道 + 一组 aux 辅助轨道。
+ *
+ * 分派逻辑：
+ *  - `loop` → 走 `<LoopTrack />` 独立布局；
+ *  - `bigwig` 走叠加版的 `BigwigStacked`（支持多 sample 横向切片）；
+ *  - 其他 kind 各对应独立 Lane 组件；
+ *  - 兜底仍使用 `BigwigLane`（保守 fallback，保证至少有图可看）。
+ */
 export function TracksModel({
   tab,
   sampleId,
@@ -35,10 +60,12 @@ export function TracksModel({
 }: TracksModelProps): JSX.Element {
   const mainSpec = TRACK_CATALOG[tab];
 
+  // `loop` 是混合布局（Hi-C + SVG 叠加 + gene），不走 kind 分派。
   if (tab === 'loop') {
     return <LoopTrack sampleId={sampleId} />;
   }
 
+  // 按 mainSpec.kind 决定主轨道的渲染组件。
   const renderMain = (): JSX.Element => {
     if (mainSpec.kind === 'bigwig') {
       return (
@@ -88,6 +115,7 @@ export function TracksModel({
     if (mainSpec.kind === 'gene') {
       return <GeneLane sampleId={sampleId} height={mainSpec.defaultHeight} />;
     }
+    // 兜底分支：未知 kind 时仍尝试用 BigwigLane 渲染（保证 DOM 总有内容）
     return (
       <BigwigLane
         sampleId={sampleId}
@@ -97,6 +125,7 @@ export function TracksModel({
     );
   };
 
+  // 与 renderMain 几乎同构，但额外支持 `sv`（aux 才会用到，主轨道没有 sv）。
   const renderAux = (auxId: TrackId): JSX.Element => {
     const auxSpec = TRACK_CATALOG[auxId];
     if (auxSpec.kind === 'bigwig') {

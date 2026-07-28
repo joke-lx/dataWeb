@@ -1,3 +1,7 @@
+/**
+ * Hi-C 模型的业务轨道容器，负责把样本与基因组视口转换为矩阵查询，并组合色标和通用 WebGL 渲染器。
+ * 它刻意留在 models 层：数据获取、分箱策略和默认样本属于业务决策，而像素绘制下沉到 render-kit。
+ */
 import { useState } from 'react';
 import type { JSX } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -20,10 +24,10 @@ interface HiCMatrixProps {
 }
 
 /**
- * Hi-C matrix lane — colormap selector + WebGL-rendered 2D heatmap.
+ * 渲染视口感知的 Hi-C 矩阵业务轨道。
  *
- * Owns its own viewport-aware query (so the matrix bin follows zoom) and
- * delegates rendering to the WebGL-backed `HiCMatrix2D`.
+ * @param props - 轨道配置；`sampleId` 可覆盖全局活动样本，`height` 控制整条 lane 的像素高度。
+ * @returns 包含色标、WebGL 矩阵以及加载/错误状态的轨道元素。
  */
 export function HiCMatrix({
   sampleId: sampleIdOverride,
@@ -36,6 +40,8 @@ export function HiCMatrix({
   const [colorMap, setColorMap] = useState<ColormapName>('ref');
 
   const viewportWidth = viewport.end - viewport.start;
+  // 以 512×512 作为显存与辨识度上限，并向上对齐到服务端支持的 kb 粒度；
+  // 同时不得细于用户视口请求的 bin，避免缩放时拉取无法显示的过量矩阵单元。
   const targetBin = Math.ceil(viewportWidth / MAX_MATRIX_DIM);
   const hicBin = Math.max(
     viewport.bin,

@@ -1,3 +1,7 @@
+/**
+ * render-kit 的 Plotly 生命周期适配器，把声明式 React 属性桥接到按命令更新的 Plotly 引擎。
+ * 该组件集中处理动态加载、容器缩放和资源释放，使业务轨道只需提供 figure 数据而不直接依赖 Plotly 运行时。
+ */
 import { useEffect, useRef } from 'react';
 import type { JSX } from 'react';
 
@@ -18,9 +22,8 @@ interface PlotlyTrackProps {
   height: number;
 }
 
-// Tracks are embedded inside a d3-zoom stage. Keep them fully static so Plotly
-// attaches no pointer listeners (which would otherwise hijack stage pan/zoom)
-// while still rendering anti-aliased geometry, grid, ticks and titles.
+// 轨道嵌在 d3-zoom 舞台中，因此必须禁用 Plotly 自身的指针交互；
+// 否则 Plotly 会截获事件，导致外层基因组平移和缩放失效。
 const PLOTLY_CONFIG: PlotlyConfig = {
   staticPlot: true,
   responsive: true,
@@ -28,14 +31,13 @@ const PLOTLY_CONFIG: PlotlyConfig = {
 };
 
 /**
- * Mounts a Plotly figure into a div and keeps it in sync with `data`/`layout`.
+ * 将 Plotly figure 挂载到 React 容器，并随属性和容器尺寸保持同步。
  *
- * - Uses a dynamic import so plotly.js (~3 MB) lands in a lazy chunk and never
- *   blocks the initial app bundle.
- * - `Plotly.react` on every prop change; `Plotly.purge` on unmount to release
- *   the WebGL/canvas resources Plotly allocates internally.
- * - A `ResizeObserver` calls `Plotly.Plots.resize` so the figure tracks its
- *   flex container width (e.g. when the left rail collapses).
+ * @param props - trace 数据、布局片段及由 lane 决定的最终像素高度。
+ * @returns 由 Plotly 接管内部内容的宿主元素。
+ *
+ * 动态导入把约 3 MB 的引擎留在懒加载 chunk；更新时使用 `react`，卸载时
+ * 使用 `purge` 释放 Plotly 内部分配的 canvas/WebGL 资源。
  */
 export function PlotlyTrack({
   data,

@@ -1,3 +1,7 @@
+/**
+ * Hi-C 模型中的基因注释业务轨道，按当前视口请求 BED 数据，再交给通用 Plotly 构建器与渲染器。
+ * 单独保留该适配层，是为了让 render-kit 不依赖样本、查询键或后端轨道命名等业务知识。
+ */
 import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -18,8 +22,10 @@ interface GeneLaneProps {
 }
 
 /**
- * Gene annotation lane — intron backbones + exon rectangles stacked
- * across rows. Shared shape with the tracks view.
+ * 渲染与当前基因组视口同步的基因注释轨道。
+ *
+ * @param props - 可选的样本覆盖值与 lane 像素高度；未传样本时使用 Hi-C 默认样本。
+ * @returns 由内含子骨架和外显子矩形组成，并带异步状态提示的 Plotly 轨道。
  */
 export function GeneLane({
   sampleId,
@@ -29,6 +35,7 @@ export function GeneLane({
   const resolvedSample = sampleId ?? 'Brain_BF3';
 
   const { data, isLoading, error } = useQuery<GeneRecord[]>({
+    // 将完整视口纳入键，防止平移或缩放后短暂复用上一窗口的注释。
     queryKey: [
       'gene',
       resolvedSample,
