@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Variant E — Minimal flat list</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #fafafa;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 48px 48px;
+}
+
+/* ── trigger button ── */
+.trigger-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  position: relative;
+}
+
+.btn-trigger {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  background: #fff;
+  border: 1px solid #d9d9d6;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: default;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn-subtitle {
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* ── popover ── */
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: #fff;
+  border: 1px solid #d9d9d6;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── title bar ── */
+.popover-title {
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #888;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e5e5;
+  line-height: 1;
+}
+
+/* ── list ── */
+.popover-list {
+  padding: 4px 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.popover-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 12px;
+  height: 26px;
+  cursor: default;
+  transition: background 0.1s;
+}
+
+.popover-row:hover {
+  background: #f7e9e7;
+}
+
+.popover-row.active {
+  background: #e8d4d0;
+}
+
+.popover-row .sample-id {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: #333;
+  line-height: 1;
+}
+
+.popover-row .meta {
+  font-family: "Inter", sans-serif;
+  font-size: 10px;
+  color: #888;
+  line-height: 1;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="trigger-wrap">
+  <div class="btn-trigger">Compare with &#9662;</div>
+  <div class="btn-subtitle">(current: Brain_BF3)</div>
+
+  <div class="popover">
+    <div class="popover-title">Compare with</div>
+    <div class="popover-list">
+      <div class="popover-row">
+        <span class="sample-id">Liver_BF3</span>
+        <span class="meta">Liver &middot; Berkshire &middot; F</span>
+      </div>
+      <div class="popover-row">
+        <span class="sample-id">Muscle_BM4</span>
+        <span class="meta">Muscle &middot; Berkshire &middot; M</span>
+      </div>
+      <div class="popover-row">
+        <span class="sample-id">Brain_TM4</span>
+        <span class="meta">Brain &middot; Tibetan &middot; M</span>
+      </div>
+      <div class="popover-row">
+        <span class="sample-id">Liver_TF2_28d</span>
+        <span class="meta">Liver &middot; Tibetan &middot; F</span>
+      </div>
+      <div class="popover-row">
+        <span class="sample-id">Muscle_TM3</span>
+        <span class="meta">Muscle &middot; Tibetan &middot; M</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

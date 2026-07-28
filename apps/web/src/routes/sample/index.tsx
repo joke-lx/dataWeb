@@ -8,7 +8,6 @@ import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { useAppIntl } from '../../i18n';
 import { useSamples } from '../../store/samples';
 import { useViewport } from '../../store/viewport';
-import type { Sample } from '../../api/types';
 import './sample.css';
 
 const TABS = ['hic', 'tracks', '3d', 'ctcfMotif'] as const;
@@ -16,15 +15,6 @@ type SampleTab = (typeof TABS)[number];
 const MODEL_TYPES: Record<SampleTab, 'hic' | 'tracks' | '3d' | 'ctcf-motif'> = {
   hic: 'hic', tracks: 'tracks', '3d': '3d', ctcfMotif: 'ctcf-motif',
 };
-
-type CompareGroup = 'sameBreedDifferentTissue' | 'sameTissueDifferentBreed' | 'sameSpeciesDifferentBreedAndTissue' | 'differentSpecies';
-
-function classifyCompareGroup(current: Sample, other: Sample): CompareGroup {
-  if (other.species !== current.species) return 'differentSpecies';
-  if (other.breed === current.breed && other.tissue !== current.tissue) return 'sameBreedDifferentTissue';
-  if (other.tissue === current.tissue && other.breed !== current.breed) return 'sameTissueDifferentBreed';
-  return 'sameSpeciesDifferentBreedAndTissue';
-}
 
 export function SampleRoute(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +28,7 @@ export function SampleRoute(): JSX.Element {
   const [tab, setTab] = useState<SampleTab>((params.get('tab') as SampleTab) || 'hic');
   const [showSamples, setShowSamples] = useState(false);
   const [showComparePicker, setShowComparePicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const viewerRef = useRef<HTMLDivElement>(null);
   const compareButtonRef = useRef<HTMLButtonElement>(null);
   const comparePopoverRef = useRef<HTMLDivElement>(null);
@@ -69,35 +60,55 @@ export function SampleRoute(): JSX.Element {
     };
   }, [showComparePicker]);
 
+  const candidates = useMemo(
+    () => (samples ?? []).filter((item) => item.id !== sample?.id),
+    [samples, sample?.id],
+  );
+  const suggested = useMemo(
+    () =>
+      !sample
+        ? []
+        : candidates.filter(
+            (item) => item.breed === sample.breed && item.tissue !== sample.tissue,
+          ),
+    [candidates, sample],
+  );
+  const query = searchQuery.trim().toLowerCase();
+  const filteredSuggested = useMemo(
+    () =>
+      suggested.filter(
+        (item) =>
+          !query ||
+          item.id.toLowerCase().includes(query) ||
+          item.tissue.toLowerCase().includes(query),
+      ),
+    [suggested, query],
+  );
+  const allSamples = useMemo(
+    () =>
+      candidates
+        .filter(
+          (item) =>
+            !query ||
+            item.id.toLowerCase().includes(query) ||
+            item.tissue.toLowerCase().includes(query),
+        )
+        .slice()
+        .sort((a, b) => a.id.localeCompare(b.id)),
+    [candidates, query],
+  );
+  const canCompare = candidates.length > 0;
+
   if (isLoading) return <main className="route-page"><div className="route-content">{t('common.loading')}</div></main>;
   if (!sample) return <main className="route-page"><div className="model-missing"><strong>{t('sample.notFound.title')}</strong><p>{t('sample.notFound.description', { id: id ?? '' })}</p></div></main>;
 
   const region = `${viewport.chr}:${viewport.start.toLocaleString()}-${viewport.end.toLocaleString()}`;
   const subtitle = `${sample.species} · ${sample.tissue} · ${sample.breed} · ${sample.sex} · ${sample.dev_stage}`;
 
-  const otherSamples = (samples ?? []).filter((item) => item.id !== sample.id);
-  const grouped: Record<CompareGroup, Sample[]> = {
-    sameBreedDifferentTissue: [],
-    sameTissueDifferentBreed: [],
-    sameSpeciesDifferentBreedAndTissue: [],
-    differentSpecies: [],
+  const navigateToCompare = (targetId: string) => {
+    setShowComparePicker(false);
+    navigate(`/compare/${sample.id}/${targetId}`);
   };
-  for (const other of otherSamples) {
-    grouped[classifyCompareGroup(sample, other)].push(other);
-  }
-  const groupOrder: CompareGroup[] = [
-    'sameBreedDifferentTissue',
-    'sameTissueDifferentBreed',
-    'sameSpeciesDifferentBreedAndTissue',
-    'differentSpecies',
-  ];
-  const groupLabels: Record<CompareGroup, string> = {
-    sameBreedDifferentTissue: t('sample.comparePicker.sameBreedDifferentTissue'),
-    sameTissueDifferentBreed: t('sample.comparePicker.sameTissueDifferentBreed'),
-    sameSpeciesDifferentBreedAndTissue: t('sample.comparePicker.sameSpeciesDifferentBreedAndTissue'),
-    differentSpecies: t('sample.comparePicker.differentSpecies'),
-  };
-  const canCompare = otherSamples.length > 0;
 
   return (
     <RouteShell
@@ -111,7 +122,7 @@ export function SampleRoute(): JSX.Element {
           <button
             type="button"
             ref={compareButtonRef}
-            aria-haspopup="listbox"
+            aria-haspopup="dialog"
             aria-expanded={showComparePicker}
             disabled={!canCompare}
             onClick={() => setShowComparePicker((open) => !open)}
@@ -119,42 +130,92 @@ export function SampleRoute(): JSX.Element {
             {t('sample.actions.compareWith')} ▾
           </button>
           {showComparePicker && (
-            <div className="sample-picker__menu compare-picker" ref={comparePopoverRef} role="listbox">
+            <div
+              className="sample-picker__menu compare-picker"
+              ref={comparePopoverRef}
+              role="dialog"
+              aria-label={t('sample.comparePicker.title')}
+            >
               {!canCompare ? (
                 <div className="compare-picker__empty">{t('sample.comparePicker.empty')}</div>
               ) : (
                 <>
-                  <div className="compare-picker__heading">{t('sample.comparePicker.heading', { id: sample.id })}</div>
-                  {groupOrder.map((groupKey) => {
-                    const items = grouped[groupKey];
-                    if (items.length === 0) return null;
-                    const isRecommended = groupKey === 'sameBreedDifferentTissue' || groupKey === 'sameTissueDifferentBreed';
-                    return (
-                      <div key={groupKey} className="compare-picker__group">
-                        <div className="compare-picker__group-header">
-                          <span>{groupLabels[groupKey]}</span>
-                          {isRecommended && <span className="compare-picker__badge">{t('sample.comparePicker.recommended')}</span>}
+                  <div className="compare-picker__head">
+                    <div className="compare-picker__title">
+                      {t('sample.comparePicker.title')} <em>{sample.id}</em>
+                    </div>
+                    <button
+                      type="button"
+                      className="compare-picker__dismiss"
+                      aria-label="close"
+                      onClick={() => setShowComparePicker(false)}
+                    >▴</button>
+                  </div>
+
+                  <div className="compare-picker__body">
+                    <div className="compare-picker__search">
+                      <svg className="compare-picker__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder={t('sample.comparePicker.search')}
+                        autoFocus
+                      />
+                    </div>
+
+                    <h4 className="compare-picker__section">
+                      <span className="compare-picker__meta-dot" aria-hidden="true"></span>
+                      {t('sample.comparePicker.suggested')}
+                    </h4>
+                    {filteredSuggested.length === 0 ? (
+                      <div className="compare-picker__empty-section">—</div>
+                    ) : (
+                      filteredSuggested.map((other) => (
+                        <button
+                          key={other.id}
+                          type="button"
+                          className="compare-picker__chip"
+                          onClick={() => navigateToCompare(other.id)}
+                        >
+                          <span className="compare-picker__chip-id">{other.id}</span>
+                          <span className="compare-picker__chip-tag">{t('sample.comparePicker.sameBreed')}</span>
+                          <span className="compare-picker__chip-arrow" aria-hidden="true">→</span>
+                        </button>
+                      ))
+                    )}
+
+                    <h4 className="compare-picker__section">
+                      {t('sample.comparePicker.allSamples', { count: allSamples.length })}
+                    </h4>
+                    <div className="compare-picker__list">
+                      {allSamples.map((other) => (
+                        <div
+                          key={other.id}
+                          role="button"
+                          tabIndex={0}
+                          className="compare-picker__row"
+                          onClick={() => navigateToCompare(other.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              navigateToCompare(other.id);
+                            }
+                          }}
+                        >
+                          <span className="compare-picker__row-id">{other.id}</span>
+                          <span className="compare-picker__row-meta">
+                            {other.tissue} · {other.breed} · {other.sex}
+                          </span>
                         </div>
-                        {items.map((other) => (
-                          <button
-                            key={other.id}
-                            type="button"
-                            role="option"
-                            aria-selected="false"
-                            className="compare-picker__option"
-                            onClick={() => { setShowComparePicker(false); navigate(`/compare/${sample.id}/${other.id}`); }}
-                          >
-                            <span className="compare-picker__option-id">{other.id}</span>
-                            <span className="compare-picker__option-meta">
-                              <span className="compare-picker__chip">{other.tissue}</span>
-                              <span className="compare-picker__chip">{other.breed}</span>
-                              <span className="compare-picker__chip">{other.sex}</span>
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    );
-                  })}
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="compare-picker__foot">{t('sample.comparePicker.helper')}</div>
                 </>
               )}
             </div>

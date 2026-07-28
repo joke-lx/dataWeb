@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Picker — Style B · Card Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #d9d9d6;
+    --card-border: #e5e5e5;
+    --text: #1f2328;
+    --text-muted: #6e7781;
+    --text-faint: #888888;
+    --accent: #c0392b;
+    --accent-soft: #fbecea;
+    --shadow: 0 6px 20px rgba(0,0,0,0.12);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Page chrome */
+  .page {
+    min-height: 100vh;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    position: relative;
+  }
+  .trigger {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: 500 13px/1 'Inter', sans-serif;
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .trigger-btn:hover { border-color: #b9b9b6; }
+  .caret {
+    display: inline-block;
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--text-muted);
+    transform: rotate(180deg);
+  }
+  .trigger-sub {
+    font: 400 11px/1 'Inter', sans-serif;
+    color: var(--text-faint);
+  }
+
+  /* Popover */
+  .popover {
+    position: absolute;
+    top: 64px;
+    right: 32px;
+    width: 480px;
+    height: 480px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .popover-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid #efefef;
+    flex: 0 0 auto;
+  }
+  .popover-title {
+    font: 500 13px/1.4 'Inter', sans-serif;
+    color: var(--text);
+  }
+  .popover-title strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .popover-title em {
+    font-style: normal;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+  .close-btn {
+    width: 24px; height: 24px;
+    border: 0; background: transparent;
+    cursor: pointer; border-radius: 4px;
+    color: var(--text-faint);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .close-btn:hover { background: #f3f3f1; color: var(--text); }
+  .close-btn .chev {
+    display: inline-block;
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 5px solid currentColor;
+  }
+
+  .popover-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 4px 0 8px;
+  }
+  .group {
+    padding: 12px 12px 4px;
+  }
+  .group + .group { padding-top: 4px; }
+  .group-label {
+    font: 500 11px/1 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    padding: 8px 0 10px;
+  }
+  .group-label .count {
+    margin-left: 6px;
+    color: #b8b8b8;
+    font-weight: 400;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .grid.cols-1 { grid-template-columns: 1fr; }
+
+  .card {
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 12px;
+    background: var(--surface);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
+    text-align: left;
+    font: inherit;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(192,57,43,0.10);
+  }
+  .card.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .card.selected .tissue,
+  .card.selected .meta { color: rgba(255,255,255,0.85); }
+
+  .sample-id {
+    font: 500 13px/1.2 'JetBrains Mono', monospace;
+    color: var(--text);
+  }
+  .tissue {
+    font: 400 12px/1.2 'Inter', sans-serif;
+    color: var(--text);
+  }
+  .meta {
+    font: 400 10px/1.2 'Inter', sans-serif;
+    color: var(--text-faint);
+    margin-top: 2px;
+  }
+
+  /* Scrollbar polish */
+  .popover-body::-webkit-scrollbar { width: 8px; }
+  .popover-body::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+  .popover-body::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="topbar">
+      <div class="trigger">
+        <button class="trigger-btn" type="button" aria-haspopup="dialog" aria-expanded="true">
+          Compare with <span class="caret" aria-hidden="true"></span>
+        </button>
+        <span class="trigger-sub">(current: Brain_BF3)</span>
+      </div>
+
+      <div class="popover" role="dialog" aria-label="Compare with picker">
+        <div class="popover-head">
+          <div class="popover-title">
+            Compare <strong>Brain_BF3</strong> <em>with…</em>
+          </div>
+          <button class="close-btn" type="button" aria-label="Close picker">
+            <span class="chev" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <div class="popover-body">
+
+          <section class="group">
+            <div class="group-label">Recommended <span class="count">2</span></div>
+            <div class="grid">
+              <button class="card" type="button">
+                <span class="sample-id">Liver_BF3</span>
+                <span class="tissue">Liver</span>
+                <span class="meta">Berkshire · F</span>
+              </button>
+              <button class="card" type="button">
+                <span class="sample-id">Muscle_BM4</span>
+                <span class="tissue">Muscle</span>
+                <span class="meta">Berkshire · M</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="group">
+            <div class="group-label">Same tissue, different breed <span class="count">1</span></div>
+            <div class="grid cols-1">
+              <button class="card" type="button">
+                <span class="sample-id">Brain_TM4</span>
+                <span class="tissue">Brain</span>
+                <span class="meta">Tibetan · M</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="group">
+            <div class="group-label">Same species, different <span class="count">2</span></div>
+            <div class="grid">
+              <button class="card" type="button">
+                <span class="sample-id">Liver_TF2_28d</span>
+                <span class="tissue">Liver</span>
+                <span class="meta">Tibetan · F</span>
+              </button>
+              <button class="card selected" type="button" aria-pressed="true">
+                <span class="sample-id">Muscle_TM3</span>
+                <span class="tissue">Muscle</span>
+                <span class="meta">Tibetan · M</span>
+              </button>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Card selection toggle (purely visual demo)
+    document.querySelectorAll('.card').forEach((el) => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.card').forEach((c) => c.classList.remove('selected'));
+        el.classList.add('selected');
+      });
+    });
+  </script>
+</body>
+</html>

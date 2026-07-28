@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Compare Brain_BF3 with… · Variant D (search-first)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #d9d9d6;
+    --border-soft: #e5e5e5;
+    --text: #1f1f1f;
+    --text-muted: #888;
+    --text-meta: #666;
+    --accent: #b8463a;          /* warm brick, matches 3D chromatin demo */
+    --accent-soft: rgba(184, 70, 58, 0.18);
+    --accent-bg: #f7e9e7;
+    --shadow: 0 6px 20px rgba(0,0,0,0.12);
+    --radius: 8px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* demo stage */
+  .stage {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 32px 40px;
+    position: relative;
+  }
+
+  .trigger-wrap {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .trigger-sub {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    margin-right: 4px;
+  }
+
+  .trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .trigger:hover { border-color: var(--accent); }
+  .trigger .caret { font-size: 10px; color: var(--text-muted); }
+
+  /* popover */
+  .popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 380px;
+    height: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 10;
+  }
+
+  /* header */
+  .popover-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    flex-shrink: 0;
+  }
+  .popover-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .popover-title em {
+    font-style: normal;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .popover-dismiss {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .popover-dismiss:hover { background: var(--accent-bg); color: var(--accent); }
+
+  /* body scroll region */
+  .popover-body {
+    padding: 14px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* search */
+  .search {
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .search input {
+    width: 100%;
+    height: 34px;
+    padding: 8px 12px 8px 32px;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    background: var(--surface);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .search input::placeholder {
+    color: #aaa;
+    font-weight: 400;
+  }
+  .search input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .search .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    color: #aaa;
+    pointer-events: none;
+  }
+
+  /* section label */
+  .section-label {
+    margin: 0;
+    padding: 14px 0 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* suggested chip */
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    margin-bottom: 4px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color .12s ease, background-color .12s ease;
+  }
+  .chip:hover {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+  .chip .chip-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .chip .chip-tag {
+    flex: 1;
+    text-align: left;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chip .chip-arrow {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1;
+    transition: transform .12s ease, color .12s ease;
+  }
+  .chip:hover .chip-arrow {
+    color: var(--accent);
+    transform: translateX(2px);
+  }
+
+  /* sample list */
+  .sample-list {
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 4px 8px;
+    background: var(--surface);
+  }
+  .sample-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 28px;
+    padding: 0 6px;
+    margin: 0 -6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color .12s ease;
+  }
+  .sample-row + .sample-row {
+    border-top: 1px solid transparent;
+  }
+  .sample-row:hover,
+  .sample-row.active {
+    background: var(--accent-bg);
+  }
+  .sample-row .row-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .sample-row .row-meta {
+    font-size: 11px;
+    color: var(--text-meta);
+    letter-spacing: 0.01em;
+  }
+
+  /* footer / dim note */
+  .popover-foot {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border-top: 1px solid var(--border-soft);
+    background: #fcfcfc;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .popover-foot kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 1px 5px;
+    border: 1px solid var(--border-soft);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--text-meta);
+  }
+
+  /* tiny meta */
+  .meta-dot {
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* subtle scrollbar */
+  .popover-body::-webkit-scrollbar { width: 6px; }
+  .popover-body::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
+  .popover-body::-webkit-scrollbar-thumb:hover { background: #c8c8c8; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="trigger-wrap">
+      <span class="trigger-sub">(current: Brain_BF3)</span>
+      <button class="trigger" type="button">
+        Compare with <span class="caret">▾</span>
+      </button>
+
+      <div class="popover" role="dialog" aria-label="Compare Brain_BF3 with sample">
+        <div class="popover-head">
+          <div class="popover-title">Compare <em>Brain_BF3</em> with…</div>
+          <div class="popover-dismiss" aria-label="close">▴</div>
+        </div>
+
+        <div class="popover-body">
+          <!-- search input -->
+          <div class="search">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="Search sample id or tissue..." autofocus>
+          </div>
+
+          <!-- suggested matches -->
+          <h4 class="section-label"><span class="meta-dot"></span>Suggested matches</h4>
+
+          <button class="chip" type="button">
+            <span class="chip-id">Liver_BF3</span>
+            <span class="chip-tag">same breed · different tissue</span>
+            <span class="chip-arrow">→</span>
+          </button>
+          <button class="chip" type="button">
+            <span class="chip-id">Muscle_BM4</span>
+            <span class="chip-tag">same breed · different tissue</span>
+            <span class="chip-arrow">→</span>
+          </button>
+
+          <!-- all samples -->
+          <h4 class="section-label">All samples (5)</h4>
+
+          <div class="sample-list">
+            <div class="sample-row active">
+              <span class="row-id">Liver_BF3</span>
+              <span class="row-meta">Liver · Berkshire · F</span>
+            </div>
+            <div class="sample-row">
+              <span class="row-id">Muscle_BM4</span>
+              <span class="row-meta">Muscle · Berkshire · M</span>
+            </div>
+            <div class="sample-row">
+              <span class="row-id">Brain_TM4</span>
+              <span class="row-meta">Brain · Tibetan · M</span>
+            </div>
+            <div class="sample-row">
+              <span class="row-id">Liver_TF2_28d</span>
+              <span class="row-meta">Liver · Tibetan · F</span>
+            </div>
+            <div class="sample-row">
+              <span class="row-id">Muscle_TM3</span>
+              <span class="row-meta">Muscle · Tibetan · M</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="popover-foot">
+          <span>↑↓ navigate · ↵ select</span>
+          <span><kbd>esc</kbd> close</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

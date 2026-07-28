@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Compare Picker — Style A: Flat Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafafa;
+    --popover-bg: #ffffff;
+    --border: #d9d9d6;
+    --group-border: #e5e5e5;
+    --muted: #888888;
+    --text: #2b2b2b;
+    --accent: #c0392b;
+    --hover: #f7e9e7;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: var(--sans);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    min-height: 100vh;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .page-title {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .trigger-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .trigger {
+    appearance: none;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .trigger:hover {
+    border-color: #b9b9b6;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  .trigger .caret {
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+  }
+
+  .trigger[aria-expanded="true"] .caret {
+    transform: rotate(180deg);
+  }
+
+  .current-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  /* Popover */
+  .popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    background: var(--popover-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    padding: 0;
+    z-index: 10;
+    overflow: hidden;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .popover[hidden] {
+    display: none;
+  }
+
+  .popover-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--group-border);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .popover-head .caret-up {
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .popover-body {
+    padding: 10px 12px 12px;
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .group + .group {
+    margin-top: 12px;
+  }
+
+  .group-header {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 4px 6px;
+  }
+
+  .group-box {
+    border: 1px solid var(--group-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    background: #ffffff;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    padding: 0 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.1s ease;
+  }
+
+  .row + .row {
+    border-top: 1px solid transparent;
+  }
+
+  .row:hover {
+    background: var(--hover);
+  }
+
+  .row input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid #b9b9b6;
+    border-radius: 50%;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    background: transparent;
+    transition: border-color 0.1s ease;
+  }
+
+  .row input[type="radio"]:checked {
+    border-color: var(--accent);
+  }
+
+  .row input[type="radio"]:checked::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .row.selected {
+    background: var(--hover);
+    box-shadow: inset 2px 0 0 0 var(--accent);
+  }
+
+  .row .sample-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .row .meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .row .meta .dot {
+    margin: 0 6px;
+    color: #c8c8c8;
+  }
+
+  /* Demo state: pre-select Liver_BF3 in Recommended group */
+  .row[data-sample="Liver_BF3"] {
+    background: var(--hover);
+  }
+
+  .row[data-sample="Liver_BF3"]::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .row[data-sample="Liver_BF3"] input[type="radio"] {
+    border-color: var(--accent);
+  }
+
+  .row[data-sample="Liver_BF3"] input[type="radio"]::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* Fake page body for context */
+  .stage {
+    flex: 1;
+    border: 1px dashed #e0e0e0;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 24px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c8c8c8;
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <h1 class="page-title">Style A · Flat Table with Checkboxes</h1>
+      <div class="trigger-wrap">
+        <button class="trigger" id="trigger" aria-expanded="true" aria-controls="popover">
+          Compare with
+          <span class="caret">▾</span>
+        </button>
+        <div class="current-sub">(current: Brain_BF3)</div>
+
+        <div class="popover" id="popover" role="dialog" aria-label="Pick a sample to compare">
+          <div class="popover-head">
+            <span>Compare Brain_BF3 with</span>
+            <span class="caret-up">▴</span>
+          </div>
+          <div class="popover-body">
+
+            <div class="group">
+              <div class="group-header">Recommended</div>
+              <div class="group-box">
+                <label class="row" data-sample="Liver_BF3">
+                  <input type="radio" name="compare" checked>
+                  <span class="sample-id">Liver_BF3</span>
+                  <span class="meta">Liver<span class="dot">·</span>Berkshire<span class="dot">·</span>F</span>
+                </label>
+                <label class="row" data-sample="Muscle_BM4">
+                  <input type="radio" name="compare">
+                  <span class="sample-id">Muscle_BM4</span>
+                  <span class="meta">Muscle<span class="dot">·</span>Berkshire<span class="dot">·</span>M</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="group">
+              <div class="group-header">Same tissue, different breed</div>
+              <div class="group-box">
+                <label class="row" data-sample="Brain_TM4">
+                  <input type="radio" name="compare">
+                  <span class="sample-id">Brain_TM4</span>
+                  <span class="meta">Brain<span class="dot">·</span>Tibetan<span class="dot">·</span>M</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="group">
+              <div class="group-header">Same species, different</div>
+              <div class="group-box">
+                <label class="row" data-sample="Liver_TF2_28d">
+                  <input type="radio" name="compare">
+                  <span class="sample-id">Liver_TF2_28d</span>
+                  <span class="meta">Liver<span class="dot">·</span>Tibetan<span class="dot">·</span>F</span>
+                </label>
+                <label class="row" data-sample="Muscle_TM3">
+                  <input type="radio" name="compare">
+                  <span class="sample-id">Muscle_TM3</span>
+                  <span class="meta">Muscle<span class="dot">·</span>Tibetan<span class="dot">·</span>M</span>
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="stage">
+      genome browser canvas would render here
+    </div>
+  </div>
+
+<script>
+  // Light toggle to demonstrate open/close, but popover opens by default.
+  const trigger = document.getElementById('trigger');
+  const popover = document.getElementById('popover');
+  trigger.addEventListener('click', () => {
+    const expanded = trigger.getAttribute('aria-expanded') === 'true';
+    trigger.setAttribute('aria-expanded', String(!expanded));
+    popover.hidden = expanded;
+  });
+
+  // Click rows to highlight + sync radio
+  document.querySelectorAll('.row').forEach(row => {
+    row.addEventListener('click', () => {
+      document.querySelectorAll('.row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+      const radio = row.querySelector('input[type="radio"]');
+      if (radio) radio.checked = true;
+    });
+  });
+</script>
+</body>
+</html>

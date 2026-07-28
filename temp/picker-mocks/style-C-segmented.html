@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compare Picker — Style C: Segmented</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #fafafa;
+    color: #222;
+    min-height: 100vh;
+    padding: 40px;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 60px;
+  }
+
+  .page-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: -0.01em;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Trigger button */
+  .trigger-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: #ffffff;
+    border: 1px solid #d9d9d6;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #222;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    transition: border-color 0.15s ease;
+  }
+
+  .trigger-btn:hover {
+    border-color: #c0392b;
+  }
+
+  .trigger-btn .caret {
+    font-size: 10px;
+    color: #888;
+  }
+
+  .trigger-sub {
+    font-size: 10px;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-style: italic;
+  }
+
+  /* Popover */
+  .popover {
+    margin-top: 16px;
+    width: 360px;
+    height: 320px;
+    background: #ffffff;
+    border: 1px solid #d9d9d6;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Header */
+  .popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .popover-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .popover-close {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #888;
+    font-size: 12px;
+    transition: background 0.12s ease;
+  }
+
+  .popover-close:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  /* Segmented control */
+  .segmented {
+    margin: 12px 12px 0;
+    display: flex;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    padding: 2px;
+    background: #fafafa;
+  }
+
+  .segment {
+    flex: 1;
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    user-select: none;
+  }
+
+  .segment:hover:not(.active) {
+    background: rgba(0,0,0,0.04);
+  }
+
+  .segment.active {
+    background: #c0392b;
+    color: #ffffff;
+  }
+
+  /* Caption */
+  .caption {
+    font-size: 11px;
+    color: #888;
+    padding: 12px;
+    font-weight: 400;
+  }
+
+  /* Sample list */
+  .sample-list {
+    margin: 0 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    padding: 4px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .sample-row {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.1s ease;
+  }
+
+  .sample-row + .sample-row {
+    margin-top: 1px;
+  }
+
+  .sample-row:hover {
+    background: #f7e9e7;
+  }
+
+  .sample-row.selected {
+    background: #c0392b;
+    color: #ffffff;
+  }
+
+  .sample-row.selected .sample-meta {
+    color: rgba(255,255,255,0.85);
+  }
+
+  .sample-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: #222;
+  }
+
+  .sample-meta {
+    font-size: 11px;
+    color: #888;
+  }
+
+  .recommended {
+    font-size: 10px;
+    color: #c0392b;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  .sample-row.selected .recommended {
+    color: #ffffff;
+  }
+
+  /* Placeholder rows for inactive tabs */
+  .placeholder {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 11px;
+    color: #999;
+    font-family: 'JetBrains Mono', monospace;
+    font-style: italic;
+  }
+
+  .tab-content {
+    display: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tab-content.active {
+    display: flex;
+  }
+
+  /* Footer hint */
+  .popover-footer {
+    padding: 8px 12px;
+    font-size: 10px;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Multi-omics Genome Browser</div>
+      <div class="page-subtitle">chr12:5,234,567-5,456,789 · mm39 · Brain_BF3 track</div>
+    </div>
+
+    <div class="trigger-wrap">
+      <button class="trigger-btn">
+        Compare with <span class="caret">▴</span>
+      </button>
+      <div class="trigger-sub">(current: Brain_BF3)</div>
+
+      <div class="popover">
+        <div class="popover-header">
+          <div class="popover-title">Compare Brain_BF3 with...</div>
+          <div class="popover-close">✕</div>
+        </div>
+
+        <div class="segmented">
+          <div class="segment active" data-tab="tissue">Tissue</div>
+          <div class="segment" data-tab="breed">Breed</div>
+          <div class="segment" data-tab="cross">Cross</div>
+          <div class="segment" data-tab="development">Development</div>
+        </div>
+
+        <!-- Tissue tab -->
+        <div class="tab-content active" data-panel="tissue">
+          <div class="caption">Showing candidates that match: Tissue</div>
+          <div class="sample-list">
+            <div class="sample-row">
+              <div class="sample-name">Liver_BF3</div>
+              <div class="sample-meta">Liver · Berkshire <span class="recommended">★</span></div>
+            </div>
+            <div class="sample-row">
+              <div class="sample-name">Muscle_BM4</div>
+              <div class="sample-meta">Muscle · Berkshire <span class="recommended">★</span></div>
+            </div>
+            <div class="sample-row">
+              <div class="sample-name">Brain_TM4</div>
+              <div class="sample-meta">Brain · Tibetan</div>
+            </div>
+            <div class="sample-row">
+              <div class="sample-name">Liver_TF2_28d</div>
+              <div class="sample-meta">Liver · Tibetan</div>
+            </div>
+            <div class="sample-row">
+              <div class="sample-name">Muscle_TM3</div>
+              <div class="sample-meta">Muscle · Tibetan</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breed tab -->
+        <div class="tab-content" data-panel="breed">
+          <div class="caption">Showing candidates that match: Breed</div>
+          <div class="sample-list">
+            <div class="sample-row">
+              <div class="sample-name">Liver_TF3</div>
+              <div class="sample-meta">Tibetan · Liver</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cross tab -->
+        <div class="tab-content" data-panel="cross">
+          <div class="caption">Showing candidates that match: Cross</div>
+          <div class="sample-list">
+            <div class="placeholder">Coming soon</div>
+          </div>
+        </div>
+
+        <!-- Development tab -->
+        <div class="tab-content" data-panel="development">
+          <div class="caption">Showing candidates that match: Development</div>
+          <div class="sample-list">
+            <div class="placeholder">Coming soon</div>
+          </div>
+        </div>
+
+        <div class="popover-footer">Click any sample to start comparison</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  const segments = document.querySelectorAll('.segment');
+  const panels = document.querySelectorAll('.tab-content');
+  const captions = {
+    tissue: 'Showing candidates that match: Tissue',
+    breed: 'Showing candidates that match: Breed',
+    cross: 'Showing candidates that match: Cross',
+    development: 'Showing candidates that match: Development'
+  };
+
+  segments.forEach(seg => {
+    seg.addEventListener('click', () => {
+      const tab = seg.dataset.tab;
+      segments.forEach(s => s.classList.remove('active'));
+      seg.classList.add('active');
+      panels.forEach(p => p.classList.remove('active'));
+      const panel = document.querySelector(`[data-panel="${tab}"]`);
+      if (panel) panel.classList.add('active');
+      // Update caption inside the active panel
+      const cap = panel.querySelector('.caption');
+      if (cap) cap.textContent = captions[tab];
+    });
+  });
+
+  // Row click toggles selected highlight
+  document.querySelectorAll('.sample-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const list = row.parentElement;
+      list.querySelectorAll('.sample-row').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
+    });
+  });
+</script>
+</body>
+</html>
