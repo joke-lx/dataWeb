@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 
 import { CTCFLoops } from '../../../components/overlay/CTCFLoops';
-import { useActiveSample } from '../../../hooks/useActiveSample';
 import { GeneLane } from './GeneLane';
 import { HiCMatrix } from './HiCMatrix';
 import './tracks.css';
 
 const LOOP_HIC_HEIGHT = 320;
 
+interface LoopTrackProps {
+  sampleId: string;
+}
+
 /** Special layout for the "loops" sub-tab: Hi-C(320) + SVG overlay(60) + gene. */
-export function LoopTrack(): JSX.Element {
-  const sampleId = useActiveSample() ?? 'Brain_BF3';
+export function LoopTrack({ sampleId }: LoopTrackProps): JSX.Element {
   const [overlayWidth, setOverlayWidth] = useState<number>(() =>
     typeof window === 'undefined' ? 800 : window.innerWidth - 240,
   );

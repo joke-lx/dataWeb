@@ -2,6 +2,5 @@
 export type ModelType =
   | 'hic'
   | 'differential'
-  | 'tracks'
   | '3d'
   | 'ctcf-motif';

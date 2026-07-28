@@ -13,7 +13,6 @@ import type { ModelType } from './types';
 export const MODEL_REGISTRY: Record<ModelType, ComponentType> = {
   hic: lazy(() => import('./hic')),
   differential: lazy(() => import('./differential')),
-  tracks: lazy(() => import('./tracks')),
   '3d': lazy(() => import('./3d')),
   'ctcf-motif': lazy(() => import('./ctcf-motif')),
 };

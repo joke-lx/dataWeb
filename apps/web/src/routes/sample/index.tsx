@@ -1,18 +1,25 @@
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import type { Sample } from '../../api/types';
 import { ModelFactory } from '../../components/models';
+import type { ModelType } from '../../components/models';
 import { RouteShell } from '../../components/route/RouteShell';
+import { TracksModel } from '../../components/models/tracks';
+import { TrackSampleHeader } from '../../components/models/tracks/TrackSampleHeader';
 import { useD3Zoom } from '../../hooks/useD3Zoom';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
+import { useTrackSampleSelection } from '../../hooks/useTrackSampleSelection';
 import { useAppIntl } from '../../i18n';
 import { useSamples } from '../../store/samples';
 import { useViewport } from '../../store/viewport';
+import { SUB_TABS, TRACK_CATALOG } from '../trackSpec';
+import type { TrackId } from '../trackSpec';
 import './sample.css';
 
 const TABS = ['hic', 'tracks', '3d', 'ctcfMotif'] as const;
 type SampleTab = (typeof TABS)[number];
-const MODEL_TYPES: Record<SampleTab, 'hic' | 'tracks' | '3d' | 'ctcf-motif'> = {
+const MODEL_TYPES: Record<SampleTab, string> = {
   hic: 'hic', tracks: 'tracks', '3d': '3d', ctcfMotif: 'ctcf-motif',
 };
 
@@ -34,6 +41,28 @@ export function SampleRoute(): JSX.Element {
   const comparePopoverRef = useRef<HTMLDivElement>(null);
   useD3Zoom(viewerRef);
   const sample = useMemo(() => samples?.find((item) => item.id === id), [samples, id]);
+
+  // --- Tracks sub-tab business logic ---
+  const trackType = (params.get('type') ?? 'ab') as TrackId;
+  const trackSubTab = SUB_TABS.find((t) => t.id === trackType) ?? SUB_TABS[3];
+  const trackAux = trackSubTab.aux;
+  const { sampleIds: trackSampleIds, setSampleIdsRaw } = useTrackSampleSelection();
+  const trackMainSpec = TRACK_CATALOG[trackSubTab.id];
+  const trackSampleById = useMemo(() => {
+    const map = new Map<string, Sample>();
+    (samples ?? []).forEach((s) => map.set(s.id, s));
+    return map;
+  }, [samples]);
+  const overlaySampleIds = trackMainSpec.kind === 'bigwig' ? trackSampleIds : undefined;
+  const overlayMeta =
+    overlaySampleIds === undefined
+      ? undefined
+      : overlaySampleIds.map(
+          (id) =>
+            trackSampleById.get(id) ??
+            ({ id, species: '', tissue: '', breed: '', sex: '', individual: 0, dev_stage: '' } as Sample),
+        );
+  // --- end tracks business logic ---
 
   useEffect(() => { if (samples) setSamples(samples); }, [samples, setSamples]);
   useEffect(() => { if (sample) setActive(sample.id); }, [sample, setActive]);
@@ -191,7 +220,28 @@ export function SampleRoute(): JSX.Element {
     >
       <div className="sample-region">{region} · {t('stage.binLabel', { bin: viewport.bin.toLocaleString() })}</div>
       <div ref={viewerRef} className="sample-viewer">
-        <ModelFactory type={MODEL_TYPES[tab]} />
+        {tab === 'tracks' ? (
+          <>
+            {overlaySampleIds && (
+              <TrackSampleHeader
+                title={TRACK_CATALOG[trackSubTab.id].title}
+                sampleIds={overlaySampleIds}
+                onSampleChange={setSampleIdsRaw}
+                allSamples={samples ?? []}
+                isCatalogLoading={isLoading}
+              />
+            )}
+            <TracksModel
+              tab={trackSubTab.id}
+              sampleId={sample.id}
+              aux={trackAux}
+              overlaySampleIds={overlaySampleIds}
+              overlayMeta={overlayMeta}
+            />
+          </>
+        ) : (
+          <ModelFactory type={MODEL_TYPES[tab] as ModelType} />
+        )}
       </div>
       <div className="sample-navigator">{t('sample.regionNavigator')}</div>
     </RouteShell>

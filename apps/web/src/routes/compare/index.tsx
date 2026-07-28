@@ -13,7 +13,7 @@ import './compare.css';
 const COMPARISON_MODES = ['tissue', 'breed', 'cross', 'developmental'] as const;
 type CompareMode = (typeof COMPARISON_MODES)[number];
 
-const MODE_VIEWERS: Record<CompareMode, 'differential' | 'hic' | 'tracks'> = {
+const MODE_VIEWERS: Record<CompareMode, 'differential' | 'hic'> = {
   tissue: 'differential',
   breed: 'hic',
   cross: 'hic',
