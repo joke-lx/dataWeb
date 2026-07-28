@@ -115,12 +115,12 @@ export function SampleRoute(): JSX.Element {
       title={`${sample.id} — ${sample.tissue} (${sample.species})`}
       subtitle={subtitle}
       breadcrumb={`${sample.species} › ${sample.tissue} › ${sample.id}`}
-      actions={<div className="sample-actions">
-        <div className="sample-picker"><button type="button" onClick={() => setShowSamples((open) => !open)}>{t('sample.actions.changeSample')} ▾</button>
-          {showSamples && <div className="sample-picker__menu">{(samples ?? []).map((item) => <Link key={item.id} to={`/sample/${item.id}`} onClick={() => setShowSamples(false)}>{item.id}<small>{item.tissue} · {item.breed}</small></Link>)}</div>}</div>
-      </div>}
+      actions={null}
       toolbar={
         <div className="sample-toolbar">
+          <div className="sample-picker"><button type="button" onClick={() => setShowSamples((open) => !open)}>{t('sample.actions.changeSample')} ▾</button>
+            {showSamples && <div className="sample-picker__menu">{(samples ?? []).map((item) => <Link key={item.id} to={`/sample/${item.id}`} onClick={() => setShowSamples(false)}>{item.id}<small>{item.tissue} · {item.breed}</small></Link>)}</div>}
+          </div>
           <div className="sample-tabs" role="tablist">
             {TABS.map((item) => (
               <button
