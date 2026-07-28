@@ -6,6 +6,8 @@ import { useAppIntl } from '../../i18n';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { ModelFactory } from '../../components/models';
 import type { ModelType } from '../../components/models';
+import { TracksModel } from '../../components/models/tracks';
+import { SUB_TABS } from '../../components/models/tracks/trackSpec';
 import './explore.css';
 
 /**
@@ -19,7 +21,7 @@ import './explore.css';
  * that this file does not need to solve. The lookup below uses
  * `String.prototype.includes`, so widening to `string` is safe.
  */
-const VALID_TYPES: readonly string[] = ['hic', 'tracks', '3d', 'ctcf-motif'];
+const VALID_TYPES = new Set<string>(['hic', 'tracks', '3d', 'ctcf-motif']);
 
 /**
  * Viewer-type landing page. Each viewer (hic / tracks / 3d / ctcfMotif)
@@ -50,7 +52,7 @@ export function Explore(): JSX.Element {
   const meta = EXPLORE_META[viewerType] ?? EXPLORE_META.hic;
 
   const canRenderModel =
-    defaultSample !== undefined && VALID_TYPES.includes(viewerType);
+    defaultSample !== undefined && VALID_TYPES.has(viewerType);
 
   return (
     <RouteShell title={meta.title} subtitle={meta.subtitle}>
@@ -62,7 +64,15 @@ export function Explore(): JSX.Element {
               <div className="explore-preview__sample-label">
                 {t('explore.preview.sampleLabel', { id: defaultSample.id })}
               </div>
-              <ModelFactory type={viewerType as ModelType} />
+              {viewerType === 'tracks' ? (
+                <TracksModel
+                  tab={SUB_TABS[3].id}
+                  sampleId={defaultSample.id}
+                  aux={SUB_TABS[3].aux}
+                />
+              ) : (
+                <ModelFactory type={viewerType as ModelType} />
+              )}
             </>
           ) : (
             meta.preview ?? <DefaultPreview viewer={viewerType} />

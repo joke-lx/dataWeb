@@ -1,3 +1,20 @@
+/**
+ * Sample 详情页：单样本 viewer 的容器。
+ *
+ * 职责：把 `<RouteShell>` 包装 + sub-tab 切换（hic / tracks / 3d / ctcfMotif）+
+ * compare 模式（?vs=） + sample picker + TrackSampleHeader 等"外壳"职责
+ * 集中在一处。真正的数据图表由对应 `<ModelFactory type="..." />` 渲染。
+ *
+ * 为什么这里这么多业务逻辑：路由层负责把 URL 参数（id, vs, tab, type, samples）
+ * 翻译成给下层 viewer 的 props；下游 viewer 不必各自解析 URL。
+ *
+ * 关键状态机：
+ *   - 单一 sample → 展示 sub-tab（hic / tracks / 3d / ctcfMotif）
+ *   - compare 模式（?vs= 合法 partner）→ 锁定为 Differential 视图
+ *
+ * 注意：CSS 改动见 `sample.css`（不在本注释任务范围）。
+ */
+
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
@@ -20,12 +37,25 @@ import { SUB_TABS, TRACK_CATALOG } from '../../components/models/tracks/trackSpe
 import type { TrackId } from '../../components/models/tracks/trackSpec';
 import './sample.css';
 
+/** sub-tab 枚举：hic / tracks / 3d / ctcfMotif。 */
 const TABS = ['hic', 'tracks', '3d', 'ctcfMotif'] as const;
 type SampleTab = (typeof TABS)[number];
-const MODEL_TYPES: Record<SampleTab, string> = {
-  hic: 'hic', tracks: 'tracks', '3d': '3d', ctcfMotif: 'ctcf-motif',
+// tab id → ModelType 映射。ctcfMotif tab 内部模型 id 为 'ctcf-motif'。
+// tracks 不在 ModelType union 里（它有必传 props），所以这一项用 'as never'
+// 标注后由外层 if/else 分支直接渲染 <TracksModel>。
+const MODEL_TYPES: Record<SampleTab, ModelType> = {
+  hic: 'hic', tracks: 'tracks' as never, '3d': '3d', ctcfMotif: 'ctcf-motif',
 };
 
+/**
+ * Sample 路由组件。
+ * URL 参数：
+ *   - `:id`        样本 id
+ *   - `?vs=`       对比样本 id（compare 模式）
+ *   - `?tab=`      sub-tab（hic/tracks/3d/ctcfMotif）
+ *   - `?type=`     Tracks 子模式（rna_seq/h3k4me3/...）
+ *   - `?samples=`  Tracks 多样本叠加（详见 useTrackSampleSelection）
+ */
 export function Sample(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const [params, setParams] = useSearchParams();
@@ -35,6 +65,7 @@ export function Sample(): JSX.Element {
   const setSamples = useSamples((state) => state.setSamples);
   const viewport = useViewport();
   const partnerId = params.get('vs');
+  // 兜底 default 'hic'，避免初次渲染时拿到无效值。
   const [tab, setTab] = useState<SampleTab>((params.get('tab') as SampleTab) || 'hic');
   const [searchQuery, setSearchQuery] = useState('');
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -44,19 +75,23 @@ export function Sample(): JSX.Element {
     () => (partnerId ? samples?.find((item) => item.id === partnerId) : undefined),
     [samples, partnerId],
   );
+  // 严格判断 compare 模式：partnerId 存在 + 双方都找到 + 不等于自己。
   const isCompareMode = Boolean(partnerId && partner && sample && partnerId !== sample.id);
 
-  // --- Tracks sub-tab business logic ---
+  // --- Tracks sub-tab 业务逻辑：解析 ?type= + 准备叠加样本元数据 ---
   const trackType = (params.get('type') ?? 'ab') as TrackId;
+  // 兜底到 index 3（AB）——历史约定，避免 type 非法时空白。
   const trackSubTab = SUB_TABS.find((t) => t.id === trackType) ?? SUB_TABS[3];
   const trackAux = trackSubTab.aux;
   const { sampleIds: trackSampleIds, setSampleIdsRaw } = useTrackSampleSelection();
   const trackMainSpec = TRACK_CATALOG[trackSubTab.id];
+  // 把样本列表 index 成 Map 便于 O(1) 取——叠加多 sample 时 linear find 太慢。
   const trackSampleById = useMemo(() => {
     const map = new Map<string, Sample>();
     (samples ?? []).forEach((s) => map.set(s.id, s));
     return map;
   }, [samples]);
+  // 仅 bigwig 类主轨支持多样本叠加；其它轨道（bedGraph/is/tad/...）不传该参数。
   const overlaySampleIds = trackMainSpec.kind === 'bigwig' ? trackSampleIds : undefined;
   const overlayMeta =
     overlaySampleIds === undefined
@@ -64,17 +99,21 @@ export function Sample(): JSX.Element {
       : overlaySampleIds.map(
           (id) =>
             trackSampleById.get(id) ??
+            // 缺失元数据兜底：保留 id 但字段为空——避免上层渲染崩溃。
             ({ id, species: '', tissue: '', breed: '', sex: '', individual: 0, dev_stage: '' } as Sample),
         );
-  // --- end tracks business logic ---
+  // --- end tracks 业务逻辑 ---
 
+  // 把样本 catalog 同步到 zustand store（其他 viewer 只要 active 即可）。
   useEffect(() => { if (samples) setSamples(samples); }, [samples, setSamples]);
   useEffect(() => { if (sample) setActive(sample.id); }, [sample, setActive]);
 
   const candidates = useMemo(
+    // 排除自己——compare 的可选集不包含自己。
     () => (samples ?? []).filter((item) => item.id !== sample?.id),
     [samples, sample?.id],
   );
+  // 同品种 + 不同组织：compare 的"智能推荐"列表。
   const suggested = useMemo(
     () =>
       !sample
@@ -104,6 +143,7 @@ export function Sample(): JSX.Element {
             item.id.toLowerCase().includes(query) ||
             item.tissue.toLowerCase().includes(query),
         )
+        // 副本排序：避免污染原数组（candidates 也会被其它逻辑用）。
         .slice()
         .sort((a, b) => a.id.localeCompare(b.id)),
     [candidates, query],
@@ -113,14 +153,16 @@ export function Sample(): JSX.Element {
   if (isLoading) return <main className="route-page"><div className="route-content">{t('common.loading')}</div></main>;
   if (!sample) return <main className="route-page"><div className="model-missing"><strong>{t('sample.notFound.title')}</strong><p>{t('sample.notFound.description', { id: id ?? '' })}</p></div></main>;
 
-  // Compare mode requires both samples to exist; treat as off if partner is missing.
+  // compare 模式要求 partner 实际存在；缺失即视为关闭。
   const compareActive = isCompareMode && partner;
 
   const region = `${viewport.chr}:${viewport.start.toLocaleString()}-${viewport.end.toLocaleString()}`;
+  // 标题 / 副标题 / breadcrumb 全部按是否 compare 走不同分支。
   const subtitle = compareActive && partner
     ? `${sample.tissue} vs ${partner.tissue} · ${sample.species} · ${sample.breed} vs ${partner.breed} · ${region}`
     : `${sample.species} · ${sample.tissue} · ${sample.breed} · ${sample.sex} · ${sample.dev_stage}`;
 
+  // 写入 ?vs= 跳转对比；保留其它 URL 参数。
   const navigateToCompare = (targetId: string) => {
     setParams(
       (prev) => {
@@ -267,6 +309,7 @@ export function Sample(): JSX.Element {
     >
       <div className="sample-region">{region} · {t('stage.binLabel', { bin: viewport.bin.toLocaleString() })}</div>
       <div ref={viewerRef} className="sample-viewer">
+        {/* compare 模式：固定显示 Log2Heatmap + GeneLane，忽略 sub-tab */}
         {compareActive && partner ? (
           <>
             <Log2Heatmap sampleA={sample.id} sampleB={partner.id} />
@@ -292,7 +335,7 @@ export function Sample(): JSX.Element {
             />
           </>
         ) : (
-          <ModelFactory type={MODEL_TYPES[tab] as ModelType} />
+          <ModelFactory type={MODEL_TYPES[tab]} />
         )}
       </div>
       <div className="sample-navigator">{t('sample.regionNavigator')}</div>
