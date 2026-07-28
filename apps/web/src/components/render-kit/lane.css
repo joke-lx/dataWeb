@@ -39,7 +39,7 @@
 
 .lane {
   display: grid;
-  grid-template-columns: var(--label-gutter-width) minmax(0, 1fr);
+  grid-template-columns: var(--label-gutter-width) minmax(280px, 1fr);
   width: 100%;
   border-bottom: var(--track-separator) solid var(--color-border);
   background: var(--color-bg);
@@ -80,7 +80,7 @@
 .lane-content {
   position: relative;
   display: flex;
-  min-width: 0;
+  min-width: 320px;
   align-items: stretch;
   justify-content: stretch;
   overflow: hidden;

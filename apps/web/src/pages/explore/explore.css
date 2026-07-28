@@ -12,9 +12,9 @@
   border-radius: 6px;
   min-height: 320px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .explore-preview__placeholder {
