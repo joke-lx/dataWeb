@@ -20,7 +20,7 @@ interface ColormapBarProps {
 const GRADIENTS: Record<ColormapName, string> = {
   viridis:
     'linear-gradient(to bottom, #fde725, #b5de2b, #6ece58, #35b779, #1f9e89, #26828e, #31688e, #3e4989, #482878, #440154)',
-  rdbu: 'linear-gradient(to bottom, #c0392b, #f7f7f7, #2c5fa6)',
+  rdbu: 'linear-gradient(to bottom, #9d2c44, #f7f7f7, #2e7d4e)',
   ref: 'linear-gradient(to bottom, #c85e5d, #de923b, #ddb044, #c4c195, #9dc4d0, #7fa6c8, #6b8bb8, #5b7099)',
 };
 

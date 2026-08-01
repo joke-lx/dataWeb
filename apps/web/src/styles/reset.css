@@ -17,7 +17,7 @@ body {
   font-family: var(--font-ui, system-ui, sans-serif);
   font-size: var(--font-size-body, 13px);
   line-height: 1.4;
-  color: var(--color-text-primary, #1a1a1a);
+  color: var(--color-text-primary, #0f1f24);
   background: var(--color-bg, #ffffff);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

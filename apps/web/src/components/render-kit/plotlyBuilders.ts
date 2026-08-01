@@ -106,7 +106,7 @@ export function buildBigwig(
   title: string,
   height: number,
 ): PlotlyBuild {
-  const color = cssVar('--sample-a', '#c0392b');
+  const color = cssVar('--sample-a', '#9d2c44');
   const n = values?.length ?? 0;
   const binBp = n > 0 ? (viewport.end - viewport.start) / n : 1;
   const x: number[] = [];
@@ -150,8 +150,8 @@ export function buildBedGraph(
   title: string,
   height: number,
 ): PlotlyBuild {
-  const colorA = cssVar('--color-a-compartment', '#c0392b');
-  const colorB = cssVar('--color-b-compartment', '#2c5fa6');
+  const colorA = cssVar('--color-a-compartment', '#9d2c44');
+  const colorB = cssVar('--color-b-compartment', '#2e7d4e');
   const visible = (records ?? []).filter((r) => r.chrom === viewport.chr);
   const x = visible.map((r) => (r.start + r.end) / 2);
   const data: PlotlyData[] = [
@@ -265,8 +265,8 @@ export function buildTadBar(
   title: string,
   height: number,
 ): PlotlyBuild {
-  const body = cssVar('--color-tad-body', '#f5f5f5');
-  const boundary = cssVar('--color-tad-boundary', '#1a1a1a');
+  const body = cssVar('--color-tad-body', '#f7f8f8');
+  const boundary = cssVar('--color-tad-boundary', '#1f2c2a');
   const shapes = (records ?? [])
     .filter((r) => r.chrom === viewport.chr)
     .map((r) => ({
