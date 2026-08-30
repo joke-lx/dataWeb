@@ -1,0 +1,84 @@
+/* PickerRow — 单维度多选 picker 行的视觉约定。
+ * 渲染顺序：上方 12px 大写小标签 + 下方 chip 列表（wrap）。
+ * chip 状态：默认 / hover / active（accent 边框 + 浅背景）/ disabled。 */
+
+.pk-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pk-row--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.pk-row__label {
+  font-size: var(--font-size-tiny);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+}
+
+.pk-row__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: var(--font-size-small);
+  font-family: var(--font-ui);
+  line-height: 1.2;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.pk-chip:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+.pk-chip--active {
+  background: var(--color-accent-tint);
+  border-color: var(--color-accent);
+  color: var(--color-accent-deep);
+  font-weight: 600;
+}
+
+.pk-chip--active:hover {
+  background: var(--color-accent-soft);
+}
+
+.pk-chip--disabled {
+  cursor: not-allowed;
+}
+
+.pk-chip__label {
+  white-space: nowrap;
+}
+
+.pk-chip__count {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+  background: var(--color-surface-2);
+  border-radius: 999px;
+  padding: 0 5px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.pk-chip--active .pk-chip__count {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
