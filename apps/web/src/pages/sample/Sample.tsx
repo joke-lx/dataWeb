@@ -151,6 +151,28 @@ export function Sample(): JSX.Element {
     [],
   );
 
+  /**
+   * 去重渲染计划：多选时每个 tab 的 aux（TAD/Gene 等）会被多个主轨道重复
+   * 携带 —— 这里过滤出"未被任何选中主轨道覆盖、且未被前面的 aux 用过"的
+   * aux，保证 TAD / Gene 在整个 tracks 区块只渲染一次。
+   * 单选时行为与旧版一致（主轨道 + 完整 aux 上下文）。
+   */
+  const trackRenderPlan = useMemo<Array<{ main: TrackId; aux: TrackId[] }>>(
+    () => {
+      const mainSet = new Set<TrackId>(selectedTypes);
+      const auxSeen = new Set<TrackId>();
+      return selectedTypes.map((main) => {
+        const tab = SUB_TABS.find((tt) => tt.id === main);
+        const filteredAux = (tab?.aux ?? []).filter(
+          (a) => !mainSet.has(a) && !auxSeen.has(a),
+        );
+        filteredAux.forEach((a) => auxSeen.add(a));
+        return { main, aux: filteredAux };
+      });
+    },
+    [selectedTypes],
+  );
+
   // URL 同步：写 ?types=，并清掉旧 ?type= 字段避免混淆。
   useEffect(() => {
     setParams(
@@ -312,14 +334,13 @@ export function Sample(): JSX.Element {
       {selectedTypes.length === 0 ? (
         <div className="tracks-empty">{t('tracks.empty')}</div>
       ) : (
-        selectedTypes.map((t) => {
-          const tab = SUB_TABS.find((tt) => tt.id === t);
+        trackRenderPlan.map(({ main, aux }) => {
+          const tab = SUB_TABS.find((tt) => tt.id === main);
           if (!tab) return null;
-          const spec = TRACK_CATALOG[t];
+          const spec = TRACK_CATALOG[main];
           const isBigwig = spec.kind === 'bigwig';
-          const aux = tab.aux;
           return (
-            <InViewSection key={t} minHeight={SECTION_MIN_HEIGHT.tracks}>
+            <InViewSection key={main} minHeight={SECTION_MIN_HEIGHT.tracks}>
               <DragPanContainer>
                 {!compareActive && isBigwig && overlaySampleIds && (
                   <TrackSampleHeader
@@ -332,18 +353,20 @@ export function Sample(): JSX.Element {
                 )}
                 {compareActive && partner ? (
                   <div className="compare-tracks">
+                    {/* 对比模式：同类型上下 A/B 并排，只显示主轨道 —— aux 不重复渲染
+                        （对比目的就是看同一类型的 A/B 差异，TAD/Gene 上下文不堆叠）。 */}
                     <div className="compare-tracks__block">
                       <span className="compare-label">{sample.id}</span>
-                      <TracksModel tab={t} sampleId={sample.id} aux={aux} />
+                      <TracksModel tab={main} sampleId={sample.id} aux={[]} />
                     </div>
                     <div className="compare-tracks__block">
                       <span className="compare-label">{partner.id}</span>
-                      <TracksModel tab={t} sampleId={partner.id} aux={aux} />
+                      <TracksModel tab={main} sampleId={partner.id} aux={[]} />
                     </div>
                   </div>
                 ) : (
                   <TracksModel
-                    tab={t}
+                    tab={main}
                     sampleId={sample.id}
                     aux={aux}
                     overlaySampleIds={isBigwig ? overlaySampleIds : undefined}

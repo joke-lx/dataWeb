@@ -90,7 +90,6 @@ export const SUB_TABS: SubTab[] = [
   { id: 'is',      group: 'structure',  label: 'IS',       aux: ['tad', 'gene'] },
   { id: 'tad',     group: 'structure',  label: 'TAD',      aux: ['gene'] },
   { id: 'pei',     group: 'structure',  label: 'PEI',      aux: ['tad', 'gene'] },
-  { id: 'loop',    group: 'structure',  label: 'Loops',    aux: ['gene'] },
   { id: 'sv',      group: 'structure',  label: 'SV',       aux: ['tad', 'gene'] },
   // 基因（Gene）
   { id: 'gene',    group: 'gene',       label: 'Gene',     aux: [] },
