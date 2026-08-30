@@ -18,7 +18,12 @@ import './tracks.css';
 
 export interface SubTabBarProps {
   tabs: SubTab[];
-  value: string;
+  /** 当前已选中的 tab id 集合（按选择顺序，顺序决定 stacking 顺序）。 */
+  value: readonly string[];
+  /**
+   * 选中变化时的回调——toggle 语义（已选则移除、未选则追加），由父级
+   * 维护 `selectedTypes` 状态。
+   */
   onChange: (id: string) => void;
 }
 
@@ -48,7 +53,9 @@ export function SubTabBar({ tabs, value, onChange }: SubTabBarProps): JSX.Elemen
           {groupTabs.map((tab) => (
             <button
               key={tab.id}
-              className={'subtab-chip' + (value === tab.id ? ' subtab-chip--active' : '')}
+              className={
+                'subtab-chip' + (value.includes(tab.id) ? ' subtab-chip--active' : '')
+              }
               onClick={() => onChange(tab.id)}
               title={TRACK_CATALOG[tab.id]?.title ?? tab.id}
             >

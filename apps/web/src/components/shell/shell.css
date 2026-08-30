@@ -35,8 +35,8 @@
   flex-direction: row;
   align-items: center;
   height: 48px;
-  background: var(--color-surface-1);
-  border-bottom: var(--track-separator) solid var(--color-border);
+  background: var(--color-accent-deep);
+  border-bottom: none;
   padding: 0 var(--space-3);
   gap: var(--space-3);
   min-width: 0;
@@ -46,14 +46,14 @@
   font-size: var(--font-size-title);
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--color-accent);
+  color: var(--color-text-on-accent);
   flex: 0 0 auto;
   margin-right: var(--space-2);
 }
 
 .topbar-nav {
   display: flex;
-  gap: 2px;
+  gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
   min-width: 0;
@@ -75,26 +75,26 @@
 }
 
 .topbar-btn {
-  padding: 6px 10px;
+  padding: 4px 10px;
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
-  border-radius: 3px;
+  border-radius: 999px;
   white-space: nowrap;
-  border: var(--track-separator) solid transparent;
   flex-shrink: 0;
   transition: background 0.12s ease, color 0.12s ease;
 }
 
 .topbar-btn:hover {
-  background: var(--color-surface-2);
-  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 
-.topbar-btn-active {
-  background: var(--color-accent);
-  color: var(--color-text-on-accent);
-  border-color: var(--color-accent);
+.topbar-btn-active,
+.topbar-btn-active:hover {
+  background: #fff;
+  color: var(--color-accent-deep);
+  font-weight: 600;
 }
 
 .topbar__toggle {

@@ -1,4 +1,4 @@
-"""``GET /api/hic/matrix`` — synthetic Hi-C contact matrix as float32 bytes.
+"""``GET /api/hic/matrix`` — Hi-C contact matrix as float32 bytes.
 
 Query parameters
 ----------------
@@ -15,16 +15,28 @@ with shape and colour-range metadata in custom headers:
 * ``X-Genomics-Shape`` — ``"{rows},{cols}"``
 * ``X-Genomics-Vmin``  — matrix minimum (after ``log1p``)
 * ``X-Genomics-Vmax``  — 99th percentile (used as the client's colour-map upper bound)
+
+Data sources (real first, mock fallback):
+    When a converted real-data cache exists for the sample/chromosome
+    (``{hic_matrix_root}/npy/{sample}.chr{N}.20kb.npy``, produced by
+    ``scripts/convert_hic_matrix.py``) the submatrix is sliced from it via
+    mmap. Regions beyond the file's coverage return an empty ``0×0`` matrix
+    rather than synthetic values. Only when no cache exists at all does the
+    deterministic mock generator serve the request.
 """
 
 from __future__ import annotations
+
+import logging
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
 from app.mock import hic_matrix
+from app.real_data.hic_reader import read_hic_matrix
 
 router = APIRouter(prefix="/api", tags=["hic"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/hic/matrix")
@@ -35,8 +47,12 @@ async def hic_matrix_endpoint(
     end: int = Query(..., gt=0, description="Region end (bp, exclusive)"),
     bin: int = Query(..., gt=0, alias="bin", description="Bin size in bp"),
 ) -> Response:
-    """Return the synthetic Hi-C contact matrix as raw float32 bytes."""
-    mat, vmin, vmax = hic_matrix(sample, chr, start, end, bin)
+    """Return the Hi-C contact matrix as raw float32 bytes."""
+    try:
+        mat, vmin, vmax = read_hic_matrix(sample, chr, start, end, bin)
+    except FileNotFoundError as error:
+        logger.debug("Falling back to mock hic for %s/%s: %s", sample, chr, error)
+        mat, vmin, vmax = hic_matrix(sample, chr, start, end, bin)
     return Response(
         content=mat.tobytes(),
         media_type="application/octet-stream",

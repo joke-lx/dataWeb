@@ -12,10 +12,14 @@ dependencies = [
     "uvicorn[standard]>=0.27",
     "numpy>=1.26",
     "pyyaml>=6.0",
-    "pyBigWig>=0.3.22",
 ]
+# pyBigWig requires a C extension that ships wheels only for select Python
+# versions; keep it opt-in so the dev install doesn't break on 3.13/3.14.
+# Install with `pip install -e '.[bw]'` when you actually need to read
+# binary .bw tracks.
 
 [project.optional-dependencies]
+bw = ["pyBigWig>=0.3.22"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

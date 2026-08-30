@@ -25,9 +25,11 @@ import type { JSX } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import * as THREE from 'three';
 
-import { fetchBed } from '../../../api/client';
+import { fetchBed, fetchDerivedThreeD } from '../../../api/client';
+import type { DerivedThreeDResponse } from '../../../api/client';
 import type { PeiRecord } from '../../../api/types';
 import { useViewport } from '../../../store/viewport';
+import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
 import './three-d-chromatin.css';
 
 interface ThreeDChromatinProps {
@@ -242,6 +244,29 @@ export function ThreeDChromatin({
     staleTime: 30_000,
   });
 
+  // 3D 坐标查询：真实 Hi-C 时后端返回已居中的 MDS 坐标（含 `source`）；
+  // 不可用时返回空 coords + `source: "mock"`，前端降级为随机游走路径。
+  const threeDQuery = useQuery<DerivedThreeDResponse>({
+    queryKey: [
+      'derived-three-d',
+      sampleId ?? 'default',
+      viewport.chr,
+      viewport.start,
+      viewport.end,
+      viewport.bin,
+    ],
+    queryFn: () =>
+      fetchDerivedThreeD(
+        sampleId ?? 'Brain_BF3',
+        viewport.chr,
+        viewport.start,
+        viewport.end,
+        viewport.bin,
+      ),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+
   // 用于让第二个 effect（PEI 数据 effect）能调到主 effect 里定义的 attachEnhancers
   // 避免重建整个 scene 来更新 enhancer 几何
   const sceneHandleRef = useRef<{
@@ -254,7 +279,16 @@ export function ThreeDChromatin({
     if (!mount) return undefined;
 
     const { seed, steps, markers } = ORGAN_PARAMS[organ];
-    const path = makePath(seed, steps);
+    // 真实数据优先：source === 'real' 且 coords ≥ 2 点时直接用后端归一化好的
+    // MDS 坐标构建 TubeGeometry；否则回退到 makePath 随机游走（任何 source 下都有几何）。
+    const coords = threeDQuery.data?.coords;
+    const useRealCoords =
+      threeDQuery.data?.source === 'real' &&
+      coords !== undefined &&
+      coords.length >= 2;
+    const path = useRealCoords
+      ? coords.map(([x, y, z]) => new THREE.Vector3(x, y, z))
+      : makePath(seed, steps);
     // clientWidth/Height 在 mount 时可能为 0（layout 未就绪），用 max(.., 1) 兜底
     const panelW = Math.max(mount.clientWidth, 1);
     const panelH = Math.max(mount.clientHeight, 1);
@@ -538,7 +572,7 @@ export function ThreeDChromatin({
       sceneHandleRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organ, height, sampleId, viewport.chr, viewport.start, viewport.end]);
+  }, [organ, height, sampleId, viewport.chr, viewport.start, viewport.end, threeDQuery.data]);
 
   // PEI 数据 effect：仅在 peiQuery.data 变化时调 attachEnhancers，
   // 不重建整个 scene，节省 GPU/CPU 资源
@@ -552,6 +586,8 @@ export function ThreeDChromatin({
       ref={mountRef}
       role="img"
       aria-label={`3D chromatin folding model for ${organ}`}
-    />
+    >
+      <ModelSourceBadge source={threeDQuery.data?.source} />
+    </div>
   );
 }

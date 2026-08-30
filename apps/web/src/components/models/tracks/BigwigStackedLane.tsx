@@ -13,14 +13,19 @@
  *
  * 架构位置：tracks 模型目录下的"多样本 bigwig"lane，被 `<TracksModel />`
  * 在主轨道 `kind === 'bigwig'` 分支调用。
+ *
+ * Activity proxy：当 trackName 属于 RNA/ChIP/ATAC 集合，没有真实数据，
+ * 改用 `fetchDerivedActivity`（Hi-C A/B 派生的 [0,1] 信号）—— lane 加
+ * `ModelSourceBadge source="ab_proxy"`。
  */
 
 import { keepPreviousData, useQueries } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
-import { fetchBigwig } from '../../../api/client';
+import { fetchBigwig, fetchDerivedActivity } from '../../../api/client';
 import type { Sample } from '../../../api/types';
 import { useViewport } from '../../../store/viewport';
+import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
 import {
   buildBigwig,
@@ -28,6 +33,10 @@ import {
 import { buildBigwigStacked, type BigwigSeries } from './BigwigStacked';
 import { colorForTissue, type SampleColor } from './sampleColors';
 import '../../render-kit/lane.css';
+
+/** 与 BigwigLane 共享的 activity 代理白名单。 */
+const ACTIVITY_PROXY_TRACKS = new Set(['rna_seq', 'h3k4me3', 'h3k27ac']);
+const isActivityProxy = (t: string) => ACTIVITY_PROXY_TRACKS.has(t);
 
 interface BigwigStackedProps {
   sampleIds: string[];
@@ -65,27 +74,32 @@ export function BigwigStacked({
   const viewportWidth = viewport.end - viewport.start;
   const bins = Math.max(50, Math.min(800, Math.ceil(viewportWidth / 1000)));
 
+  const useActivity = isActivityProxy(trackName);
+
   // 用 useQueries 并行拉取——多个 query 共享 React Query 的 cache / dedup / retry 策略。
   const queries = useQueries({
     queries: sampleIds.map((id) => ({
-      queryKey: [
-        'bigwig-stacked',
-        id,
-        trackName,
-        viewport.chr,
-        viewport.start,
-        viewport.end,
-        bins,
-      ],
+      queryKey: useActivity
+        ? ['derived-activity', id, trackName, viewport.chr, viewport.start, viewport.end, bins]
+        : ['bigwig-stacked', id, trackName, viewport.chr, viewport.start, viewport.end, bins],
       queryFn: () =>
-        fetchBigwig(
-          id,
-          trackName,
-          viewport.chr,
-          viewport.start,
-          viewport.end,
-          bins,
-        ),
+        useActivity
+          ? fetchDerivedActivity(
+              id,
+              viewport.chr,
+              viewport.start,
+              viewport.end,
+              viewport.bin,
+              bins,
+            ).then((d) => ({ values: d.records.map((r) => r.score), source: d.source }))
+          : fetchBigwig(
+              id,
+              trackName,
+              viewport.chr,
+              viewport.start,
+              viewport.end,
+              bins,
+            ),
       enabled: !!trackName,
       placeholderData: keepPreviousData,
     staleTime: 30_000,
@@ -98,12 +112,20 @@ export function BigwigStacked({
     fill: 'rgba(102, 102, 102, 0.60)',
   };
   // 按 sampleIds 顺序构造 series——保证最终 Plotly 切片顺序 = URL 选择顺序。
+  // activity 路径返回 number[]，统一转 Float32Array 满足 BigwigSeries.values 类型。
   const series: BigwigSeries[] = sampleIds.map((id, i) => {
     const meta = sampleMeta?.[i];
     const c = meta ? colorForTissue(meta.tissue) : fallback;
+    const raw = queries[i]?.data?.values;
+    const values =
+      raw === undefined
+        ? undefined
+        : raw instanceof Float32Array
+          ? raw
+          : new Float32Array(raw);
     return {
       id,
-      values: queries[i]?.data?.values,
+      values,
       line: c.line,
       fill: c.fill,
     };
@@ -130,6 +152,10 @@ export function BigwigStacked({
   // 任一 query 失败 → 在右上角显示错误标记（但不阻断其它已就绪的 trace）
   const overlayError = queries.find((q) => q.error)?.error ?? null;
   const overlayLoading = queries.some((q) => q.isLoading);
+  // activity 代理时所有 sample 共享同一 source（ab_proxy）
+  const activitySource = queries[0]?.data && 'source' in queries[0].data
+    ? (queries[0].data as { source: string }).source
+    : undefined;
 
   return (
     <div
@@ -146,7 +172,7 @@ export function BigwigStacked({
       </div>
       <div
         className="lane-content"
-        data-kind="bigwig"
+        data-kind={useActivity ? 'activity' : 'bigwig'}
         data-track-name={trackName}
       >
         {series.every((s) => !s.values) ? (
@@ -154,6 +180,7 @@ export function BigwigStacked({
         ) : (
           <PlotlyTrack data={plot.data} layout={plot.layout} height={stackedLaneHeight} />
         )}
+        {useActivity && <ModelSourceBadge source={activitySource ?? 'ab_proxy'} />}
         {overlayLoading && <span className="track-loading">…</span>}
         {overlayError && (
           <span className="track-error" title={overlayError.message}>

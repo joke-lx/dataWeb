@@ -19,6 +19,7 @@ import type {
   CtcfGenotypeResponse,
   CtcfMotifResponse,
   Sample,
+  SampleFileMeta,
   Species,
 } from './types';
 
@@ -162,6 +163,25 @@ export interface HicMatrixResponse {
 }
 
 /**
+ * 拉取某个样本的可下载文件列表。
+ * 失败时抛出 `download: <status>`，由上层 UI 展示。
+ */
+export async function fetchSampleFiles(sampleId: string): Promise<SampleFileMeta[]> {
+  const params = new URLSearchParams({ sample: sampleId });
+  const r = await fetch(`${API_BASE}/api/download/files?${params}`);
+  if (!r.ok) throw new Error(`download: ${r.status}`);
+  return r.json() as Promise<SampleFileMeta[]>;
+}
+
+/**
+ * 构建某样本某文件的下载 URL（直接下载 / 分片下载都走它）。
+ */
+export function buildDownloadUrl(sampleId: string, file: string): string {
+  const params = new URLSearchParams({ sample: sampleId, file });
+  return `${API_BASE}/api/download/file?${params.toString()}`;
+}
+
+/**
  * 拉取 Hi-C 接触矩阵。
  * 与 bigwig 相同：使用 arrayBuffer + 自定义 header 传输 dtype/shape/vmin/vmax，
  * 不做 JSON 序列化。
@@ -258,4 +278,220 @@ export async function fetchDifferentialHic(
   const vmin = parseFloat(r.headers.get('X-Genomics-Vmin') ?? '0');
   const vmax = parseFloat(r.headers.get('X-Genomics-Vmax') ?? '1');
   return { matrix: new Float32Array(buf), shape: [h, w], vmin, vmax };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hi-C derived 端点（/api/derived/*）
+//
+// 每个端点都返回 `source: "real" | "mock" | "ab_proxy"`，让 UI 能标注数据来源。
+// 真实 Hi-C 缓存不可用时后端自动降级为 mock（3D/loop/sv 返回空列表），
+// activity 恒为 `ab_proxy`（A/B compartment 代理，并非真实表达/表观数据）。
+// 调用方必须能处理任意 source，绝不能因为无数据而崩溃。
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 派生数据来源标记。 */
+export type DerivedSource = 'real' | 'mock' | 'ab_proxy';
+
+/** 派生区间记录（chrom/start/end），对应 tad_boundary / sv。 */
+export interface DerivedIntervalRecord {
+  chrom: string;
+  start: number;
+  end: number;
+}
+
+/** 带 score 的派生记录（insulation / ab / activity）。 */
+export interface DerivedScoreRecord extends DerivedIntervalRecord {
+  score: number;
+}
+
+/** 派生端点通用响应外壳：records + source。 */
+export interface DerivedRecordsResponse<T> {
+  records: T[];
+  source: DerivedSource;
+  note?: string;
+}
+
+/** `/api/derived/three_d` 的坐标点（后端已居中/归一化）。 */
+export type DerivedCoord3D = [number, number, number];
+
+/** `/api/derived/three_d` 响应。 */
+export interface DerivedThreeDResponse {
+  coords: DerivedCoord3D[];
+  n_bins: number;
+  source: DerivedSource;
+}
+
+/** `/api/derived/ctcf_loop` 的单条 loop（bp 坐标，与 /api/ctcf/loops 对齐）。 */
+export interface DerivedLoopRecord {
+  chrom1: string;
+  start1: number;
+  end1: number;
+  chrom2: string;
+  start2: number;
+  end2: number;
+  score: number;
+}
+
+/** `/api/derived/ctcf_loop` 响应。 */
+export interface DerivedCtcfLoopResponse {
+  records: DerivedLoopRecord[];
+  source: DerivedSource;
+}
+
+/** `/api/derived/sv` 记录（简化结构变异：chrom/start/end/kind）。 */
+export interface DerivedSvRecord {
+  chrom: string;
+  start: number;
+  end: number;
+  kind: string;
+}
+
+/** Hi-C 派生 TAD 边界 —— `/api/derived/tad_boundary`。 */
+export async function fetchDerivedTadBoundary(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+): Promise<DerivedRecordsResponse<DerivedIntervalRecord>> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/tad_boundary?${params}`);
+  if (!r.ok) throw new Error(`derived/tad_boundary: ${r.status}`);
+  return r.json() as Promise<DerivedRecordsResponse<DerivedIntervalRecord>>;
+}
+
+/** Hi-C 派生 insulation score —— `/api/derived/insulation`。 */
+export async function fetchDerivedInsulation(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+  nBins: number,
+): Promise<DerivedRecordsResponse<DerivedScoreRecord>> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+    n_bins: String(Math.max(1, Math.round(nBins))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/insulation?${params}`);
+  if (!r.ok) throw new Error(`derived/insulation: ${r.status}`);
+  return r.json() as Promise<DerivedRecordsResponse<DerivedScoreRecord>>;
+}
+
+/** Hi-C 派生 A/B compartment —— `/api/derived/ab`（真实 01.AB 文件的镜像策略）。 */
+export async function fetchDerivedAB(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+  nBins: number,
+): Promise<DerivedRecordsResponse<DerivedScoreRecord>> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+    n_bins: String(Math.max(1, Math.round(nBins))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/ab?${params}`);
+  if (!r.ok) throw new Error(`derived/ab: ${r.status}`);
+  return r.json() as Promise<DerivedRecordsResponse<DerivedScoreRecord>>;
+}
+
+/**
+ * 表达/表观 activity 代理 —— `/api/derived/activity`。
+ * 注意：这是 A/B compartment 的代理而非真实 RNA/ChIP/ATAC，后端恒为
+ * `source: "ab_proxy"`，UI 必须以此标注。
+ */
+export async function fetchDerivedActivity(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+  nBins: number,
+): Promise<DerivedRecordsResponse<DerivedScoreRecord>> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+    n_bins: String(Math.max(1, Math.round(nBins))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/activity?${params}`);
+  if (!r.ok) throw new Error(`derived/activity: ${r.status}`);
+  return r.json() as Promise<DerivedRecordsResponse<DerivedScoreRecord>>;
+}
+
+/** Hi-C 派生 3D 坐标 —— `/api/derived/three_d`；mock 时 coords 为空。 */
+export async function fetchDerivedThreeD(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+): Promise<DerivedThreeDResponse> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/three_d?${params}`);
+  if (!r.ok) throw new Error(`derived/three_d: ${r.status}`);
+  return r.json() as Promise<DerivedThreeDResponse>;
+}
+
+/** Hi-C 派生 CTCF loop —— `/api/derived/ctcf_loop`；mock 时 records 为空。 */
+export async function fetchDerivedCtcfLoop(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+): Promise<DerivedCtcfLoopResponse> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/ctcf_loop?${params}`);
+  if (!r.ok) throw new Error(`derived/ctcf_loop: ${r.status}`);
+  return r.json() as Promise<DerivedCtcfLoopResponse>;
+}
+
+/** Hi-C 派生结构变异 —— `/api/derived/sv`；mock 时 records 为空。 */
+export async function fetchDerivedSv(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+): Promise<DerivedRecordsResponse<DerivedSvRecord>> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/sv?${params}`);
+  if (!r.ok) throw new Error(`derived/sv: ${r.status}`);
+  return r.json() as Promise<DerivedRecordsResponse<DerivedSvRecord>>;
 }

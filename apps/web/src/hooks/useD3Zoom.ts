@@ -47,7 +47,7 @@ export function useD3Zoom(ref: RefObject<HTMLElement | null>): {
           return false;
         }
         // 滚轮缩放：直接接受、不要求 Ctrl/Cmd（避免与浏览器缩放冲突，但保留 wheel 平移）。
-        if (event.type === 'wheel') return true;
+        if (event.type === 'wheel') return false;
         // 触摸缩放：双指 pinch 才触发。
         if (event.type === 'touchstart' || event.type === 'touchmove') {
           return (event as TouchEvent).touches.length >= 2;

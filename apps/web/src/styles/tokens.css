@@ -1,40 +1,57 @@
 /* Design tokens — single source of truth for visual primitives.
  * Mirrors `docx/plan/architecture.md` §7.1. Keep in sync with that section.
+ *
+ * Palette: Style E · Cool Slate
+ *   surfaces: cool gray with subtle blue undertone
+ *   accent:   low-saturation slate blue (~30% saturation)
+ *   text:     cool gray hierarchy
+ *
+ * 主题思路:把 visual chrome 收到一套低饱和度的 cool slate + cool gray
+ * 调色板,让数据色(A/B compartment、SV、PEI 等)的红绿橙更突出。
+ * Biology 中仅 loop-arc / gene-exon / gene-intron 与 accent 同色族,
+ * 便于和数据可视化色形成层次,而非冲突。
  */
 
 :root {
-  /* surface */
-  --color-bg: #ffffff;
-  --color-surface-1: #f7f8f8;
-  --color-surface-2: #eef1f1;
-  --color-border: #e5e8e8;
-  --color-divider-strong: #c8cdcd;
+  /* surface — cool gray, very subtle blue undertone */
+  --color-bg: #fafbfc;
+  --color-surface-1: #f3f5f7;
+  --color-surface-2: #e7eaee;
+  --color-border: #d8dde2;
+  --color-divider-strong: #bcc2c8;
 
-  /* text */
-  --color-text-primary: #0f1f24;
-  --color-text-secondary: #3a4a52;
-  --color-text-tertiary: #6c7a82;
+  /* text — cool gray hierarchy */
+  --color-text-primary: #1a2128;
+  --color-text-secondary: #4b5560;
+  --color-text-tertiary: #6e7884;
   --color-text-on-accent: #ffffff;
 
-  /* accent — deep teal (Style D · Clean Academic) */
-  --color-accent: #0f766e;
-  --color-accent-soft: #d9ece8;
-  --color-accent-deep: #0c5d57;
-  --color-accent-tint: #ecf5f3;
+  /* accent — low-saturation slate blue (~30% saturation) */
+  --color-accent: #4d6e8c;
+  --color-accent-soft: #d8e1eb;
+  --color-accent-deep: #3a556e;
+  --color-accent-tint: #eef2f6;
 
-  /* biology — keep meaning stable across themes */
+  /* footer — deep slate (home page dark footer) */
+  --color-footer-bg: #22303d;
+  --color-footer-surface: #2b3d4d;
+  --color-footer-text: #c6cfd8;
+
+  /* biology — semantic colors stay differentiated; only the
+     slate-blue family members (loop arc / gene exon / intron)
+     track the accent so data viz reads as part of the same hue. */
   --color-a-compartment: #9d2c44;
   --color-b-compartment: #2e7d4e;
-  --color-tad-boundary: #1f2c2a;
-  --color-tad-body: #f7f8f8;
-  --color-loop-arc: #1f5b9d;
+  --color-tad-boundary: #2a3540;
+  --color-tad-body: #f3f5f7;
+  --color-loop-arc: #4d6e8c;
   --color-sv-del: #9d2c44;
   --color-sv-dup: #2e7d4e;
   --color-sv-inv: #a8651b;
   --color-sv-tra: #444444;
   --color-pei-anchor: #a8651b;
-  --color-gene-exon: #1f5b9d;
-  --color-gene-intron: #dde7f1;
+  --color-gene-exon: #4d6e8c;
+  --color-gene-intron: #d8e1eb;
 
   /* sample palettes */
   --sample-a: var(--color-a-compartment);

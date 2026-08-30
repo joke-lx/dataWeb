@@ -1,8 +1,9 @@
+/* i18n 切换器 — 适配深蓝 TopBar 底（白字 / 半透明白容器 / 白 pill 激活）。 */
 .i18n-toggle {
   display: flex;
   padding: 3px;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
   margin-right: 6px;
 }
@@ -10,7 +11,7 @@
 .i18n-toggle button {
   border: 0;
   background: transparent;
-  color: var(--color-text-tertiary);
+  color: rgba(255, 255, 255, 0.75);
   padding: 6px 10px;
   border-radius: 5px;
   font-size: 12px;
@@ -21,11 +22,12 @@
 }
 
 .i18n-toggle button:hover {
-  color: var(--color-text-primary);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .i18n-toggle button.active {
-  color: var(--color-text-on-accent);
-  background: var(--color-accent);
-  box-shadow: 0 1px 3px rgba(143, 45, 36, 0.16);
+  color: var(--color-accent-deep);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.24);
 }

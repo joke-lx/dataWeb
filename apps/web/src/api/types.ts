@@ -27,6 +27,14 @@ export interface Sample {
   dev_stage: string;
 }
 
+/** 一个可下载的文件（后端 /api/download/files 返回项）。 */
+export interface SampleFileMeta {
+  file: string;
+  format: string;
+  size_bytes: number;
+  description?: string;
+}
+
 /** BED 类记录共有的区间字段（chrom / start / end）。 */
 interface IntervalRecord {
   chrom: string;

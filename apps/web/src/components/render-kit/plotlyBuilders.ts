@@ -265,7 +265,7 @@ export function buildTadBar(
   title: string,
   height: number,
 ): PlotlyBuild {
-  const body = cssVar('--color-tad-body', '#f7f8f8');
+  const body = cssVar('--color-tad-body', '#f3f5f7');
   const boundary = cssVar('--color-tad-boundary', '#1f2c2a');
   const shapes = (records ?? [])
     .filter((r) => r.chrom === viewport.chr)
@@ -395,8 +395,8 @@ export function buildGene(
   title: string,
   height: number,
 ): PlotlyBuild {
-  const exonColor = cssVar('--color-gene-exon', '#26417f');
-  const intronColor = cssVar('--color-gene-intron', '#26417f');
+  const exonColor = cssVar('--color-gene-exon', '#4d6e8c');
+  const intronColor = cssVar('--color-gene-intron', '#d8e1eb');
 
   interface GeneAccum {
     start: number;

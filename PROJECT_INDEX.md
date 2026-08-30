@@ -257,11 +257,11 @@ dataWeb/
 make install                    # 等价于 pnpm install
 
 # 并行启动 api + web（推荐）
-make dev                        # :8000 (api) + :5173 (web)
+make dev                        # :8000 (api) + :8181 (web)
 
 # 分别启动
 make api                        # FastAPI 监听 :8000
-make web                        # Vite 监听 :5173
+make web                        # Vite 监听 :8181
 
 # 验证
 make typecheck                  # tsc --noEmit
@@ -269,7 +269,7 @@ pnpm --filter @dataweb/web build
 pytest apps/api/tests/          # 42 passed（真实 bigwig 用例需 pyBigWig）
 
 # 浏览器
-# 访问 http://localhost:5173 ，默认路由 /hic
+# 访问 http://localhost:8181 ，默认路由 /hic
 ```
 
 ## 🚧 下一步

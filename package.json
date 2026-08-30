@@ -1,8 +1,22 @@
 {
-	"dependencies": {
-		"@reduxjs/toolkit": "^2.12.0",
-		"react-redux": "^9.3.0",
-		"react-intl": "^10.1.18",
-		"@formatjs/intl": "^4.1.17"
-	}
+  "name": "dataweb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "dataWeb — multi-omics 3D genome browser for pigs/chickens (monorepo root).",
+  "packageManager": "pnpm@10.25.0",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:api": "cd apps/api && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:web": "pnpm --filter @dataweb/web dev",
+    "build": "pnpm -r run build",
+    "preview": "pnpm --filter @dataweb/web preview",
+    "typecheck": "pnpm -r run typecheck",
+    "i18n:check": "node scripts/i18n-lint.js",
+    "test": "pnpm run test:api",
+    "test:api": "cd apps/api && uv run pytest"
+  }
 }

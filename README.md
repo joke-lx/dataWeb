@@ -35,7 +35,7 @@ make dev
 
 # 或分别启动
 make api    # FastAPI 监听 :8000
-make web    # Vite 监听 :5173
+make web    # Vite 监听 :8181
 
 # 类型检查 / 构建
 make typecheck
@@ -60,7 +60,7 @@ docker compose up --build
 排障等完整说明见 **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**。
 
 
-启动后访问 http://localhost:5173 ，默认路由 `/hic`。
+启动后访问 http://localhost:8181 ，默认路由 `/hic`。
 
 ## 路由结构（5）
 

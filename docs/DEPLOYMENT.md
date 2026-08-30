@@ -83,7 +83,7 @@ docker compose up --build
 # web → http://localhost:8080  （nginx，/api 反代到 api 容器）
 ```
 
-非容器开发仍可用 `make dev`（api :8000 + web :5173）。
+非容器开发仍可用 `make dev`（api :8000 + web :8181）。
 
 ## 排障
 

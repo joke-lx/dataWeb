@@ -20,20 +20,11 @@
  */
 import { useEffect, useState } from 'react';
 
+import { fetchDerivedCtcfLoop, type DerivedLoopRecord, type DerivedSource } from '../../api/client';
+import { ModelSourceBadge } from '../feedback/ModelSourceBadge';
 import { bpToPx } from '../../genomics/coords';
 import { useViewport } from '../../store/viewport';
 import './overlay.css';
-
-interface LoopRecord {
-  chrom1: string;
-  start1: number;
-  end1: number;
-  chrom2: string;
-  start2: number;
-  end2: number;
-  /** loop 强度，0~1；用于调透明度 */
-  score: number;
-}
 
 interface CTCFLoopsProps {
   /** 取哪个 sample 的 loop 数据 */
@@ -54,25 +45,31 @@ export function CTCFLoops({
   width,
 }: CTCFLoopsProps): JSX.Element {
   const viewport = useViewport();
-  const [records, setRecords] = useState<LoopRecord[]>([]);
+  const [records, setRecords] = useState<DerivedLoopRecord[]>([]);
+  const [source, setSource] = useState<DerivedSource | undefined>(undefined);
 
-  // 监听 sample/viewport 变化重新拉 loop；abort 防止过期响应覆盖新数据
+  // 监听 sample/viewport 变化重新拉派生 loop；fetchDerivedCtcfLoop 内部走
+  // react-query 不可见的直接 fetch(本组件单个 overlay 局部使用);abort 防过期覆盖
   useEffect(() => {
     const ctrl = new AbortController();
-    fetch(
-      `/api/ctcf/loops?sample=${sampleId}&chr=${viewport.chr}&start=${viewport.start}&end=${viewport.end}`,
-      { signal: ctrl.signal },
-    )
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-      .then((j: { records?: LoopRecord[] }) =>
-        setRecords(j.records ?? []),
-      )
-      .catch((e: Error) => {
-        // AbortError 是正常取消路径，不污染 console
-        if (e.name !== 'AbortError') console.error('ctcf loops', e);
-      });
+    const run = async () => {
+      try {
+        const data = await fetchDerivedCtcfLoop(
+          sampleId,
+          viewport.chr,
+          viewport.start,
+          viewport.end,
+          viewport.bin,
+        );
+        setRecords(data.records ?? []);
+        setSource(data.source);
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') console.error('ctcf loops', e);
+      }
+    };
+    void run();
     return () => ctrl.abort();
-  }, [sampleId, viewport.chr, viewport.start, viewport.end]);
+  }, [sampleId, viewport.chr, viewport.start, viewport.end, viewport.bin]);
 
   // 从 CSS 变量读 loop 弧颜色——让主题切换（light/dark）时弧线颜色也跟着变
   // 兜底 #b8b8b8 用于变量未定义的极端情况（SSR / CSS 未加载完成）
@@ -82,40 +79,42 @@ export function CTCFLoops({
       .trim() || '#b8b8b8';
 
   return (
-    <svg
-      className="ctcf-loops-overlay"
-      width={width}
-      height={height}
-      style={{ background: 'var(--color-surface-1)' }}
-    >
-      {records.map((rec, i) => {
-        // 跨染色体的 loop 当前不支持——直接跳过
-        if (rec.chrom1 !== viewport.chr) return null;
-        const x1 = bpToPx(rec.start1, viewport, width);
-        const x2 = bpToPx(rec.start2, viewport, width);
-        // viewport 外的弧跳过——既不可见也会拖累后续重排
-        if (x1 < 0 || x2 > width || x1 > width || x2 < 0) return null;
-        const yMax = height - 4;
-        const midX = (x1 + x2) / 2;
-        // 二次贝塞尔：起点(x1,yMax) → 控制点(midX, 4) → 终点(x2,yMax)
-        // 控制点靠近顶部 → 形成对称"拱形"，符合 loop 视觉约定
-        const path = `M ${x1} ${yMax} Q ${midX} ${4} ${x2} ${yMax}`;
-        return (
-          <g key={i}>
-            <path
-              d={path}
-              stroke={arcColor}
-              strokeWidth={1.5}
-              fill="none"
-              // score 越高透明度越高（0.4~1.0），让强 loop 视觉上更突出
-              opacity={0.4 + rec.score * 0.6}
-            />
-            {/* 两端 anchor 小圆点——让用户知道 loop 起止位置 */}
-            <circle cx={x1} cy={yMax} r={3} fill={arcColor} />
-            <circle cx={x2} cy={yMax} r={3} fill={arcColor} />
-          </g>
-        );
-      })}
-    </svg>
+    <div className="ctcf-loops-wrap" style={{ position: 'relative' }}>
+      <ModelSourceBadge source={source} />
+      <svg
+        className="ctcf-loops-overlay"
+        width={width}
+        height={height}
+        style={{ background: 'var(--color-surface-1)' }}
+      >
+        {records.map((rec, i) => {
+          // 跨染色体的 loop 当前不支持——直接跳过
+          if (rec.chrom1 !== viewport.chr) return null;
+          const x1 = bpToPx(rec.start1, viewport, width);
+          const x2 = bpToPx(rec.start2, viewport, width);
+          // viewport 外的弧跳过——既不可见也会拖累后续重排
+          if (x1 < 0 || x2 > width || x1 > width || x2 < 0) return null;
+          const yMax = height - 4;
+          const midX = (x1 + x2) / 2;
+          // 二次贝塞尔：起点(x1,yMax) → 控制点(midX, 4) → 终点(x2,yMax)
+          // 控制点靠近顶部 → 形成对称"拱形"，符合 loop 视觉约定
+          const path = `M ${x1} ${yMax} Q ${midX} ${4} ${x2} ${yMax}`;
+          return (
+            <g key={i}>
+              <path
+                d={path}
+                stroke={arcColor}
+                strokeWidth={1.5}
+                fill="none"
+                opacity={0.4 + rec.score * 0.6}
+              />
+              {/* 两端 anchor 小圆点——让用户知道 loop 起止位置 */}
+              <circle cx={x1} cy={yMax} r={3} fill={arcColor} />
+              <circle cx={x2} cy={yMax} r={3} fill={arcColor} />
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }

@@ -20,6 +20,7 @@ import { Provider } from 'react-redux';
 import { IntlProvider } from 'react-intl';
 
 import { App } from './App';
+import { AntdProvider } from './providers/AntdProvider';
 import { i18nStore, setLocale, useAppSelector } from './i18n/store';
 import enMessages from './i18n/messages/en.json';
 import zhMessages from './i18n/messages/zh-CN.json';
@@ -60,7 +61,9 @@ createRoot(container).render(
     <QueryClientProvider client={queryClient}>
       <Provider store={i18nStore}>
         {/* Provider 必须包裹 I18nApp，以便后者能 useAppSelector 读 locale。 */}
-        <I18nApp><App /></I18nApp>
+        <I18nApp>
+          <AntdProvider><App /></AntdProvider>
+        </I18nApp>
       </Provider>
     </QueryClientProvider>
   </StrictMode>,

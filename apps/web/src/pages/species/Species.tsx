@@ -15,70 +15,21 @@ import { Link, useParams } from 'react-router-dom';
 
 import type { Sample } from '../../api/types';
 import { RouteShell } from '../../components/route/RouteShell';
+import { ArrowIcon, SearchIcon, tissueIcon } from '../../components/icons/tissueIcons';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { useAppIntl } from '../../i18n';
 import './species.css';
 
-// ── SVG icon components ─────────────────────────────────────────────────────
-
-function BrainIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em">
-      <path d="M12 4C7 4 4 7 4 11c0 2 .8 3.5 2 4.5V19a1 1 0 001 1h2a1 1 0 001-1v-3" />
-      <path d="M12 4c5 0 8 3 8 7 0 2-.8 3.5-2 4.5V19a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3" />
-      <path d="M10 14v-2a2 2 0 114 0v2" />
-    </svg>
-  );
-}
-
-function LiverIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em">
-      <path d="M12 20c-4-2-7-6-7-10 0-3 2-5 4-5s3 1 3 3c0-2 1-3 3-3s4 2 4 5c0 4-3 8-7 10z" />
-      <path d="M12 20V9" />
-    </svg>
-  );
-}
-
-function MuscleIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em">
-      <path d="M3 14c0-3 3-5 5-3s2 5 4 7c2 2 5 4 8 3" />
-      <path d="M16 5c2-1 5 1 5 4s-2 6-4 7" />
-      <path d="M16 5l3 3" />
-      <path d="M8 11l3-2" />
-    </svg>
-  );
-}
-
-function SearchIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em">
-      <circle cx="11" cy="11" r="7" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function ArrowIcon(): JSX.Element {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="1em" height="1em">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </svg>
-  );
-}
-
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-const TISSUE_META: Record<string, { icon: () => JSX.Element; dot: string }> = {
-  Brain: { icon: BrainIcon, dot: 'td-brain' },
-  Liver: { icon: LiverIcon, dot: 'td-liver' },
-  Muscle: { icon: MuscleIcon, dot: 'td-muscle' },
+const TISSUE_DOT: Record<string, string> = {
+  Brain: 'td-brain',
+  Liver: 'td-liver',
+  Muscle: 'td-muscle',
 };
 
 function tissueMeta(tissue: string): { icon: () => JSX.Element; dot: string } {
-  return TISSUE_META[tissue] ?? { icon: BrainIcon, dot: 'td-other' };
+  return { icon: tissueIcon(tissue), dot: TISSUE_DOT[tissue] ?? 'td-other' };
 }
 
 type SortMode = 'id' | 'breed' | 'tissue';

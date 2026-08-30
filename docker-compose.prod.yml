@@ -12,6 +12,8 @@ services:
     environment:
       # Empty/optional data dir -> app falls back to deterministic mock data.
       DATAWEB_DATA_ROOT: /data
+      # Converted Hi-C npy caches live under /data/hic/npy (matches registry).
+      DATAWEB_HIC_ROOT: /data/hic
     volumes:
       - ./data:/data:ro
     restart: unless-stopped

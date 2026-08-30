@@ -17,6 +17,7 @@ from .generators import (
 )
 from .registry import CHROMOSOMES, SAMPLES, SPECIES, find_sample
 from .samples import CHROMOSOMES as _CHROMOSOMES  # re-export
+from .files import file_size, iter_file_bytes, sample_files
 
 __all__ = [
     "CHROMOSOMES",
@@ -28,8 +29,11 @@ __all__ = [
     "ctcf_loops",
     "ctcf_motif_matrix",
     "differential_hic",
+    "file_size",
     "find_sample",
     "hic_matrix",
     "insulation_score",
+    "iter_file_bytes",
+    "sample_files",
     "sv_records",
 ]

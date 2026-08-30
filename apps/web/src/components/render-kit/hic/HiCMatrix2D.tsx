@@ -180,7 +180,12 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const gl = canvas.getContext('webgl2');
+    // WebGL2 默认 preserveDrawingBuffer=false —— 绘制缓冲在浏览器 present 后被清空。
+    // 本组件的绘制只在 effect 里触发（视口变化 / 数据到达时才重画），发生在浏览器
+    // 提交帧之后；不保留缓冲时，合成器可能在后续合成或截图时读到已清空的缓冲，
+    // 屏幕上表现为矩阵空白。preserve=true 让上一次绘制结果保留到下一次绘制，
+    // 是"静态矩阵 + 按需重绘"场景的标准兜底，与 3D 视图的连续 rAF 渲染等效。
+    const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
     if (!gl) {
       setGlError(new Error('WebGL2 not supported'));
       return;
