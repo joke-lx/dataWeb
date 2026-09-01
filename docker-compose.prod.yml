@@ -15,7 +15,11 @@ services:
       # Converted Hi-C npy caches live under /data/hic/npy (matches registry).
       DATAWEB_HIC_ROOT: /data/hic
     volumes:
-      - ./data:/data:ro
+      # Absolute host path: the data bundle lives at /root/data on the server
+      # (uploaded via SFTP). A relative ./data would resolve to ~/dataweb/data,
+      # which the deploy workflow leaves as an empty dir — silently reverting
+      # every real-data view to mock after each deploy.
+      - /root/data:/data:ro
     restart: unless-stopped
     # No published port: only reachable on the internal network via web's /api.
     expose:
