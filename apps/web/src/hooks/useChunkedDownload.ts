@@ -287,8 +287,9 @@ export function useChunkedDownload({
         if (writableRef.current) {
           await writableRef.current.close();
           writableRef.current = null;
-        } else if (fallbackBlobsRef.current) {
-          await assembleAndTriggerDownload();
+        } else {
+          // FS Access 不可用 → 触发浏览器原生下载（流式 GET → 写盘）。
+          triggerBrowserDownload();
         }
         setStatus('done');
         cleanup();
@@ -303,24 +304,18 @@ export function useChunkedDownload({
       }
     };
 
-    // 兜底组装（无 FS Access）。
-    const assembleAndTriggerDownload = async () => {
-      const blobs = fallbackBlobsRef.current;
-      if (!blobs) return;
-      const sorted = chunksRef.current
-        .slice()
-        .sort((a, b) => a.index - b.index)
-        .map((c) => c.blob)
-        .filter((b): b is Blob => b !== null);
-      const full = new Blob(sorted, { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(full);
+    // 兜底：FS Access 不可用时，浏览器原生 GET + Content-Disposition
+    // 直接流式到磁盘（不在内存组装 Blob）。这是"直存"按钮的入口——不在
+    // 这里用 Blob 拼装,避免大文件 OOM。
+    const triggerBrowserDownload = () => {
+      const url = buildDownloadUrl(sampleId, fileName);
       const a = document.createElement('a');
       a.href = url;
       a.download = fileName;
+      a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
       a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
     };
 
     finishRef.current = async () => {
@@ -331,15 +326,16 @@ export function useChunkedDownload({
       if (writableRef.current) {
         await writableRef.current.close();
         writableRef.current = null;
-      } else if (fallbackBlobsRef.current) {
-        await assembleAndTriggerDownload();
+      } else {
+        // FS Access 不可用 → 触发浏览器原生下载（流式 GET → 写盘）。
+        triggerBrowserDownload();
       }
       setStatus('done');
       cleanup();
     };
 
     void run();
-  }, [cleanup, fileName, resetProgress, workerLoop]);
+  }, [cleanup, fileName, resetProgress, workerLoop, sampleId]);
 
   /** 暂停：abort 在途请求，已完成分片保留。 */
   const pause = useCallback(() => {

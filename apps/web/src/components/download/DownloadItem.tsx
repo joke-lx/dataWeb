@@ -2,10 +2,14 @@
  * DownloadItem — 单文件下载控件。
  *
  * 职责：根据文件大小选择路径 ——
- *  - < 100 MB：直接锚点下载（浏览器自动保存）；
- *  - >= 100 MB：分片下载，展示 antd Progress + 速度/ETA + 暂停/继续/取消。
- *
- * 同时用在 /database 下载抽屉与 Sample 详情页文件表里。
+ *  - < 100 MB：内存 blob + `<a download>` 触发（浏览器自动保存）。
+ *  - >= 100 MB 且 File System Access API 可用（Chrome/Edge HTTPS 或
+ *    localhost）：useChunkedDownload.start() 弹原生保存框 → 分片流式写盘，
+ *    全程零 JS Heap 占用，带进度/暂停/继续。
+ *  - >= 100 MB 且 FS Access 不可用（普通 HTTP 部署）：只显示"直存"按钮 —
+ *    浏览器原生 GET + Content-Disposition 流式到磁盘，零 JS Heap 占用，
+ *    牺牲细粒度进度（浏览器原生下载不暴露回调）。这是普通 HTTP 上
+ *    防止 OOM 的唯一安全路径。
  */
 
 import { type JSX } from 'react';
@@ -52,14 +56,33 @@ export function DownloadItem({ sampleId, file }: DownloadItemProps): JSX.Element
   return <ChunkedDownloadButton sampleId={sampleId} file={file} />;
 }
 
-/** 大文件：分片下载。 */
+/** 大文件：分片下载或直存。 */
 function ChunkedDownloadButton({ sampleId, file }: DownloadItemProps): JSX.Element {
   const { t } = useAppIntl();
   const dl = useChunkedDownload({ sampleId, fileName: file.file, totalBytes: file.size_bytes });
 
   const sizeLabel = formatBytes(file.size_bytes);
 
-  // 空闲态：开始按钮。
+  // FS Access API 不可用时（HTTP 上 Chrome 会拒绝），分片走 fallback 会触发内存
+  // 组装 Blob 路径（OOM 风险）。这种环境下直接显示"直存"按钮——浏览器原生
+  // GET + Content-Disposition 流式到磁盘，零 JS Heap 占用，放弃细粒度进度。
+  // 同时不调用 useChunkedDownload.start()，避免误入 fallback 路径。
+  const canStreamToDisk = typeof window !== 'undefined' && typeof window.showSaveFilePicker === 'function';
+  const streamUrl = buildDownloadUrl(sampleId, file.file);
+
+  if (!canStreamToDisk) {
+    return (
+      <Tooltip title={t('download.fallbackNote')}>
+        <a href={streamUrl} download={file.file} className="dl-stream">
+          <Button size="small" icon={<DownloadOutlined />}>
+            {t('download.direct')} · {sizeLabel}
+          </Button>
+        </a>
+      </Tooltip>
+    );
+  }
+
+  // 空闲态：开始分片（FS Access 写盘，零内存）。
   if (dl.status === 'idle') {
     return (
       <Button
@@ -136,11 +159,6 @@ function ChunkedDownloadButton({ sampleId, file }: DownloadItemProps): JSX.Eleme
       </div>
       {dl.status === 'error' && (
         <div className="dl-chunked__error">{dl.error}</div>
-      )}
-      {typeof window.showSaveFilePicker !== 'function' && dl.isActive && (
-        <Tooltip title={t('download.fallbackNote')}>
-          <Tag className="dl-chunked__fallback-note">{t('download.fallbackNote')}</Tag>
-        </Tooltip>
       )}
     </div>
   );

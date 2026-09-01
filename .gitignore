@@ -18,3 +18,4 @@ apps/web/vite.config.js
 /data
 apps/*/data
 .claude/worktrees/
+temp/
