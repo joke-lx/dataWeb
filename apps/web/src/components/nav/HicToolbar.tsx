@@ -1,12 +1,13 @@
 /**
  * HicToolbar —— Hi-C 接触图的「快速调整工具栏」（对应参考 3D Genome Browser 2.0）。
  *
- * 一行图标按钮，全部为受控组件：视觉开关由父级持有状态并通过 props 传入，
- * 本组件只负责渲染 + 派发变更。缩放类操作（zoom in / out / reset）直接命令式
- * 调用当前面板的 viewport store（同步关时为面板独立 store，同步开/普通页回退全局）。
+ * 独立成行、渲染在图表卡片**外部**（不压在 Hi-C 矩阵上）。全部开关受控：
+ * 视觉状态由父级持有并通过 props 传入；本组件只渲染 + 派发变更。
  *
- * 图标一律使用内联单色 SVG（stroke=currentColor），不依赖原生 emoji / 系统字体
- * 字形——跨平台渲染一致，且按钮激活态（蓝底白字）下图标自动反色。
+ * 图标一律内联单色 SVG（stroke/fill=currentColor），不依赖原生 emoji。
+ *
+ * 导出 PNG/SVG：父级传入 `getCanvas()` 返回当前 Hi-C WebGL canvas，本组件
+ * 用 toDataURL 同步导出（WebGL preserveDrawingBuffer=true，可靠）。
  */
 import type { JSX, ReactNode } from 'react';
 
@@ -16,6 +17,36 @@ import './hic-toolbar.css';
 
 /** 单次缩放步长（zoom in 放大 1.5×，zoom out 缩小到 1/1.5）。 */
 const ZOOM_STEP = 1.5;
+
+/** 把 canvas 同步导出为 PNG 并下载。 */
+function downloadCanvasPng(canvas: HTMLCanvasElement, filename: string): void {
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+/** 把 canvas 光栅内嵌进独立 .svg 文件下载。 */
+function downloadCanvasSvg(canvas: HTMLCanvasElement, filename: string): void {
+  const dataUrl = canvas.toDataURL('image/png');
+  const w = canvas.width;
+  const h = canvas.height;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+    `<image href="${dataUrl}" width="${w}" height="${h}"/>` +
+    `</svg>`;
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 interface HicToolbarProps {
   /** Triangle Mode：只显示上三角。 */
@@ -30,20 +61,43 @@ interface HicToolbarProps {
   /** 数据归一化方式。 */
   normalization: HicNormalization;
   onNormalizationChange: (value: HicNormalization) => void;
-  /** 导出当前矩阵为 PNG。 */
-  onExportPng: () => void;
-  /** 导出当前矩阵为 SVG。 */
-  onExportSvg: () => void;
-  /** 进入全屏（Hi-C 视图容器）。 */
+  /** 取当前 Hi-C canvas（用于 PNG/SVG 导出）。 */
+  getCanvas: () => HTMLCanvasElement | null;
+  /** 导出文件名前缀（如样本 id）。 */
+  filenamePrefix: string;
+  /** 进入全屏。 */
   onFullscreen: () => void;
   /** 手动色阶上界缩放（1.0=Auto 全上界，0.1=压到 10%）。 */
   vmaxScale: number;
   onVmaxScaleChange: (value: number) => void;
-  /** 行尾右侧附加内容（如 Export PDF 按钮），自动靠右对齐。 */
+  /** 行尾右侧附加内容（如 Export PDF 按钮）。 */
   actions?: ReactNode;
 }
 
-/* ── 内联单色 SVG 图标（16×16，stroke/fill = currentColor）────────────── */
+/** 单个图标按钮。 */
+interface ToolButtonProps {
+  title: string;
+  onClick: () => void;
+  active?: boolean;
+  children: ReactNode;
+}
+
+function ToolButton({ title, onClick, active, children }: ToolButtonProps): JSX.Element {
+  return (
+    <button
+      type="button"
+      className={'hic-toolbar__btn' + (active ? ' is-active' : '')}
+      title={title}
+      aria-label={title}
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ── 内联单色 SVG 图标（16×16，currentColor）────────────────────────── */
 
 function LockIcon(): JSX.Element {
   return (
@@ -54,6 +108,38 @@ function LockIcon(): JSX.Element {
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ZoomInIcon(): JSX.Element {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M10.5 10.5 L13.5 13.5 M7 5v4 M5 7h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ZoomOutIcon(): JSX.Element {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M10.5 10.5 L13.5 13.5 M5 7h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ResetIcon(): JSX.Element {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2.5 8a5.5 5.5 0 1 1 1.6 3.9 M2.5 8V4.5 M2.5 8H6"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -81,31 +167,8 @@ function FullscreenIcon(): JSX.Element {
   );
 }
 
-/** 单个图标按钮的统一 props。 */
-interface ToolButtonProps {
-  title: string;
-  onClick: () => void;
-  active?: boolean;
-  children: ReactNode;
-}
-
-function ToolButton({ title, onClick, active, children }: ToolButtonProps): JSX.Element {
-  return (
-    <button
-      type="button"
-      className={'hic-toolbar__btn' + (active ? ' is-active' : '')}
-      title={title}
-      aria-label={title}
-      aria-pressed={active}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
-
 /**
- * 快速调整工具栏。缩放按钮直接操作当前面板 viewport；其余开关受控。
+ * 快速调整工具栏（独立一行）。缩放按钮直接操作当前面板 viewport；其余受控。
  */
 export function HicToolbar({
   triangle,
@@ -116,8 +179,8 @@ export function HicToolbar({
   onLockResolutionChange,
   normalization,
   onNormalizationChange,
-  onExportPng,
-  onExportSvg,
+  getCanvas,
+  filenamePrefix,
   onFullscreen,
   vmaxScale,
   onVmaxScaleChange,
@@ -125,17 +188,26 @@ export function HicToolbar({
 }: HicToolbarProps): JSX.Element {
   const viewportStore = usePanelViewportStore();
 
+  const exportPng = () => {
+    const canvas = getCanvas();
+    if (canvas) downloadCanvasPng(canvas, `${filenamePrefix}_hic.png`);
+  };
+  const exportSvg = () => {
+    const canvas = getCanvas();
+    if (canvas) downloadCanvasSvg(canvas, `${filenamePrefix}_hic.svg`);
+  };
+
   return (
     <div className="hic-toolbar" role="toolbar" aria-label="Hi-C quick adjust">
       {/* 缩放 */}
       <ToolButton title="Zoom in" onClick={() => viewportStore.getState().zoom(ZOOM_STEP)}>
-        +
+        <ZoomInIcon />
       </ToolButton>
       <ToolButton title="Zoom out" onClick={() => viewportStore.getState().zoom(1 / ZOOM_STEP)}>
-        −
+        <ZoomOutIcon />
       </ToolButton>
       <ToolButton title="Reset view" onClick={() => viewportStore.getState().reset()}>
-        ⟲
+        <ResetIcon />
       </ToolButton>
 
       <span className="hic-toolbar__sep" aria-hidden="true" />
@@ -169,7 +241,7 @@ export function HicToolbar({
 
       <span className="hic-toolbar__sep" aria-hidden="true" />
 
-      {/* 手动色阶上界滑杆（对应参考图 b 的 1044.0 滑杆） */}
+      {/* 手动色阶上界滑杆 */}
       <label className="hic-toolbar__slider-wrap" title="Color scale upper bound">
         <input
           type="range"
@@ -206,17 +278,17 @@ export function HicToolbar({
       <span className="hic-toolbar__sep" aria-hidden="true" />
 
       {/* 导出 + 全屏 */}
-      <ToolButton title="Export plot as PNG" onClick={onExportPng}>
+      <ToolButton title="Export plot as PNG" onClick={exportPng}>
         PNG
       </ToolButton>
-      <ToolButton title="Export plot as SVG" onClick={onExportSvg}>
+      <ToolButton title="Export plot as SVG" onClick={exportSvg}>
         SVG
       </ToolButton>
       <ToolButton title="Fullscreen view" onClick={onFullscreen}>
         <FullscreenIcon />
       </ToolButton>
 
-      {/* 行尾右侧插槽（Export PDF 等），margin-left:auto 顶到最右 */}
+      {/* 行尾右侧插槽（Export PDF 等） */}
       {actions && <div className="hic-toolbar__actions">{actions}</div>}
     </div>
   );

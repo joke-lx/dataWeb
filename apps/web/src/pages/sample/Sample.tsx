@@ -20,9 +20,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'rea
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import type { Sample } from '../../api/types';
+import type { HicNormalization } from '../../api/client';
 import { ModelFactory } from '../../components/models';
 import { InViewSection } from '../../components/lazy/InViewSection';
 import { RegionInput } from '../../components/nav/RegionInput';
+import { HicToolbar } from '../../components/nav/HicToolbar';
 import { ZoomSlider } from '../../components/nav/ZoomSlider';
 import { Popover } from '../../components/popover/Popover';
 import { RouteShell } from '../../components/route/RouteShell';
@@ -141,6 +143,23 @@ export function Sample(): JSX.Element {
     return DEFAULT_TYPES;
   }, []); // 只在首挂载初始化一次
   const [selectedTypes, setSelectedTypes] = useState<TrackId[]>(initialTypes);
+
+  // ── Hi-C 快速调整工具栏状态（独立一行，受控下发给 GenomeBrowserView）──
+  const [triangle, setTriangle] = useState(false);
+  const [autoColor, setAutoColor] = useState(true);
+  const [lockResolution, setLockResolution] = useState(false);
+  const [normalization, setNormalization] = useState<HicNormalization>('log2');
+  const [vmaxScale, setVmaxScale] = useState(1);
+  const hicWrapRef = useRef<HTMLDivElement>(null);
+  const enterHicFullscreen = () => {
+    const el = hicWrapRef.current;
+    if (!el) return;
+    if (document.fullscreenElement !== el) {
+      el.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
 
   // toggle 一个 tab：已选则移除、未选则追加（保持原顺序，追加到末尾）。
   const toggleType = useCallback(
@@ -382,7 +401,7 @@ export function Sample(): JSX.Element {
           )}
         </>
       ) : (
-        <div className="gbv-hic-host" data-crosshair-host>
+        <div className="gbv-hic-host" data-crosshair-host ref={hicWrapRef}>
           <GenomeBrowserView
             sampleId={sample.id}
             tracks={visibleSections.tracks !== false ? selectedTypes : []}
@@ -392,7 +411,13 @@ export function Sample(): JSX.Element {
               pc1: t('sample.genomeBrowser.pc1'),
               gene: t('sample.genomeBrowser.gene'),
             }}
-            toolbarActions={<ExportPdfButton label={t('sample.exportPdf')} />}
+            hicOptions={{
+              triangle,
+              colorMode: autoColor ? 'auto' : 'full',
+              normalization,
+              lockResolution,
+              vmaxScale,
+            }}
           />
           {/* 十字准线 + 区域说明：悬浮 Hi-C 时竖线贯穿全部轨道 */}
           <CrosshairLayer />
@@ -459,6 +484,25 @@ export function Sample(): JSX.Element {
             <span className="sample-region__bin-label">bin</span>
             <ZoomSlider />
           </div>
+          {/* Hi-C 快速调整工具栏：与坐标/分辨率同行（compare 模式由各 ComparePanel 自带） */}
+          {!compareActive && (
+            <HicToolbar
+              triangle={triangle}
+              onTriangleChange={setTriangle}
+              autoColor={autoColor}
+              onAutoColorChange={setAutoColor}
+              lockResolution={lockResolution}
+              onLockResolutionChange={setLockResolution}
+              normalization={normalization}
+              onNormalizationChange={setNormalization}
+              getCanvas={() => hicWrapRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas') ?? null}
+              filenamePrefix={sample.id}
+              onFullscreen={enterHicFullscreen}
+              vmaxScale={vmaxScale}
+              onVmaxScaleChange={setVmaxScale}
+              actions={<ExportPdfButton label={t('sample.exportPdf')} />}
+            />
+          )}
         </div>
       }
     >
@@ -501,9 +545,6 @@ export function Sample(): JSX.Element {
         <div className="sample-linear__main">
           {visibleSections.hic !== false && (
             <section id="hic" data-section="hic" className="sample-section">
-              <h3 className="sample-section__title">
-                <span>{t('sample.sections.hic')}</span>
-              </h3>
               {hicSection}
             </section>
           )}

@@ -17,12 +17,14 @@
  *    Save Session / Synchronize All Charts）。
  */
 
-import type { JSX } from 'react';
+import { useState, useRef, type JSX } from 'react';
 
 import type { Sample } from '../../api/types';
+import type { HicNormalization } from '../../api/client';
 import { PanelViewportProvider } from '../../hooks/usePanelViewport';
 import { useAppIntl } from '../../i18n';
 import { RegionInput } from '../../components/nav/RegionInput';
+import { HicToolbar } from '../../components/nav/HicToolbar';
 import { ZoomSlider } from '../../components/nav/ZoomSlider';
 import { GenomeBrowserView } from '../../components/models/tracks/GenomeBrowserView';
 import { CrosshairLayer } from '../../components/overlay/CrosshairLayer';
@@ -62,6 +64,23 @@ function ComparePanelBody({
 }): JSX.Element {
   const { t } = useAppIntl();
 
+  // 每面板独立的快速调整工具栏状态。
+  const [triangle, setTriangle] = useState(false);
+  const [autoColor, setAutoColor] = useState(true);
+  const [lockResolution, setLockResolution] = useState(false);
+  const [normalization, setNormalization] = useState<HicNormalization>('log2');
+  const [vmaxScale, setVmaxScale] = useState(1);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const enterFullscreen = () => {
+    const el = bodyRef.current;
+    if (!el) return;
+    if (document.fullscreenElement !== el) {
+      el.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
+
   return (
     <section className="compare-panel" data-sample-id={sample.id}>
       <header className="compare-panel__header">
@@ -97,7 +116,23 @@ function ComparePanelBody({
           className="gbv-hic-host"
           data-crosshair-host
           data-crosshair-id={sample.id}
+          ref={bodyRef}
         >
+          <HicToolbar
+            triangle={triangle}
+            onTriangleChange={setTriangle}
+            autoColor={autoColor}
+            onAutoColorChange={setAutoColor}
+            lockResolution={lockResolution}
+            onLockResolutionChange={setLockResolution}
+            normalization={normalization}
+            onNormalizationChange={setNormalization}
+            getCanvas={() => bodyRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas') ?? null}
+            filenamePrefix={sample.id}
+            onFullscreen={enterFullscreen}
+            vmaxScale={vmaxScale}
+            onVmaxScaleChange={setVmaxScale}
+          />
           <GenomeBrowserView
             sampleId={sample.id}
             tracks={COMPARE_TRACKS}
@@ -106,6 +141,13 @@ function ComparePanelBody({
               loops: t('sample.genomeBrowser.loops'),
               pc1: t('sample.genomeBrowser.pc1'),
               gene: t('sample.genomeBrowser.gene'),
+            }}
+            hicOptions={{
+              triangle,
+              colorMode: autoColor ? 'auto' : 'full',
+              normalization,
+              lockResolution,
+              vmaxScale,
             }}
           />
           <CrosshairLayer hostId={sample.id} />

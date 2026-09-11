@@ -92,3 +92,14 @@
   align-items: center;
   gap: 4px;
 }
+
+/* 嵌入页面顶部 sample-toolbar 时：去掉自身灰底/边框，融入顶条 */
+.sample-toolbar .hic-toolbar {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
