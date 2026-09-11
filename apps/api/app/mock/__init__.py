@@ -13,6 +13,8 @@ from .generators import (
     differential_hic,
     hic_matrix,
     insulation_score,
+    activity_signal,
+    pc1_signal,
     sv_records,
 )
 from .registry import CHROMOSOMES, SAMPLES, SPECIES, find_sample
@@ -33,6 +35,8 @@ __all__ = [
     "find_sample",
     "hic_matrix",
     "insulation_score",
+    "activity_signal",
+    "pc1_signal",
     "iter_file_bytes",
     "sample_files",
     "sv_records",

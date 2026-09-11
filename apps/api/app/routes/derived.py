@@ -30,6 +30,9 @@ from fastapi.responses import Response
 
 from app.mock import bed_records as mock_bed_records
 from app.mock import differential_hic as mock_differential_hic
+from app.mock import activity_signal as mock_activity_signal
+from app.mock import pc1_signal as mock_pc1_signal
+from app.mock import ctcf_loops as mock_ctcf_loops
 from app.real_data.derived import (
     HiCCoords,
     get_strategy,
@@ -283,7 +286,9 @@ async def derived_ctcf_loop(
     """
     mat, is_real = _load_real_matrix(sample, chr, start, end, bin)
     if not is_real or mat is None:
-        return {"records": [], "source": "mock"}
+        logger.debug("Falling back to mock ctcf_loop for %s/%s", sample, chr)
+        records = mock_ctcf_loops(sample, chr, start, end)
+        return {"records": records, "source": "mock"}
     coords = HiCCoords(chrom=chr, start=start, end=end, bin_size=_bin_size_for(start, end, bin))
     result = get_strategy("ctcf_loop").compute(coords, {"mat": mat})
     bin_size = coords.bin_size
@@ -352,10 +357,12 @@ async def derived_activity(
     """
     mat, is_real = _load_real_matrix(sample, chr, start, end, bin)
     if not is_real or mat is None:
+        logger.debug("Falling back to mock activity for %s/%s", sample, chr)
+        records = mock_activity_signal(sample, chr, start, end, n_bins)
         return {
-            "records": [],
+            "records": records,
             "source": "ab_proxy",
-            "note": "Hi-C data unavailable - cannot derive activity proxy.",
+            "note": "Mock A/B activity proxy (Hi-C unavailable).",
         }
     coords = HiCCoords(chrom=chr, start=start, end=end, bin_size=_bin_size_for(start, end, bin))
     result = get_strategy("activity_signal").compute(coords, {"mat": mat})
@@ -378,3 +385,43 @@ async def derived_activity(
         "source": "ab_proxy",
         "note": str(result.extra.get("note", "Derived from Hi-C A/B compartment.")),
     }
+
+
+@router.get("/derived/pc1")
+async def derived_pc1(
+    sample: Annotated[str, Query(description="Sample id")],
+    chr: Annotated[str, Query(alias="chr", description="Chromosome")],
+    start: Annotated[int, Query(ge=0, description="Region start (bp)")],
+    end: Annotated[int, Query(gt=0, description="Region end (bp, exclusive)")],
+    bin: Annotated[int, Query(gt=0, description="Bin size (bp)")],
+    n_bins: Annotated[int, Query(ge=1, le=2000, description="Output bins")] = 100,
+) -> dict:
+    """PC1 — first principal component of the Hi-C sub-matrix (real) or mock.
+
+    Computed as the eigenvector of the largest eigenvalue of the symmetric
+    log1p contact matrix (np.linalg.eigh). On mock fallback a deterministic
+    PC1-like signal is returned so the UI never breaks.
+    """
+    mat, is_real = _load_real_matrix(sample, chr, start, end, bin)
+    if not is_real or mat is None:
+        logger.debug("Falling back to mock pc1 for %s/%s", sample, chr)
+        records = mock_pc1_signal(sample, chr, start, end, n_bins)
+        return {"records": records, "source": "mock"}
+
+    try:
+        _, vec = np.linalg.eigh(mat)
+        pc1 = vec[:, -1].astype(np.float32)  # largest-eigenvalue eigenvector
+    except np.linalg.LinAlgError:
+        pc1 = np.zeros(mat.shape[0], dtype=np.float32)
+    if pc1.size != n_bins:
+        pc1 = _resample_1d(pc1, n_bins)
+    records = [
+        {
+            "chrom": chr,
+            "start": start + i * (end - start) // n_bins,
+            "end": start + (i + 1) * (end - start) // n_bins,
+            "score": float(pc1[i]),
+        }
+        for i in range(n_bins)
+    ]
+    return {"records": records, "source": "real"}

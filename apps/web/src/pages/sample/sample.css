@@ -100,15 +100,23 @@
   color: var(--color-accent) !important;
 }
 
-/* ═══ 线性单页布局（参考 detail.png）═══ */
+/* ═══ 详细页布局（参考站点详细页：左数据控制台 + 右主区）═══ */
 
-/* 线性主体：主列 + 右侧锚点栏 */
+/* 主体：左侧数据/轨道控制台 + 右侧主列 */
 .sample-linear {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 168px;
-  gap: 24px;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--space-4);
   padding: var(--space-4);
   align-items: start;
+}
+
+/* 左列容器：轨道控制台 + 概览 + 文件（右侧只留可视化） */
+.sample-linear__left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .sample-linear__main {
@@ -116,6 +124,191 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+/* ── 左侧数据/轨道控制台 ── */
+.sample-sidebar {
+  position: sticky;
+  top: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+/* 样本卡 */
+.sample-sidebar__sample {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+}
+.sample-sidebar__sample-id {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sample-sidebar__vs {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+.sample-sidebar__vs em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-right: 2px;
+}
+.sample-sidebar__meta {
+  margin: var(--space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.sample-sidebar__meta > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+.sample-sidebar__meta dt {
+  color: var(--color-text-tertiary);
+  flex: none;
+}
+.sample-sidebar__meta dd {
+  margin: 0;
+  color: var(--color-text-secondary);
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sample-sidebar__btn {
+  margin-top: var(--space-3);
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface-1);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+.sample-sidebar__btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.sample-sidebar__btn--muted {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+/* 分组卡（视图区块 / 轨道 / 文件） */
+.sample-sidebar__group {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+}
+.sample-sidebar__group h4 {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+.sample-sidebar__subgroup {
+  margin-top: var(--space-2);
+}
+.sample-sidebar__subgroup-label {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 2px;
+}
+
+/* 勾选列表 */
+.sample-sidebar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.sample-sidebar__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+}
+.sample-sidebar__check {
+  flex: none;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+.sample-sidebar__link {
+  display: block;
+  flex: 1;
+  padding: 3px 4px;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 12.5px;
+}
+.sample-sidebar__link:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-2);
+}
+.sample-sidebar__link.is-active {
+  color: var(--color-accent);
+  background: var(--color-accent-tint);
+  font-weight: 600;
+}
+.sample-sidebar__link.is-hidden {
+  color: var(--color-text-tertiary);
+  opacity: 0.55;
+  cursor: default;
+}
+.sample-sidebar__track-label {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+/* 文件摘要 */
+.sample-sidebar__files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sample-sidebar__files li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+.sample-sidebar__file-name {
+  color: var(--color-text-primary);
+}
+.sample-sidebar__file-fmt {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-tertiary);
 }
 
 /* 区块卡片 */
@@ -210,92 +403,6 @@
   background: var(--color-bg);
 }
 
-/* 右侧锚点导航 */
-.sample-anchor-nav {
-  position: sticky;
-  top: 56px;
-}
-
-.sample-anchor-nav__inner {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  font-size: 13px;
-}
-
-.sample-anchor-nav__compare-chip {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  padding: 4px 8px;
-  background: var(--color-accent-tint);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-}
-
-.sample-anchor-nav__compare-chip span {
-  color: var(--color-text-tertiary);
-}
-
-.sample-anchor-nav ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sample-anchor-nav a {
-  display: block;
-  padding: 5px 10px;
-  border-left: 2px solid transparent;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  font-size: 12.5px;
-  border-radius: 0 4px 4px 0;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.sample-anchor-nav a:hover {
-  color: var(--color-text-primary);
-  background: var(--color-surface-1);
-}
-
-.sample-anchor-nav a.active {
-  color: var(--color-accent);
-  border-left-color: var(--color-accent);
-  background: var(--color-accent-tint);
-  font-weight: 600;
-}
-
-/* 侧边栏勾选（viz 区块展示开关） */
-.sample-anchor-nav__item {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-.sample-anchor-nav__check {
-  flex: none;
-  margin: 0 2px 0 6px;
-  accent-color: var(--color-accent);
-  cursor: pointer;
-}
-.sample-anchor-nav a.is-hidden,
-.sample-anchor-nav a.is-hidden.active {
-  color: var(--color-text-tertiary);
-  border-left-color: transparent;
-  background: transparent;
-  font-weight: normal;
-  opacity: 0.55;
-  cursor: default;
-}
-.sample-anchor-nav a.is-hidden:hover,
-.sample-anchor-nav a.is-hidden.active:hover {
-  color: var(--color-text-tertiary);
-  background: transparent;
-}
-
 /* 懒挂载骨架 */
 .inview-skeleton {
   border-radius: 6px;
@@ -314,30 +421,233 @@
   100% { background-position: -100% 0; }
 }
 
-/* 响应式：锚点栏转顶部横向 chip */
+/* 响应式：左栏转顶部 */
 @media (max-width: 1100px) {
   .sample-linear {
     grid-template-columns: 1fr;
   }
-  .sample-anchor-nav {
-    position: static;
+  .sample-linear__left {
     order: -1;
   }
-  .sample-anchor-nav ul {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-  .sample-anchor-nav a {
-    border-left: 0;
-    border-radius: 999px;
-    padding: 4px 12px;
-    border: 1px solid var(--color-border);
-  }
-  .sample-anchor-nav a.active {
-    border-color: var(--color-accent);
+  .sample-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
   .sample-overview {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* ── GenomeBrowserView：参考站点详细页式 Hi-C 一体化视图 ──────────── */
+.genome-browser-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+/* loops lane：与 lane.css 的 .lane 同构（左标签 gutter + 内容列），
+   让 CTCF loop 弧线与 Hi-C 热图内容列对齐。 */
+.gbv-lane {
+  display: grid;
+  grid-template-columns: var(--label-gutter-width) minmax(280px, 1fr);
+  width: 100%;
+  border-bottom: var(--track-separator) solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.gbv-lane__label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-2);
+  overflow: hidden;
+  background: var(--color-surface-1);
+  border-right: var(--track-separator) solid var(--color-border);
+  text-align: right;
+  font-size: var(--font-size-small);
+}
+
+.gbv-lane__content {
+  position: relative;
+  display: flex;
+  min-width: 280px;
+  align-items: stretch;
+  justify-content: stretch;
+  overflow: hidden;
+  color: var(--color-text-tertiary);
+}
+
+
+/* ── Hi-C 区块合并子块（轨道 / 3D / CTCF 基序） ────────────────── */
+.sample-section__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.sample-section__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.export-pdf-btn {
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.export-pdf-btn:hover:not(:disabled) {
+  border-color: var(--color-accent, #4d6e8c);
+  color: var(--color-accent, #4d6e8c);
+}
+
+.export-pdf-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.gbv-subblock {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.gbv-subblock__title {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.gbv-subblock__body {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* ── 导出 PDF（打印）：只保留 Hi-C 综合区块 ──────────────────────── */
+@media print {
+  body.printing-hic .route-header,
+  body.printing-hic .route-toolbar,
+  body.printing-hic .sample-sidebar,
+  body.printing-hic .sample-section:not(#hic),
+  body.printing-hic .sample-section__actions,
+  body.printing-hic .export-pdf-btn {
+    display: none !important;
+  }
+  body.printing-hic .sample-linear {
+    display: block !important;
+  }
+  body.printing-hic .sample-linear__main {
+    width: 100% !important;
+  }
+  body.printing-hic #hic {
+    margin: 0 !important;
+    break-inside: avoid;
+  }
+  body.printing-hic {
+    background: #ffffff !important;
+  }
+}
+
+/* Hi-C 区块十字准线宿主：CrosshairLayer 以它为定位基准（position: relative）。 */
+.gbv-hic-host {
+  position: relative;
+}
+/* 轨道条目：相对定位，承载 TrackBinIndicator 锁定区域高亮列。 */
+.gbv-track-item {
+  position: relative;
+}
+
+/* 轨道堆叠容器：相对定位，承载轨道悬浮说明浮层的坐标基准。 */
+.gbv-tracks-stack {
+  position: relative;
+}
+
+/* 轨道悬浮说明：跟随鼠标显示"轨道名 + 该位置 bin 区间"，
+   与 Hi-C 十字线 tooltip 同风格（等宽字体、白底、轻阴影），
+   但不绘制十字线（十字线只在 Hi-C 热图内）。 */
+.gbv-track-tip {
+  /* 位置由 transform 驱动（跟随鼠标），left/top 固定 0；transform 走合成器层 */
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 40;
+  pointer-events: none;
+  background: var(--color-surface-1, #ffffff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 6px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--color-text-primary, #111827);
+  white-space: nowrap;
+  /* 显隐过渡：快速划过轨道时淡入淡出，避免浮层硬消失造成的闪屏 */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  will-change: transform, opacity;
+}
+.gbv-track-tip__title {
+  font-weight: 600;
+  color: var(--color-text-secondary, #374151);
+}
+.gbv-track-tip__region {
+  color: var(--color-text-primary, #111827);
+}
+.gbv-track-tip__row {
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+/* 轨道内锁定区域高亮：点击锁定后，选定 bin 在该轨道内容列内高亮
+   （属于轨道自身内容，不跨画布覆盖）。 */
+.gbv-track-bin-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: var(--color-accent, #4a6cf7);
+  opacity: 0.18;
+  border-left: 1px dashed var(--color-accent, #4a6cf7);
+  border-right: 1px dashed var(--color-accent, #4a6cf7);
+  z-index: 5;
+}
+
+/* Compare 面板坐标标尺：与内容列（120px gutter）对齐，显示视口三点刻度。 */
+.gbv-ruler {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 22px;
+  padding-left: 120px;
+  padding-right: 0;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg, #fff);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.gbv-ruler__label {
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.gbv-ruler__tick {
+  flex: 1 1 0;
 }

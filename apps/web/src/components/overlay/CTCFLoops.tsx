@@ -23,7 +23,7 @@ import { useEffect, useState } from 'react';
 import { fetchDerivedCtcfLoop, type DerivedLoopRecord, type DerivedSource } from '../../api/client';
 import { ModelSourceBadge } from '../feedback/ModelSourceBadge';
 import { bpToPx } from '../../genomics/coords';
-import { useViewport } from '../../store/viewport';
+import { usePanelViewport } from '../../hooks/usePanelViewport';
 import './overlay.css';
 
 interface CTCFLoopsProps {
@@ -44,7 +44,7 @@ export function CTCFLoops({
   height = 60,
   width,
 }: CTCFLoopsProps): JSX.Element {
-  const viewport = useViewport();
+  const viewport = usePanelViewport();
   const [records, setRecords] = useState<DerivedLoopRecord[]>([]);
   const [source, setSource] = useState<DerivedSource | undefined>(undefined);
 

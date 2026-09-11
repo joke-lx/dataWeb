@@ -16,7 +16,7 @@ import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';
 import type { TadRecord } from '../../../api/types';
-import { useViewport } from '../../../store/viewport';
+import { usePanelViewport } from '../../../hooks/usePanelViewport';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
 import { buildTadBar } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
@@ -28,6 +28,8 @@ interface TadBarProps {
   sampleId?: string;
   /** 覆盖 lane 像素高度。 */
   height?: number;
+  /** lane 标题（可选，缺省不显示标题行）。 */
+  title?: string;
 }
 
 /**
@@ -39,8 +41,9 @@ interface TadBarProps {
 export function TadBar({
   sampleId,
   height = TAD_LANE_HEIGHT,
+  title,
 }: TadBarProps): JSX.Element {
-  const viewport = useViewport();
+  const viewport = usePanelViewport();
   // gene / tad 等"非样本特异"轨道在缺省 sample 时回退到 Brain_BF3——见 hic 模型同款约定。
   const resolvedSample = sampleId ?? 'Brain_BF3';
 
@@ -64,6 +67,7 @@ export function TadBar({
   return (
     <div className="lane" style={{ height: `${height}px` }}>
       <div className="lane-label">
+        {title && <span className="lane-title">{title}</span>}
         <span className="lane-sample">{resolvedSample}</span>
       </div>
       <div

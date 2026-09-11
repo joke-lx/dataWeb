@@ -1,6 +1,6 @@
 /**
  * render-kit 中可复用的 Hi-C 二维矩阵渲染基件，统一处理 WebGL 生命周期、纹理上传、色图选择与光标映射。
- * 它同时服务标准矩阵和差异矩阵，只接收已解析的数据；这种边界使模型层决定“画什么”，本文件专注“如何高效绘制”。
+ * 它同时服务标准矩阵和差异矩阵，只接收已解析的数据；这种边界使模型层决定"画什么"，本文件专注"如何高效绘制"。
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
@@ -8,7 +8,7 @@ import type { JSX } from 'react';
 import type { HicMatrixResponse } from '../../../api/client';
 import { pxToBp } from '../../../genomics/coords';
 import { useCursor } from '../../../store/cursor';
-import { useViewport } from '../../../store/viewport';
+import { usePanelViewport } from '../../../hooks/usePanelViewport';
 import fragmentShader from '../../../genomics/hic-shader/fragment.glsl?raw';
 import vertexShader from '../../../genomics/hic-shader/vertex.glsl?raw';
 
@@ -18,11 +18,13 @@ interface HiCMatrix2DStandardProps {
   data?: HicMatrixResponse;
   loading?: boolean;
   error?: Error | null;
-  colorMap: 'rdbu' | 'viridis' | 'ref';
+  colorMap: 'rdbu' | 'viridis' | 'ref' | 'reds';
   vmin?: number;
   vmax?: number;
   bin: number;
   height?: number;
+  /** Triangle Mode：只显示对角线上方的上三角（下半部分裁掉）。 */
+  triangle?: boolean;
 }
 
 interface HiCMatrix2DDifferentialProps {
@@ -102,12 +104,13 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
     bin,
     height = 480,
   } = props;
+  const triangle = variant === 'standard' ? Boolean((props as HiCMatrix2DStandardProps).triangle) : false;
   // 差异模式强制使用白色中心发散色图（shader index 2）。
-  const effectiveColorMapIndex: 0 | 1 | 2 | 3 =
-    variant === 'differential' ? 2 : colorMap === 'viridis' ? 1 : colorMap === 'ref' ? 3 : 0;
+  const effectiveColorMapIndex: 0 | 1 | 2 | 3 | 4 =
+    variant === 'differential' ? 2 : colorMap === 'viridis' ? 1 : colorMap === 'ref' ? 3 : colorMap === 'reds' ? 4 : 0;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewport = useViewport();
+  const viewport = usePanelViewport();
   const glRef = useRef<WebGL2RenderingContext | null>(null);
   const textureRef = useRef<WebGLTexture | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
@@ -142,6 +145,7 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
       gl.getUniformLocation(program, 'u_colorMap'),
       effectiveColorMapIndex,
     );
+    gl.uniform1i(gl.getUniformLocation(program, 'u_triangle'), triangle ? 1 : 0);
     gl.uniform2f(
       gl.getUniformLocation(program, 'u_canvasSize'),
       drawingSide,
@@ -152,7 +156,7 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
       gl.bindTexture(gl.TEXTURE_2D, textureRef.current);
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-  }, [effectiveColorMapIndex, data, glReady, vmax, vmin]);
+  }, [effectiveColorMapIndex, data, glReady, triangle, vmax, vmin]);
 
   const uploadTexture = useCallback((): void => {
     const gl = glRef.current;
@@ -305,17 +309,112 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
       {...dataAttribute}
       style={{ height: `${height}px` }}
       onMouseMove={(event) => {
+        // 已点击锁定：十字线 / 说明 / 高亮带固定，不再跟随鼠标。
+        if (useCursor.getState().locked) return;
         const rect = event.currentTarget.getBoundingClientRect();
         if (rect.width <= 0) return;
         const localX = event.clientX - rect.left;
-        const stageContent = event.currentTarget.closest('.stage-content');
-        const stageRect = stageContent?.getBoundingClientRect();
-        // bp 使用矩阵局部坐标，而十字线 x 使用舞台坐标；二者分离才能同时对齐数据与跨轨道覆盖层。
-        const stageX = event.clientX - (stageRect?.left ?? rect.left);
-        const bp = pxToBp(localX, viewport, rect.width);
-        useCursor.getState().setCursor(stageX, bp, 'hic');
+        const localY = event.clientY - rect.top;
+        // 热图方块（canvas）在 .hic-matrix 容器内水平居中：
+        // bp 映射必须基于方块区域，容器左右有留白 + colormap 条，
+        // 用全宽映射会让鼠标位置与碱基坐标错位。
+        const canvasEl0 = canvasRef.current;
+        const canvasLeftInContainer = canvasEl0
+          ? canvasEl0.getBoundingClientRect().left - rect.left
+          : 0;
+        const canvasW0 = canvasEl0
+          ? Math.max(1, canvasEl0.getBoundingClientRect().width)
+          : rect.width;
+        const bp = pxToBp(
+          localX - canvasLeftInContainer,
+          viewport,
+          canvasW0,
+        );
+
+        // 十字线宿主容器（Hi-C 区块）：横线 / 竖线都相对它定位，
+        // 这样竖线能贯穿 Hi-C 下方的全部轨道，实现"轨道同步此区域"。
+        const host = event.currentTarget.closest('[data-crosshair-host]');
+        const hostRect = host?.getBoundingClientRect();
+        const hostX = event.clientX - (hostRect?.left ?? rect.left);
+        const hostY = event.clientY - (hostRect?.top ?? rect.top);
+        // Compare 工作区多面板：宿主带 data-crosshair-id，CrosshairLayer 据此
+        // 只在自己的面板内渲染十字线；单样本页无该属性 → null。
+        const hostId = host?.getAttribute('data-crosshair-id') ?? null;
+
+        // bin 级说明：鼠标所在列的 bin 区间（基因组坐标）与 Hi-C 强度值。
+        let binStart: number | null = null;
+        let binEnd: number | null = null;
+        let binIndex: number | null = null;
+        let value: number | null = null;
+        let binX0: number | null = null;
+        let binX1: number | null = null;
+        if (data && data.shape[1] > 0 && data.shape[0] > 0) {
+          // 热图方块（canvas）在容器内居中：bin→像素必须基于方块区域，
+          // 否则高亮带与轨道指示列（同以方块为基准）错位。
+          const canvasEl = canvasRef.current;
+          // localX 相对 .hic-matrix 容器（event.currentTarget），因此
+          // 鼠标在方块内的偏移要减 canvas 相对容器的 left（不是相对宿主）。
+          const canvasLeftInRect = canvasEl
+            ? canvasEl.getBoundingClientRect().left - rect.left
+            : 0;
+          const canvasLeftInHost = canvasEl
+            ? canvasEl.getBoundingClientRect().left - (hostRect?.left ?? rect.left)
+            : 0;
+          const canvasWidth = canvasEl
+            ? Math.max(1, canvasEl.getBoundingClientRect().width)
+            : rect.width;
+          const localInCanvas = localX - canvasLeftInRect;
+          const colWidth = canvasWidth / data.shape[1];
+          const rowHeight = rect.height / data.shape[0];
+          const i = Math.min(
+            data.shape[1] - 1,
+            Math.max(0, Math.floor(localInCanvas / colWidth)),
+          );
+          const j = Math.min(data.shape[0] - 1, Math.max(0, Math.floor(localY / rowHeight)));
+          binIndex = i;
+          binStart = viewport.start + i * bin;
+          binEnd = viewport.start + (i + 1) * bin;
+          const raw = data.matrix[j * data.shape[1] + i];
+          value = Number.isFinite(raw) ? raw : null;
+          // 高亮带左右像素（相对宿主容器）：按 bin 在视口内的比例映射到热图方块，
+          // 与轨道内 TrackBinIndicator（同样基于方块）像素级对齐。
+          const viewportWidth = viewport.end - viewport.start;
+          if (viewportWidth > 0) {
+            binX0 =
+              canvasLeftInHost + ((binStart - viewport.start) / viewportWidth) * canvasWidth;
+            binX1 =
+              canvasLeftInHost + ((binEnd - viewport.start) / viewportWidth) * canvasWidth;
+          }
+        }
+
+        useCursor.getState().setCursor({
+          x: hostX,
+          y: hostY,
+          bp,
+          binStart,
+          binEnd,
+          binIndex,
+          value,
+          binX0,
+          binX1,
+          track: 'hic',
+          hostId,
+        });
       }}
-      onMouseLeave={() => useCursor.getState().setCursor(null, null, null)}
+      onClick={() => {
+        // 点击锁定 / 再次点击解锁：锁定后十字线固定，轨道高亮带常驻。
+        const store = useCursor.getState();
+        if (store.locked) {
+          store.unlock();
+        } else if (store.x !== null && store.bp !== null) {
+          store.lock();
+        }
+      }}
+      onMouseLeave={() => {
+        // 锁定时保留十字线与高亮带（固定展示）；未锁定才清空。
+        if (useCursor.getState().locked) return;
+        useCursor.getState().clearCursor();
+      }}
     >
       <canvas ref={canvasRef} />
       {loading && <span className="hic-loading">Loading matrix…</span>}

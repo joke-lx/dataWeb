@@ -98,16 +98,31 @@ def read_hic_matrix(
 
     sub = np.asarray(full[r0:r1, r0:r1], dtype=np.float32)
 
-    # 分辨率:请求 bin 换算成聚合因子(≥1)。
-    factor = max(1, math.floor(bin_bp / BIN_SIZE))
-    if factor > 1:
-        usable = (sub.shape[0] // factor) * factor
-        if usable == 0:
-            return np.zeros((0, 0), dtype=np.float32), 0.0, 1.0
-        trimmed = sub[:usable, :usable]
-        sub = trimmed.reshape(
-            usable // factor, factor, usable // factor, factor
-        ).mean(axis=(1, 3))
+    # 分辨率:按目标 bin 数精确重采样。旧实现用 floor(bin/20kb) 作为聚合
+    # 因子再 reshape —— 当 bin 不是 20kb 的整数倍(如 50kb)时 floor(50/20)=2,
+    # 实际输出 40kb/bin,与请求 bin 不符:Hi-C 热图与按 bin 绘制的轨道错位,
+    # 对比模式下真实/模拟面板分辨率也不一致。改为 block 平均到
+    # ceil(span/bin_bp) 个目标 bin,输出分辨率与请求严格一致。
+    target = max(1, math.ceil((end - start) / bin_bp))
+    n_src = sub.shape[0]
+    if target >= n_src:
+        target = n_src
+    if target > 0 and target != n_src:
+        step = n_src / target
+        out = np.zeros((target, target), dtype=np.float32)
+        for i in range(target):
+            lo = int(i * step)
+            hi = max(lo + 1, int((i + 1) * step))
+            block = sub[lo:hi, lo:hi]
+            out[i, i] = float(block.mean())
+            for j in range(i + 1, target):
+                jlo = int(j * step)
+                jhi = max(jlo + 1, int((j + 1) * step))
+                block_ij = sub[lo:hi, jlo:jhi]
+                v = float(block_ij.mean())
+                out[i, j] = v
+                out[j, i] = v
+        sub = out
 
     # 与 mock 管线一致:log1p 后 vmin = min,vmax = p99。
     scaled = np.log1p(sub)

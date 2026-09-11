@@ -52,6 +52,7 @@ export function SubTabBar({ tabs, value, onChange }: SubTabBarProps): JSX.Elemen
           </span>
           {groupTabs.map((tab) => (
             <button
+              type="button"
               key={tab.id}
               className={
                 'subtab-chip' + (value.includes(tab.id) ? ' subtab-chip--active' : '')

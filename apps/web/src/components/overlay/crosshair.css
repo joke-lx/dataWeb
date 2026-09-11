@@ -5,11 +5,26 @@
   z-index: 10;
 }
 
+/* 竖直细线：只覆盖 Hi-C 热图（lane 高 480px，与 HIC_HEIGHT 一致），
+   不跨越轨道 / 3D / CTCF 等其他画布。轨道同步改用 .crosshair-band 高亮带。 */
+/* 竖直细线：只覆盖 Hi-C 热图（lane 高 480px，与 HIC_HEIGHT 一致），
+   不跨越轨道 / 3D / CTCF 等其他画布。轨道同步由各轨道内的
+   .gbv-track-bin-indicator 高亮列承担。 */
 .crosshair-vline {
   position: absolute;
   top: 0;
-  bottom: 0;
+  height: 480px;
   width: 1px;
+  background: var(--color-accent);
+  opacity: 0.6;
+}
+
+/* 横向细线：只在 Hi-C 热图高度内跟随鼠标，与竖线组成十字。 */
+.crosshair-hline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
   background: var(--color-accent);
   opacity: 0.6;
 }
@@ -29,4 +44,43 @@
 .crosshair-track {
   margin-left: 8px;
   color: var(--color-text-tertiary);
+}
+
+/* 选定区域说明：跟随鼠标的 tooltip（区域区间 + bin 索引 + Hi-C 强度）。 */
+.crosshair-tooltip {
+  position: absolute;
+  background: var(--color-bg);
+  border: 1px solid var(--color-accent);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+  white-space: nowrap;
+}
+
+.crosshair-tooltip__region {
+  font-weight: 600;
+}
+
+.crosshair-tooltip__row {
+  display: flex;
+  gap: 10px;
+  color: var(--color-text-secondary);
+}
+
+.crosshair-tooltip__value {
+  color: var(--color-accent);
+}
+
+.crosshair-tooltip__track {
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+}
+
+/* 锁定提示：tooltip 内告知当前已锁定，再次点击可解锁。 */
+.crosshair-tooltip__lock {
+  color: var(--color-warning, #b58900);
 }

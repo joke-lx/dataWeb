@@ -2,8 +2,9 @@
  * TopBar — 应用顶部条（global header）。
  *
  * 架构位置：嵌入到 `AppShell` 顶部；作为全站常驻导航条。
- * 由品牌名、一级导航（Home + 4 个 Explore viewer + Compare）和语言切换器
- * 三部分组成。
+ * 由品牌名、一级导航（Home / Dataset / Visual / Compar / About / Help）
+ * 和语言切换器三部分组成。导航项与顺序对齐参考站点主导航（见
+ * docx/refrences 参考截图）。
  *
  * 为什么存在：统一品牌、入口与语言切换；让用户在任意 viewer 页面都能
  * 快速跳转目标页面或切换语言，不需要借助浏览器历史。
@@ -34,20 +35,21 @@ interface NavItem {
 }
 
 /**
- * 顶部一级导航表。
+ * 顶部一级导航表 —— 对齐参考站点主导航：
+ * Home · Dataset · Visual · Compar · About · Help。
  *
- * 顺序：从广义到专精（首页 → 数据总览 → 单一 viewer → 并排对比）。新增 viewer 时
- * 在 `3d` 之后、`ctcfMotif` 之前插入，保持 viewer 类目聚集；新增并列
- * 工作区类入口时追加到末尾。
+ * 映射关系：
+ *  - Visual 指向 Explore 查看器落地页（默认 Hi-C viewer）；
+ *    其余 viewer（tracks / 3d / ctcfMotif）从样本页与 Explore 内进入。
+ *  - About / Help 为独立静态页面（/about、/help）。
  */
 const NAV_ITEMS: readonly NavItem[] = [
-  { to: '/',                  labelKey: 'nav.home',         defaultLabel: 'Home', end: true },
-  { to: '/database',          labelKey: 'nav.database',     defaultLabel: 'Database' },
-  { to: '/explore/hic',       labelKey: 'nav.tracks.hic',   defaultLabel: 'Hi-C' },
-  { to: '/explore/tracks',    labelKey: 'nav.tracks',       defaultLabel: 'Tracks' },
-  { to: '/explore/3d',        labelKey: 'nav.3d',           defaultLabel: '3D' },
-  { to: '/explore/ctcfMotif', labelKey: 'nav.ctcfMotif',    defaultLabel: 'CTCF Motif' },
-  { to: '/compare',           labelKey: 'nav.compare',      defaultLabel: 'Compare' },
+  { to: '/',            labelKey: 'nav.home',   defaultLabel: 'Home', end: true },
+  { to: '/database',    labelKey: 'nav.dataset', defaultLabel: 'Dataset' },
+  { to: '/explore/hic', labelKey: 'nav.visual', defaultLabel: 'Visual' },
+  { to: '/compare',     labelKey: 'nav.compar', defaultLabel: 'Compar' },
+  { to: '/about',       labelKey: 'nav.about',  defaultLabel: 'About' },
+  { to: '/help',        labelKey: 'nav.help',   defaultLabel: 'Help' },
 ];
 
 /**

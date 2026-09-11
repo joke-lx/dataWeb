@@ -1,0 +1,49 @@
+/* Static info pages (About / Help) — shared styles. */
+
+.info-page {
+  max-width: 880px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.info-section {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: var(--space-4) var(--space-5);
+}
+
+.info-section h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-title);
+  color: var(--color-text-primary);
+}
+
+.info-section p {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-body);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.info-section p:last-child {
+  margin-bottom: 0;
+}
+
+.info-section ul {
+  margin: 0;
+  padding-left: 1.2em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.info-section li {
+  font-size: var(--font-size-body);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}

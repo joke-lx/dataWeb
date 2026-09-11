@@ -251,6 +251,57 @@ export function buildInsulationScore(
 }
 
 /**
+ * 构造带零值参考线的 PC1（第一主成分）信号轨道。
+ *
+ * 视觉上与 insulation score 同构（平滑曲线 + 淡填充 + 零线），但使用
+ * accent 主题色以区分数据语义——参考站点详细页的 PC1 轨道形态。
+ *
+ * @param records - 可能包含多条染色体的 PC1 记录。
+ * @param viewport - 决定筛选染色体和可见范围的视口。
+ * @param title - 轨道标题。
+ * @param height - 图形像素高度。
+ * @returns 带轻量面积填充的 Plotly figure。
+ */
+export function buildPc1Score(
+  records: BedGraphRecord[] | undefined,
+  viewport: Viewport,
+  title: string,
+  height: number,
+): PlotlyBuild {
+  const visible = (records ?? []).filter((r) => r.chrom === viewport.chr);
+  const x = visible.map((r) => (r.start + r.end) / 2);
+  const data: PlotlyData[] = [
+    {
+      x,
+      y: visible.map((r) => r.score),
+      type: 'scatter',
+      mode: 'lines',
+      line: { color: '#4d6e8c', width: 1.5, shape: 'spline' },
+      fill: 'tozeroy',
+      fillcolor: 'rgba(77,110,140,0.12)',
+      hoverinfo: 'skip',
+    },
+  ];
+  return {
+    data,
+    layout: baseLayout(viewport, title, height, {
+      shapes: [
+        {
+          type: 'line',
+          x0: 0,
+          x1: 1,
+          xref: 'paper',
+          y0: 0,
+          y1: 0,
+          yref: 'y',
+          line: { color: 'rgba(0,0,0,0.25)', width: 1 },
+        },
+      ],
+    }),
+  };
+}
+
+/**
  * 把 TAD 区间映射为占满轨道高度的 domain 矩形。
  *
  * @param records - TAD 边界记录。

@@ -557,3 +557,76 @@ def sv_records(
         )
     svs.sort(key=lambda r: r["start"])
     return svs
+# ---------------------------------------------------------------------------
+# PC1 signal (first-principal-component proxy, bedGraph-style)
+# ---------------------------------------------------------------------------
+
+
+def pc1_signal(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+    n_bins: int,
+) -> list[dict]:
+    """Return a PC1-like eigenvector signal for the requested region.
+
+    The signal oscillates around 0 like a slow eigenvector with alternating
+    compartment blocks (~every 200 kb), plus a small deterministic noise.
+    """
+    if n_bins <= 0 or end <= start:
+        return []
+    rng = seed_rng(sample_id, chrom, start, end, n_bins, "pc1")
+    width = end - start
+    bin_size = width // n_bins
+    records: list[dict] = []
+    for i in range(n_bins):
+        x = i / max(1, n_bins - 1)
+        # Slow compartment-scale oscillation + a faster harmonic ripple.
+        score = 1.1 * np.sin(x * 5 * np.pi) + 0.35 * np.cos(x * 13 * np.pi)
+        score += float(rng.normal(0, 0.08))
+        records.append(
+            {
+                "chrom": chrom,
+                "start": start + i * bin_size,
+                "end": start + (i + 1) * bin_size,
+                "score": float(score),
+            }
+        )
+    return records
+
+
+def activity_signal(
+    sample_id: str,
+    chrom: str,
+    start: int,
+    end: int,
+    n_bins: int,
+) -> list[dict]:
+    """Return an A/B activity proxy signal in [0, 1] for the requested region.
+
+    A compartments (active) score high, B compartments (inactive) score low.
+    Mirrors pc1_signal's deterministic structure: slow compartment blocks
+    (~every 200 kb) + a small harmonic ripple + deterministic noise.
+    """
+    if n_bins <= 0 or end <= start:
+        return []
+    rng = seed_rng(sample_id, chrom, start, end, n_bins, "activity")
+    width = end - start
+    bin_size = width // n_bins
+    records: list[dict] = []
+    for i in range(n_bins):
+        x = i / max(1, n_bins - 1)
+        # 慢速 A/B 区块振荡 + 谐波，映射到 [0.02, 0.98]（A 高 / B 低）
+        raw = 0.5 + 0.40 * np.sin(x * 5 * np.pi) + 0.12 * np.cos(x * 13 * np.pi)
+        raw += float(rng.normal(0, 0.05))
+        score = float(np.clip(raw, 0.02, 0.98))
+        records.append(
+            {
+                "chrom": chrom,
+                "start": start + i * bin_size,
+                "end": start + (i + 1) * bin_size,
+                "score": score,
+            }
+        )
+    return records

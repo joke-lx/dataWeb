@@ -2,7 +2,7 @@
  * 区间输入控件 — **两段式**：`[chr:label] [start] – [end] [Go]`。
  *
  * 职责：解析用户输入的 `start` 和 `end`，与 viewport 双向同步，合法提交
- * 写回 `useViewport` 全局状态。
+ * 写回当前视口（面板级或全局）。
  *
  * 为什么两段：start/end 拆开输入比单文本框更易改一端，也避免长串数字
  * 挤在一个 input 里。
@@ -14,11 +14,14 @@
  * 输入格式宽松：允许千位逗号（`1,000,000`）。
  * 提交：Enter 键 或 "Go" 按钮（任一 input 聚焦时按 Enter 都生效）。
  * 非法输入（格式错、end <= start）静默忽略。
+ *
+ * 视口来源：`usePanelViewport` —— Compare 工作区面板（独立视口）内写面板
+ * store；普通页面 / 同步开时回退全局 store，行为与旧版一致。
  */
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 
-import { useViewport } from '../../store/viewport';
+import { usePanelViewport, usePanelViewportStore } from '../../hooks/usePanelViewport';
 import './nav.css';
 
 /** 匹配允许千位逗号的正整数。 */
@@ -38,9 +41,9 @@ function parseBp(text: string): number {
  * 非法输入静默忽略。
  */
 export function RegionInput(): JSX.Element {
-  const chr = useViewport((state) => state.chr);
-  const start = useViewport((state) => state.start);
-  const end = useViewport((state) => state.end);
+  const chr = usePanelViewport((state) => state.chr);
+  const start = usePanelViewport((state) => state.start);
+  const end = usePanelViewport((state) => state.end);
 
   const [startText, setStartText] = useState(`${start}`);
   const [endText, setEndText] = useState(`${end}`);
@@ -60,7 +63,7 @@ export function RegionInput(): JSX.Element {
     if (nextEnd <= nextStart) return;
 
     // 一次 setState 写入，避免触发额外的中间渲染。
-    useViewport.setState({
+    usePanelViewportStore().setState({
       start: nextStart,
       end: nextEnd,
     });

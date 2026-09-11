@@ -4,19 +4,25 @@
  * 职责：把鼠标水平拖拽翻译成 viewport start/end 偏移。
  * 与 useD3Zoom 的区别：
  *   - 只处理拖拽（不处理滚轮缩放）
- *   - 不绑定 d3-zoom，而是直接监听 pointer 事件 → 更新 viewport store
+ *   - 不绑定 d3-zoom，而是直接监听 pointer 事件 → 更新视口 store
  *   - 滚轮事件完全不受影响 → 页面可以正常纵向滚动
+ *
+ * 视口来源：`usePanelViewportStore` —— Compare 工作区面板内拖拽面板 store，
+ * 普通页面回退全局 store。
  *
  * 限流：viewport store 更新限流 100ms，避免拖拽时每个 move 事件都触发
  * 数据重拉导致白闪。
  */
 import { useEffect, type RefObject } from 'react';
 
-import { useViewport } from '../store/viewport';
+import { usePanelViewportStore } from './usePanelViewport';
 
 const THROTTLE_MS = 100;
 
 export function useDragPan(ref: RefObject<HTMLElement | null>): void {
+  // 在 hook 顶层取一次 store（面板内 = 面板 store，否则全局），回调里复用。
+  const store = usePanelViewportStore();
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -33,14 +39,14 @@ export function useDragPan(ref: RefObject<HTMLElement | null>): void {
       const rect = el.getBoundingClientRect();
       if (rect.width <= 0) return;
 
-      const { start, end } = useViewport.getState();
+      const { start, end } = store.getState();
       const viewWidth = end - start;
       const bpPerPx = viewWidth / rect.width;
       const deltaBP = -accumulatedDx * bpPerPx;
       accumulatedDx = 0;
 
       const newStart = Math.max(0, start + deltaBP);
-      useViewport.setState({
+      store.setState({
         start: newStart,
         end: newStart + viewWidth,
       });

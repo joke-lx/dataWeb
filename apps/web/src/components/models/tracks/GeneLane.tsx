@@ -16,7 +16,7 @@ import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';
 import type { GeneRecord } from '../../../api/types';
-import { useViewport } from '../../../store/viewport';
+import { usePanelViewport } from '../../../hooks/usePanelViewport';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
 import { buildGene } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
@@ -28,6 +28,8 @@ interface GeneLaneProps {
   sampleId?: string;
   /** 覆盖 lane 像素高度。 */
   height?: number;
+  /** lane 标题（可选，缺省不显示标题行）。 */
+  title?: string;
 }
 
 /**
@@ -39,8 +41,9 @@ interface GeneLaneProps {
 export function GeneLane({
   sampleId,
   height = GENE_LANE_HEIGHT,
+  title,
 }: GeneLaneProps): JSX.Element {
-  const viewport = useViewport();
+  const viewport = usePanelViewport();
   // gene 注释在数据模型里仍挂在某个 sample 下；缺省时回退到 Brain_BF3——和 hic 模型一致。
   const resolvedSample = sampleId ?? 'Brain_BF3';
 
@@ -64,6 +67,7 @@ export function GeneLane({
   return (
     <div className="lane" style={{ height: `${height}px` }}>
       <div className="lane-label">
+        {title && <span className="lane-title">{title}</span>}
         <span className="lane-sample">{resolvedSample}</span>
       </div>
       <div

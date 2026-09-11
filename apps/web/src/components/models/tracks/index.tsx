@@ -26,6 +26,7 @@ import { GeneLane } from './GeneLane';
 import { InsulationLane } from './InsulationLane';
 import { LoopTrack } from './LoopTrack';
 import { PeiLane } from './PeiLane';
+import { Pc1Lane } from './Pc1Lane';
 import { SvLane } from './SvLane';
 import { TadBar } from './TadBar';
 
@@ -109,6 +110,16 @@ export function TracksModel({
         />
       );
     }
+    if (mainSpec.kind === 'pc1') {
+      return (
+        <Pc1Lane
+          sampleId={sampleId}
+          trackName={mainSpec.trackName ?? 'pc1'}
+          title={mainSpec.title}
+          height={mainSpec.defaultHeight}
+        />
+      );
+    }
     if (mainSpec.kind === 'tadBar') {
       return <TadBar sampleId={sampleId} height={mainSpec.defaultHeight} />;
     }
@@ -162,6 +173,16 @@ export function TracksModel({
         <PeiLane
           sampleId={sampleId}
           trackName={auxSpec.trackName ?? 'pei'}
+          title={auxSpec.title}
+          height={auxSpec.defaultHeight}
+        />
+      );
+    }
+    if (auxSpec.kind === 'pc1') {
+      return (
+        <Pc1Lane
+          sampleId={sampleId}
+          trackName={auxSpec.trackName ?? 'pc1'}
           title={auxSpec.title}
           height={auxSpec.defaultHeight}
         />

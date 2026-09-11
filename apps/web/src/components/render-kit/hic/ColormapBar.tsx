@@ -5,7 +5,7 @@
 import type { JSX } from 'react';
 
 /** 可由标准 Hi-C 色标选择器切换的色图标识。 */
-export type ColormapName = 'rdbu' | 'viridis' | 'ref';
+export type ColormapName = 'rdbu' | 'viridis' | 'ref' | 'reds';
 
 interface ColormapBarProps {
   vmin: number;
@@ -22,6 +22,7 @@ const GRADIENTS: Record<ColormapName, string> = {
     'linear-gradient(to bottom, #fde725, #b5de2b, #6ece58, #35b779, #1f9e89, #26828e, #31688e, #3e4989, #482878, #440154)',
   rdbu: 'linear-gradient(to bottom, #9d2c44, #f7f7f7, #2e7d4e)',
   ref: 'linear-gradient(to bottom, #c85e5d, #de923b, #ddb044, #c4c195, #9dc4d0, #7fa6c8, #6b8bb8, #5b7099)',
+  reds: 'linear-gradient(to bottom, #fff5f0, #fee0d2, #fc9272, #de2d26, #a50f15, #67000d)',
 };
 
 const DIFFERENTIAL_GRADIENT =
@@ -81,6 +82,7 @@ export function ColormapBar({
           value={colorMap}
           onChange={(e) => onChange(e.target.value as ColormapName)}
         >
+          <option value="reds">Reds</option>
           <option value="ref">Ref</option>
           <option value="rdbu">RdBu_r</option>
           <option value="viridis">Viridis</option>

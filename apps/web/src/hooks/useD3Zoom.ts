@@ -1,11 +1,14 @@
 /**
- * 把 d3-zoom 绑定到任意容器元素的 hook，并把缩放/平移同步到 viewport store。
+ * 把 d3-zoom 绑定到任意容器元素的 hook，并把缩放/平移同步到当前视口 store。
  *
  * 职责：把"鼠标事件"翻译成"碱基对位移"。compute 增量时拆出 d3 transform 的
  * 平移 + 缩放分量，反推回 viewport 的 start/end。
  *
  * 为什么存在：centralize UI 控件（RegionInput / ZoomSlider）、d3-zoom 拖拽、
- * 程序化 zoom 都共享同一份 viewport store，可避免竞态。
+ * 程序化 zoom 都共享同一份视口 store，可避免竞态。
+ *
+ * 视口来源：`usePanelViewport*` —— Compare 工作区面板内操作面板 store，
+ * 普通页面回退全局 store。
  */
 
 import { useEffect, useRef } from 'react';
@@ -18,8 +21,8 @@ import { pxToBp } from '../genomics/coords';
 import {
   MAX_VIEWPORT_WIDTH_BP,
   MIN_VIEWPORT_WIDTH_BP,
-  useViewport,
 } from '../store/viewport';
+import { usePanelViewport, usePanelViewportStore } from './usePanelViewport';
 
 /**
  * 绑定 d3-zoom 到某个容器。
@@ -28,7 +31,8 @@ import {
 export function useD3Zoom(ref: RefObject<HTMLElement | null>): {
   programmaticZoom: (factor: number) => void;
 } {
-  const zoomViewport = useViewport((state) => state.zoom);
+  const store = usePanelViewportStore();
+  const zoomViewport = usePanelViewport((state) => state.zoom);
   // 记录上一帧 transform；用于本次事件计算增量（平移 + 缩放分量）。
   const previousTransformRef = useRef<ZoomTransform>(zoomIdentity);
 
@@ -68,7 +72,7 @@ export function useD3Zoom(ref: RefObject<HTMLElement | null>): {
         // 容器宽度为 0（隐藏）时跳过；scaleFactor<=0 视为异常 transform。
         if (rect.width <= 0 || scaleFactor <= 0) return;
 
-        const { start, end, chr, bin } = useViewport.getState();
+        const { start, end, chr, bin } = store.getState();
         const viewport = { chr, start, end, bin };
         const width = end - start;
         const newWidth = Math.max(
@@ -84,7 +88,7 @@ export function useD3Zoom(ref: RefObject<HTMLElement | null>): {
         );
         const newStart = Math.max(0, translatedStart);
 
-        useViewport.setState({
+        store.setState({
           start: newStart,
           end: newStart + newWidth,
         });
@@ -95,10 +99,11 @@ export function useD3Zoom(ref: RefObject<HTMLElement | null>): {
     return () => {
       selection.on('.zoom', null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref]);
 
   return {
-    // 程序化缩放：直接走 viewport store action，与 d3 的 transform 解耦。
+    // 程序化缩放：直接走视口 store action，与 d3 的 transform 解耦。
     programmaticZoom: (factor: number) => zoomViewport(factor),
   };
 }

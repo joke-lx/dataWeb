@@ -9,7 +9,6 @@
  *
  * 未匹配路径统一 `<Navigate to="/" replace />` 兜底，避免死链暴露。
  */
-
 import { lazy, Suspense, type JSX } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
@@ -23,6 +22,8 @@ const Explore = lazy(() => import('../pages/explore/Explore').then((module) => (
 const Compare = lazy(() => import('../pages/compare/Compare').then((module) => ({ default: module.Compare })));
 const CompareCase = lazy(() => import('../pages/compare/CompareCase').then((module) => ({ default: module.CompareCase })));
 const CompareCases = lazy(() => import('../pages/compare/CompareCases').then((module) => ({ default: module.CompareCases })));
+const About = lazy(() => import('../pages/about/About').then((module) => ({ default: module.About })));
+const Help = lazy(() => import('../pages/help/Help').then((module) => ({ default: module.Help })));
 
 /** 路由 chunk 加载中的占位。触发 Suspense 时显示。 */
 const PageFallback = () => <div className="route-loading">Loading…</div>;
@@ -30,12 +31,15 @@ const PageFallback = () => <div className="route-loading">Loading…</div>;
 /**
  * 应用路由出口。
  * - `/`                       Home (A-style landing)
+ * - `/database`               Dataset 数据库检索页
  * - `/species/:species`       Species 落地页
  * - `/explore/:viewerType`    Explore 子 viewer（hic / tracks / 3d / ctcfMotif）
  * - `/sample/:id`             Sample 详情页（含 `?vs=` / `?tab=` / `?type=` / `?samples=`）
  * - `/compare`                A/B 自由选择工作区
  * - `/compare/cases`          案例库列表(8 条预设)
  * - `/compare/case/:id`       案例库预设直达（<Navigate replace> 到 /sample?vs=）
+ * - `/about`                  About 项目介绍页
+ * - `/help`                   Help 使用帮助页
  * - `*`                       兜底重定向 Home
  */
 export function AppRoutes(): JSX.Element {
@@ -50,6 +54,8 @@ export function AppRoutes(): JSX.Element {
         <Route path="/compare" element={<Compare />} />
         <Route path="/compare/cases" element={<CompareCases />} />
         <Route path="/compare/case/:id" element={<CompareCase />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/help" element={<Help />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

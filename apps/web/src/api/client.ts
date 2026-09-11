@@ -181,10 +181,15 @@ export function buildDownloadUrl(sampleId: string, file: string): string {
   return `${API_BASE}/api/download/file?${params.toString()}`;
 }
 
+/** Hi-C 矩阵显示归一化方式：log2（默认）/ raw 原始计数 / ICE 均衡。 */
+export type HicNormalization = 'log2' | 'raw' | 'ice';
+
 /**
  * 拉取 Hi-C 接触矩阵。
  * 与 bigwig 相同：使用 arrayBuffer + 自定义 header 传输 dtype/shape/vmin/vmax，
  * 不做 JSON 序列化。
+ *
+ * @param normalization 后端显示归一化：log2（默认）/ raw / ice。
  */
 export async function fetchHicMatrix(
   sample: string,
@@ -192,6 +197,7 @@ export async function fetchHicMatrix(
   start: number,
   end: number,
   bin: number,
+  normalization: HicNormalization = 'log2',
 ): Promise<HicMatrixResponse> {
   const params = new URLSearchParams({
     sample,
@@ -199,6 +205,7 @@ export async function fetchHicMatrix(
     start: String(Math.floor(start)),
     end: String(Math.ceil(end)),
     bin: String(Math.max(1, Math.round(bin))),
+    normalization,
   });
   const r = await fetch(`${API_BASE}/api/hic/matrix?${params}`);
   if (!r.ok) throw new Error(`hic: ${r.status}`);
@@ -385,6 +392,28 @@ export async function fetchDerivedInsulation(
   });
   const r = await fetch(`${API_BASE}/api/derived/insulation?${params}`);
   if (!r.ok) throw new Error(`derived/insulation: ${r.status}`);
+  return r.json() as Promise<DerivedRecordsResponse<DerivedScoreRecord>>;
+}
+
+/** Hi-C 派生 PC1（第一主成分）—— `/api/derived/pc1`。 */
+export async function fetchDerivedPc1(
+  sample: string,
+  chr: string,
+  start: number,
+  end: number,
+  bin: number,
+  nBins: number,
+): Promise<DerivedRecordsResponse<DerivedScoreRecord>> {
+  const params = new URLSearchParams({
+    sample,
+    chr,
+    start: String(Math.floor(start)),
+    end: String(Math.ceil(end)),
+    bin: String(Math.max(1, Math.round(bin))),
+    n_bins: String(Math.max(1, Math.round(nBins))),
+  });
+  const r = await fetch(`${API_BASE}/api/derived/pc1?${params}`);
+  if (!r.ok) throw new Error(`derived/pc1: ${r.status}`);
   return r.json() as Promise<DerivedRecordsResponse<DerivedScoreRecord>>;
 }
 

@@ -10,6 +10,7 @@
  */
 
 import { create } from 'zustand';
+import type { StoreApi, UseBoundStore } from 'zustand';
 
 /** 浏览器视图的状态：染色体 + 起始/终止碱基 + Hi-C bin 大小。 */
 export interface Viewport {
@@ -20,7 +21,7 @@ export interface Viewport {
 }
 
 /** Viewport 存储 + 操作 actions。 */
-interface ViewportStore extends Viewport {
+export interface ViewportStore extends Viewport {
   /** 部分更新（常用于从 URL 装载）。 */
   setViewport: (viewport: Partial<Viewport>) => void;
   /**
@@ -34,6 +35,8 @@ interface ViewportStore extends Viewport {
   setChrom: (chr: string) => void;
   /** 单独更新 Hi-C bin 大小（来自 ZoomSlider）。 */
   setBin: (bin: number) => void;
+  /** 复位视图：保持当前染色体与中心，把宽度恢复到默认 2Mb。 */
+  reset: () => void;
 }
 
 /** 初始 viewport：chr1:1-2Mb，50kb bin。 */
@@ -43,6 +46,9 @@ const INITIAL: Viewport = {
   end: 2_000_000,
   bin: 50_000,
 };
+
+/** Reset 时恢复的默认视图宽度（bp）。 */
+const DEFAULT_RESET_WIDTH_BP = 2_000_000;
 
 /** 最小允许宽度（防止 zoom 过度收敛到 0）。 */
 export const MIN_VIEWPORT_WIDTH_BP = 1_000;
@@ -64,35 +70,62 @@ export const BIN_STEPS = [
 ];
 
 /**
- * viewport store。
+ * zustand 生成的 viewport store hook 类型。
+ *
+ * 同时具备两种能力：
+ *  - 可调用：`useViewport(selector)` 订阅状态；
+ *  - 命令式：`useViewport.getState() / setState()`（事件处理器里用）。
+ * 独立视口（Compare 面板）与全局单例共享该类型。
+ */
+export type ViewportStoreHook = UseBoundStore<StoreApi<ViewportStore>>;
+
+/**
+ * viewport store 工厂 + 全局单例。
+ *
+ * 为什么抽成工厂：Compare 工作区在「同步关」时为每个面板创建独立视口
+ * （见 `hooks/usePanelViewport.tsx`），而普通页面继续用全局单例 `useViewport`。
  * action 用 `get()` 取当前状态，避免闭包陷阱。
  */
-export const useViewport = create<ViewportStore>((set, get) => ({
-  ...INITIAL,
-  // 浅合并：调用方只传需要改的字段。
-  setViewport: (viewport) => set((state) => ({ ...state, ...viewport })),
-  zoom: (factor, centerBp) => {
-    const { start, end } = get();
-    // 默认以当前 viewport 中点为缩放中心；显式传 centerBp 用于 d3-zoom 的鼠标位置。
-    const center = centerBp ?? (start + end) / 2;
-    const width = end - start;
-    // 等比缩放后再夹到 [MIN, MAX] 区间。
-    const newWidth = Math.max(
-      MIN_VIEWPORT_WIDTH_BP,
-      Math.min(MAX_VIEWPORT_WIDTH_BP, width / factor),
-    );
-    const newStart = Math.max(0, center - newWidth / 2);
-    set({ start: newStart, end: newStart + newWidth });
-  },
-  pan: (deltaBp) => {
-    const { start, end } = get();
-    const width = end - start;
-    // 钳制在 0 处；右端不钳制（让用户能"出界"看到染色体末端）。
-    const newStart = Math.max(0, start + deltaBp);
-    set({ start: newStart, end: newStart + width });
-  },
-  // 切换染色体时强制 reset 区间——避免把上一条染色体的 start/end 错误套用。
-  setChrom: (chr) =>
-    set({ chr, start: 0, end: 1_000_000, bin: 50_000 }),
-  setBin: (bin) => set({ bin }),
-}));
+export const createViewportStore = (): ViewportStoreHook =>
+  create<ViewportStore>((set, get) => ({
+    ...INITIAL,
+    // 浅合并：调用方只传需要改的字段。
+    setViewport: (viewport) => set((state) => ({ ...state, ...viewport })),
+    zoom: (factor, centerBp) => {
+      const { start, end } = get();
+      // 默认以当前 viewport 中点为缩放中心；显式传 centerBp 用于 d3-zoom 的鼠标位置。
+      const center = centerBp ?? (start + end) / 2;
+      const width = end - start;
+      // 等比缩放后再夹到 [MIN, MAX] 区间。
+      const newWidth = Math.max(
+        MIN_VIEWPORT_WIDTH_BP,
+        Math.min(MAX_VIEWPORT_WIDTH_BP, width / factor),
+      );
+      const newStart = Math.max(0, center - newWidth / 2);
+      set({ start: newStart, end: newStart + newWidth });
+    },
+    pan: (deltaBp) => {
+      const { start, end } = get();
+      const width = end - start;
+      // 钳制在 0 处；右端不钳制（让用户能"出界"看到染色体末端）。
+      const newStart = Math.max(0, start + deltaBp);
+      set({ start: newStart, end: newStart + width });
+    },
+    // 切换染色体时强制 reset 区间——避免把上一条染色体的 start/end 错误套用。
+    setChrom: (chr) =>
+      set({ chr, start: 0, end: 1_000_000, bin: 50_000 }),
+    setBin: (bin) => set({ bin }),
+    // 复位视图：保持当前染色体与中心，宽度恢复到默认 2Mb。
+    reset: () => {
+      const { chr, start, end, bin } = get();
+      const center = (start + end) / 2;
+      const newStart = Math.max(0, center - DEFAULT_RESET_WIDTH_BP / 2);
+      set({ chr, start: newStart, end: newStart + DEFAULT_RESET_WIDTH_BP, bin });
+    },
+  }));
+
+/**
+ * 全局 viewport store 单例。
+ * 所有 viewer 默认共享；Compare 工作区面板在同步开时也读它。
+ */
+export const useViewport = createViewportStore();

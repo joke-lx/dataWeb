@@ -6,8 +6,10 @@
  *
  * 关键概念：
  *  - `TrackId` = 路由 URL 中 `tab` 参数的合法值（如 `'rna_seq'`、`'tad'`）；
- *  - `TrackSpec.kind` 决定 lane 渲染组件（bigwig / bedGraph / is / pei …）；
+ *  - `TrackSpec.kind` 决定 lane 渲染组件（bigwig / bedGraph / is / pc1 / …）；
  *  - `SUB_TABS` 描述路由 sub-tab 与固定辅助 lane 的绑定关系；
+ *  - `GENOME_BROWSER_TRACKS` 描述"Hi-C 一体化视图"的配套轨道集合——
+ *    勾选这些轨道时在 Hi-C 区块按参考站点顺序堆叠，Tracks 区块不再重复渲染；
  *  - `GROUP_LABELS` 给 `SubTabBar` 用作分组 chip 上的标签。
  *
  * 架构位置：tracks 模型的"业务字典"——和 `routes/tracks/trackSpec.ts` 的
@@ -20,7 +22,7 @@ import type { BedKind } from '../../../api/types';
 /** 路由 URL `tab` 参数的合法取值集合。 */
 export type TrackId =
   | 'hic' | 'rna_seq' | 'h3k4me3' | 'h3k27ac'
-  | 'ab' | 'is' | 'tad' | 'pei' | 'loop' | 'sv' | 'gene';
+  | 'ab' | 'is' | 'tad' | 'pei' | 'loop' | 'pc1' | 'sv' | 'gene';
 
 /**
  * 单条基因组轨道的渲染描述：`TracksModel` 按 `id` → `kind` 把轨道
@@ -29,7 +31,7 @@ export type TrackId =
 export interface TrackSpec {
   id: TrackId;
   /** 渲染分类——决定调用哪个 Lane 组件（详见 `TracksModel.renderMain / renderAux`）。 */
-  kind: 'hic' | 'bigwig' | 'bedGraph' | 'is' | 'tadBar' | 'pei' | 'sv' | 'gene';
+  kind: 'hic' | 'bigwig' | 'bedGraph' | 'is' | 'pc1' | 'tadBar' | 'pei' | 'sv' | 'gene';
   /** 标题（在 header / 弹层 tooltip 上展示）。 */
   title: string;
   /** bigwig / bedGraph 的后端 track 名；缺省时取 `id`。 */
@@ -57,6 +59,8 @@ export const TRACK_CATALOG: Record<TrackId, TrackSpec> = {
   // 特例：Hi-C lane (320px) + SVG loop overlay + gene。LoopTrack 自己接管布局，
   // 因此 kind 仍是 `'hic'` 但 TRACK_CATALOG 不直接用于渲染——见 TracksModel 对 tab==='loop' 的特殊分支。
   loop:    { id: 'loop',    kind: 'hic',       title: 'Hi-C + loops',                 defaultHeight: 320 },
+  // PC1：Hi-C 派生第一主成分信号（配套轨道，Hi-C 一体化视图中渲染为信号曲线）。
+  pc1:     { id: 'pc1',     kind: 'pc1',       title: 'PC1',                           defaultHeight: 140 },
   sv:      { id: 'sv',      kind: 'sv',        title: 'Structural variants',           defaultHeight: 120 },
   gene:    { id: 'gene',    kind: 'gene',      title: 'Gene model',   bedKind: 'gene',  defaultHeight: 120 },
 };
@@ -89,6 +93,8 @@ export const SUB_TABS: SubTab[] = [
   { id: 'ab',      group: 'structure',  label: 'AB Index', aux: ['tad', 'gene'] },
   { id: 'is',      group: 'structure',  label: 'IS',       aux: ['tad', 'gene'] },
   { id: 'tad',     group: 'structure',  label: 'TAD',      aux: ['gene'] },
+  { id: 'loop',    group: 'structure',  label: 'Loops',    aux: [] },
+  { id: 'pc1',     group: 'structure',  label: 'PC1',      aux: [] },
   { id: 'pei',     group: 'structure',  label: 'PEI',      aux: ['tad', 'gene'] },
   { id: 'sv',      group: 'structure',  label: 'SV',       aux: ['tad', 'gene'] },
   // 基因（Gene）
@@ -101,3 +107,17 @@ export const GROUP_LABELS: Record<SubTab['group'], string> = {
   structure: 'Structure',
   gene: 'Annotation',
 };
+
+/**
+ * Hi-C 一体化视图（参考站点详细页）的配套轨道集合。
+ *
+ * 勾选这些轨道时，它们作为 Hi-C 热图的配套 lane 在 Hi-C 区块按参考图顺序
+ * （TAD → Loops → PC1 → Gene）堆叠，Tracks 区块不重复渲染它们；
+ * 其余信号轨道（测序 + AB/IS/PEI/SV）仍走 Tracks 区块。
+ */
+export const GENOME_BROWSER_TRACKS: readonly TrackId[] = [
+  'tad',
+  'loop',
+  'pc1',
+  'gene',
+];

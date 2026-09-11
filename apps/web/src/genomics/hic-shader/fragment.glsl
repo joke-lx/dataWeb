@@ -6,6 +6,7 @@ uniform sampler2D u_matrix;
 uniform float u_vmin;
 uniform float u_vmax;
 uniform int u_colorMap;
+uniform int u_triangle;
 uniform vec2 u_canvasSize;
 
 in vec2 v_uv;
@@ -87,8 +88,30 @@ vec3 diffRdBu(float t) {
   return mix(cols[i], cols[i+1], fract(f));
 }
 
+vec3 reds(float t) {
+  // matplotlib "Reds" sequential: white -> light red -> deep red
+  // t in [0,1]: 0=white(low), 1=dark red(high)
+  vec3 cols[6] = vec3[6](
+    vec3(1.000, 0.961, 0.941),  // #FFF5F0
+    vec3(0.996, 0.878, 0.824),  // #FEE0D2
+    vec3(0.988, 0.573, 0.447),  // #FC9272
+    vec3(0.871, 0.176, 0.149),  // #DE2D26
+    vec3(0.647, 0.059, 0.082),  // #A50F15
+    vec3(0.404, 0.000, 0.051)   // #67000D
+  );
+  float f = clamp(t, 0.0, 1.0) * 5.0;
+  int i = int(f);
+  if (i >= 5) return cols[5];
+  return mix(cols[i], cols[i+1], fract(f));
+}
+
 void main() {
-  // Note: Hi-C is upper-triangle (or symmetric); we render the full square
+  // Triangle Mode：只显示对角线上方的上三角（Hi-C 矩阵对称，下半部分裁掉）。
+  // v_uv.y 向下递增（纹理行 0 = 矩阵顶部），矩阵元素 (row=i, col=j) 落在
+  // (x=j/W, y=i/H)：i > j（下三角）即 uv.y > uv.x。
+  if (u_triangle == 1 && v_uv.y > v_uv.x) {
+    discard;
+  }
   float v = texture(u_matrix, v_uv).r;
   float t = clamp((v - u_vmin) / (u_vmax - u_vmin + 1e-9), 0.0, 1.0);
   vec3 rgb;
@@ -96,6 +119,7 @@ void main() {
   else if (u_colorMap == 1) rgb = viridis(t);
   else if (u_colorMap == 2) rgb = diffRdBu(t);  // for differential Hi-C
   else if (u_colorMap == 3) rgb = reflut(t);    // reference colormap
+  else if (u_colorMap == 4) rgb = reds(t);      // sequential reds
   else                       rgb = rdbu(t);
   outColor = vec4(rgb, 1.0);
 }

@@ -2,17 +2,17 @@
  * Sample 详情页：单样本 viewer 的同页线性容器。
  *
  * 职责：把 `<RouteShell>` 包装 + compare 模式（?vs=）+ sample picker +
- * TrackSampleHeader 等"外壳"职责集中在一处。真正的数据图表由对应
- * `<ModelFactory type="..." />` 渲染。
+ * 左侧数据/轨道控制台（`<SampleSidebar>`）等"外壳"职责集中在一处。
+ * 真正的数据图表由对应 `<ModelFactory type="..." />` 渲染。
  *
- * 布局（参考 detail.png）：sticky 区间栏 + 单页线性堆叠 —— 概览 → 文件 →
- * Hi-C → 轨道 → 3D → CTCF，右侧锚点导航跟随滚动。重型 viewer 由
- * `<InViewSection>` 懒挂载（滚动接近才加载 chunk），避免一次性拉起
- * WebGL / Plotly / three.js。
+ * 布局（参考参考站点详细页）：左侧窄栏 = 样本卡 + 视图区块勾选 + Tracks
+ * 轨道多选 + 文件摘要；右侧主区 = 概览 → 文件 → Hi-C → 轨道 → 3D → CTCF
+ * 线性堆叠。重型 viewer 由 `<InViewSection>` 懒挂载（滚动接近才加载 chunk），
+ * 避免一次性拉起 WebGL / Plotly / three.js。
  *
  * 关键状态机：
  *   - 单一 sample → 所有区块自上而下渲染；
- *   - compare 模式（?vs= 合法 partner）→ 每个可视化区块内 A/B 并排。
+ *   - compare 模式（?vs= 合法 partner）→ 每个可视化区块内 A/B 并排；
  *   - `?tab=`（旧 tab 参数）向后兼容 → 映射到区块锚点并滚动。
  */
 
@@ -27,8 +27,9 @@ import { ZoomSlider } from '../../components/nav/ZoomSlider';
 import { Popover } from '../../components/popover/Popover';
 import { RouteShell } from '../../components/route/RouteShell';
 import { TracksModel } from '../../components/models/tracks';
-import { SubTabBar } from '../../components/models/tracks/SubTabBar';
-import { TrackSampleHeader } from '../../components/models/tracks/TrackSampleHeader';
+import { GenomeBrowserView } from '../../components/models/tracks/GenomeBrowserView';
+import { ExportPdfButton } from '../../components/feedback/ExportPdfButton';
+import { CrosshairLayer } from '../../components/overlay/CrosshairLayer';
 import { GeneLane } from '../../components/models/differential/GeneLane';
 import { Log2Heatmap } from '../../components/models/differential/Log2Heatmap';
 import { ThreeDChromatin } from '../../components/models/3d/ThreeDChromatin';
@@ -40,11 +41,15 @@ import { useTrackSampleSelection } from '../../hooks/useTrackSampleSelection';
 import { useAppIntl } from '../../i18n';
 import { useSamples } from '../../store/samples';
 import { useViewport } from '../../store/viewport';
-import { SUB_TABS, TRACK_CATALOG } from '../../components/models/tracks/trackSpec';
+import {
+  GENOME_BROWSER_TRACKS,
+  SUB_TABS,
+  TRACK_CATALOG,
+} from '../../components/models/tracks/trackSpec';
 import { OverviewSection } from './OverviewSection';
 import { FilesSection } from './FilesSection';
 import { CollapsibleSection } from './CollapsibleSection';
-import { SampleAnchorNav, type SectionDef } from './SampleAnchorNav';
+import { SampleSidebar, type SectionDef } from './SampleSidebar';
 import './sample.css';
 
 /** Sample.tissue → ThreeDChromatin organ prop */
@@ -76,16 +81,13 @@ const SECTIONS: readonly SectionDef[] = [
 const SECTION_MIN_HEIGHT: Record<string, number> = {
   overview: 200,
   files: 320,
-  hic: 560,
+  hic: 900,
   tracks: 620,
   '3d': 480,
   ctcf: 420,
 };
 
-/**
- * 支持侧边栏勾选展示的区块（可视化模型）。
- * 取消勾选 → 整块从 DOM 卸载（释放 WebGL / Plotly / three.js 资源）。
- */
+/** 支持侧边栏勾选展示的区块（可视化模型）。 */
 const VIZ_SECTIONS: readonly string[] = ['hic', 'tracks', '3d', 'ctcf'];
 
 /**
@@ -94,7 +96,8 @@ const VIZ_SECTIONS: readonly string[] = ['hic', 'tracks', '3d', 'ctcf'];
  *   - `:id`        样本 id
  *   - `?vs=`       对比样本 id（compare 模式）
  *   - `?tab=`      旧 tab 参数 → 向后兼容映射到区块锚点滚动
- *   - `?type=`     Tracks 子模式（rna_seq/h3k4me3/...）
+ *   - `?types=`    Tracks 多选轨道（逗号分隔，顺序 = stacking 顺序）
+ *   - `?type=`     旧 Tracks 单选参数（向后兼容，见 initialTypes）
  *   - `?samples=`  Tracks 多样本叠加（详见 useTrackSampleSelection）
  */
 export function Sample(): JSX.Element {
@@ -106,7 +109,6 @@ export function Sample(): JSX.Element {
   const setSamples = useSamples((state) => state.setSamples);
   const viewport = useViewport();
   const partnerId = params.get('vs');
-  const [searchQuery, setSearchQuery] = useState('');
   // 概览/文件标题折叠（默认展开）；4 个 viz 区块侧边栏勾选展示（默认全展示）。
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [visibleSections, setVisibleSections] = useState<Record<string, boolean>>({});
@@ -123,7 +125,7 @@ export function Sample(): JSX.Element {
   // --- Tracks 多选 sub-tab 业务逻辑 ---
   // 默认预选 3 个核心结构轨道；URL ?types=a,b,c 同步用户选择顺序（决定 stacking 顺序）。
   // 兼容旧 ?type= 单选 URL（无 ?types= 时有 ?type= 则把它作为唯一选中项）。
-  const DEFAULT_TYPES: TrackId[] = ['ab', 'is', 'tad'];
+  const DEFAULT_TYPES: TrackId[] = ['ab', 'is', 'tad', 'loop', 'pc1', 'gene'];
   const typesParam = params.get('types');
   const typeParam = params.get('type');
   const initialTypes = useMemo<TrackId[]>(() => {
@@ -157,11 +159,19 @@ export function Sample(): JSX.Element {
    * aux，保证 TAD / Gene 在整个 tracks 区块只渲染一次。
    * 单选时行为与旧版一致（主轨道 + 完整 aux 上下文）。
    */
+  // Hi-C 一体化视图的配套轨道（TAD/Loops/PC1/Gene）由 Hi-C 区块渲染；
+  // Tracks 区块只渲染剩余的信号轨道（测序 + AB/IS/PEI/SV），避免两处重复。
+  const signalTracks = useMemo(
+    () => selectedTypes.filter((t) => !GENOME_BROWSER_TRACKS.includes(t)),
+    [selectedTypes],
+  );
   const trackRenderPlan = useMemo<Array<{ main: TrackId; aux: TrackId[] }>>(
     () => {
+      // mainSet 用全量 selectedTypes：配套轨道视为"已被 Hi-C 区块覆盖"，
+      // 使信号轨道的 tad/gene aux 不再重复渲染。
       const mainSet = new Set<TrackId>(selectedTypes);
       const auxSeen = new Set<TrackId>();
-      return selectedTypes.map((main) => {
+      return signalTracks.map((main) => {
         const tab = SUB_TABS.find((tt) => tt.id === main);
         const filteredAux = (tab?.aux ?? []).filter(
           (a) => !mainSet.has(a) && !auxSeen.has(a),
@@ -170,7 +180,7 @@ export function Sample(): JSX.Element {
         return { main, aux: filteredAux };
       });
     },
-    [selectedTypes],
+    [signalTracks, selectedTypes],
   );
 
   // URL 同步：写 ?types=，并清掉旧 ?type= 字段避免混淆。
@@ -190,7 +200,7 @@ export function Sample(): JSX.Element {
     );
   }, [selectedTypes, setParams]);
 
-  const { sampleIds: trackSampleIds, setSampleIdsRaw } = useTrackSampleSelection();
+  const { sampleIds: trackSampleIds } = useTrackSampleSelection();
   // 把样本列表 index 成 Map 便于 O(1) 取——叠加多 sample 时 linear find 太慢。
   const trackSampleById = useMemo(() => {
     const map = new Map<string, Sample>();
@@ -234,45 +244,6 @@ export function Sample(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 
-  const candidates = useMemo(
-    () => (samples ?? []).filter((item) => item.id !== sample?.id),
-    [samples, sample?.id],
-  );
-  const suggested = useMemo(
-    () =>
-      !sample
-        ? []
-        : candidates.filter(
-            (item) => item.breed === sample.breed && item.tissue !== sample.tissue,
-          ),
-    [candidates, sample],
-  );
-  const query = searchQuery.trim().toLowerCase();
-  const filteredSuggested = useMemo(
-    () =>
-      suggested.filter(
-        (item) =>
-          !query ||
-          item.id.toLowerCase().includes(query) ||
-          item.tissue.toLowerCase().includes(query),
-      ),
-    [suggested, query],
-  );
-  const allSamples = useMemo(
-    () =>
-      candidates
-        .filter(
-          (item) =>
-            !query ||
-            item.id.toLowerCase().includes(query) ||
-            item.tissue.toLowerCase().includes(query),
-        )
-        .slice()
-        .sort((a, b) => a.id.localeCompare(b.id)),
-    [candidates, query],
-  );
-  const canCompare = candidates.length > 0;
-
   if (isLoading) return <main className="route-page"><div className="route-content">{t('common.loading')}</div></main>;
   if (!sample) return <main className="route-page"><div className="model-missing"><strong>{t('sample.notFound.title')}</strong><p>{t('sample.notFound.description', { id: id ?? '' })}</p></div></main>;
 
@@ -282,17 +253,6 @@ export function Sample(): JSX.Element {
   const subtitle = compareActive && partner
     ? `${sample.tissue} vs ${partner.tissue} · ${sample.species} · ${sample.breed} vs ${partner.breed} · ${region}`
     : `${sample.species} · ${sample.tissue} · ${sample.breed} · ${sample.sex} · ${sample.dev_stage}`;
-
-  const navigateToCompare = (targetId: string) => {
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.set('vs', targetId);
-        return next;
-      },
-      { replace: false },
-    );
-  };
 
   const exitCompare = () => {
     setParams(
@@ -305,33 +265,24 @@ export function Sample(): JSX.Element {
     );
   };
 
+  // 左侧面板"下载文件"：滚动到文件区块（折叠时先展开）。
+  const scrollToFiles = () => {
+    setCollapsedSections((prev) => ({ ...prev, files: false }));
+    const el = document.querySelector<HTMLElement>('[data-section="files"]');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const title = compareActive && partner
     ? `${sample.id} vs ${partner.id}`
     : `${sample.id} — ${sample.tissue} (${sample.species})`;
 
   // ── 各区块内容 ──
 
-  const hicSection = (
-    <InViewSection minHeight={SECTION_MIN_HEIGHT.hic}>
-      {compareActive && partner ? (
-        <>
-          <Log2Heatmap sampleA={sample.id} sampleB={partner.id} />
-          <GeneLane sampleId={sample.id} />
-        </>
-      ) : (
-        <ModelFactory type="hic" />
-      )}
-    </InViewSection>
-  );
 
-  const tracksSection = (
+
+  const tracksBody = (
     <div className="sample-tracks-block">
-      <SubTabBar
-        tabs={SUB_TABS}
-        value={selectedTypes}
-        onChange={toggleType}
-      />
-      {selectedTypes.length === 0 ? (
+      {signalTracks.length === 0 ? (
         <div className="tracks-empty">{t('tracks.empty')}</div>
       ) : (
         trackRenderPlan.map(({ main, aux }) => {
@@ -342,15 +293,6 @@ export function Sample(): JSX.Element {
           return (
             <InViewSection key={main} minHeight={SECTION_MIN_HEIGHT.tracks}>
               <DragPanContainer>
-                {!compareActive && isBigwig && overlaySampleIds && (
-                  <TrackSampleHeader
-                    title={spec.title}
-                    sampleIds={overlaySampleIds}
-                    onSampleChange={setSampleIdsRaw}
-                    allSamples={samples ?? []}
-                    isCatalogLoading={isLoading}
-                  />
-                )}
                 {compareActive && partner ? (
                   <div className="compare-tracks">
                     {/* 对比模式：同类型上下 A/B 并排，只显示主轨道 —— aux 不重复渲染
@@ -381,8 +323,8 @@ export function Sample(): JSX.Element {
     </div>
   );
 
-  const threeDSection = (
-    <InViewSection minHeight={SECTION_MIN_HEIGHT['3d']}>
+  const threeDBody = (
+    <div className="gbv-subblock__body">
       {compareActive && partner ? (
         <div className="compare-3d">
           <div className="compare-3d__panel">
@@ -397,11 +339,11 @@ export function Sample(): JSX.Element {
       ) : (
         <ModelFactory type="3d" />
       )}
-    </InViewSection>
+    </div>
   );
 
-  const ctcfSection = (
-    <InViewSection minHeight={SECTION_MIN_HEIGHT.ctcf}>
+  const ctcfBody = (
+    <div className="gbv-subblock__body">
       {compareActive && partner ? (
         <DragPanContainer>
           <div className="compare-ctcf">
@@ -420,9 +362,56 @@ export function Sample(): JSX.Element {
           <ModelFactory type="ctcf-motif" />
         </DragPanContainer>
       )}
-    </InViewSection>
+    </div>
   );
 
+
+  const hicSection = (
+    <InViewSection minHeight={SECTION_MIN_HEIGHT.hic}>
+      {/* Hi-C 主图：compare 模式为差异热图，否则为一体化视图（Hi-C + 配套轨道） */}
+      {compareActive && partner ? (
+        <>
+          <Log2Heatmap sampleA={sample.id} sampleB={partner.id} />
+          <GeneLane sampleId={sample.id} />
+          {/* 对比模式：信号轨道 A/B 并排子块（Hi-C 配套轨道由上方视图承载） */}
+          {visibleSections.tracks !== false && (
+            <div className="gbv-subblock" data-section="tracks">
+              <h4 className="gbv-subblock__title">{t('sample.sections.tracks')}</h4>
+              {tracksBody}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="gbv-hic-host" data-crosshair-host>
+          <GenomeBrowserView
+            sampleId={sample.id}
+            tracks={visibleSections.tracks !== false ? selectedTypes : []}
+            labels={{
+              tad: t('sample.genomeBrowser.tad'),
+              loops: t('sample.genomeBrowser.loops'),
+              pc1: t('sample.genomeBrowser.pc1'),
+              gene: t('sample.genomeBrowser.gene'),
+            }}
+            toolbarActions={<ExportPdfButton label={t('sample.exportPdf')} />}
+          />
+          {/* 十字准线 + 区域说明：悬浮 Hi-C 时竖线贯穿全部轨道 */}
+          <CrosshairLayer />
+        </div>
+      )}
+      {visibleSections['3d'] !== false && (
+        <div className="gbv-subblock" data-section="3d">
+          <h4 className="gbv-subblock__title">{t('sample.sections.3d')}</h4>
+          {threeDBody}
+        </div>
+      )}
+      {visibleSections.ctcf !== false && (
+        <div className="gbv-subblock" data-section="ctcf">
+          <h4 className="gbv-subblock__title">{t('sample.sections.ctcf')}</h4>
+          {ctcfBody}
+        </div>
+      )}
+    </InViewSection>
+  );
   return (
     <RouteShell
       title={title}
@@ -464,63 +453,6 @@ export function Sample(): JSX.Element {
           <div className="sample-toolbar__title">
             {compareActive && partner ? `${sample.id} vs ${partner.id}` : sample.id}
           </div>
-          {canCompare && (
-            <Popover
-              width={400}
-              className="compare-picker"
-              trigger={(open) => (
-                <button
-                  type="button"
-                  className="sample-picker-trigger"
-                  disabled={!canCompare}
-                  onClick={open}
-                >
-                  {t('sample.actions.compareWith')} ▾
-                </button>
-              )}
-            >
-              {() => (
-                <>
-                  <div className="compare-picker__head">
-                    <div className="compare-picker__title">{t('sample.comparePicker.title')} <em>{sample.id}</em></div>
-                  </div>
-                  <div className="compare-picker__body">
-                    <div className="compare-picker__search">
-                      <svg className="compare-picker__search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                      </svg>
-                      <input type="text" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t('sample.comparePicker.search')} autoFocus />
-                    </div>
-                    <h4 className="compare-picker__section"><span className="compare-picker__meta-dot" aria-hidden="true" />{t('sample.comparePicker.suggested')}</h4>
-                    {filteredSuggested.length === 0 ? <div className="compare-picker__empty-section">—</div> : filteredSuggested.map((other) => {
-                      const isSelected = other.id === partnerId;
-                      return (
-                        <button key={other.id} type="button" className={'compare-picker__chip' + (isSelected ? ' compare-picker__chip--selected' : '')} onClick={() => isSelected ? exitCompare() : navigateToCompare(other.id)}>
-                          <span className="compare-picker__chip-id">{other.id}</span>
-                          {isSelected ? <span className="compare-picker__chip-tag">✓</span> : <span className="compare-picker__chip-tag">{t('sample.comparePicker.sameBreed')}</span>}
-                          <span className="compare-picker__chip-arrow" aria-hidden="true">{isSelected ? '×' : '→'}</span>
-                        </button>
-                      );
-                    })}
-                    <h4 className="compare-picker__section">{t('sample.comparePicker.allSamples', { count: allSamples.length })}</h4>
-                    <div className="compare-picker__list">
-                      {allSamples.map((other) => {
-                        const isSelected = other.id === partnerId;
-                        return (
-                          <div key={other.id} role="button" tabIndex={0} className={'compare-picker__row' + (isSelected ? ' compare-picker__row--selected' : '')} onClick={() => isSelected ? exitCompare() : navigateToCompare(other.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); isSelected ? exitCompare() : navigateToCompare(other.id); } }}>
-                            <span className="compare-picker__row-id">{other.id}</span>
-                            <span className="compare-picker__row-meta">{other.tissue} · {other.breed} · {other.sex}{isSelected ? ' · ✓' : ''}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="compare-picker__foot">{t('sample.comparePicker.helper')}</div>
-                </>
-              )}
-            </Popover>
-          )}
           <div className="sample-region">
             <RegionInput />
             <span className="sample-region__sep" aria-hidden="true">·</span>
@@ -531,63 +463,53 @@ export function Sample(): JSX.Element {
       }
     >
       <div className="sample-linear">
+        {/* 左侧：数据 / 轨道控制台 + 概览 + 文件（统一在左栏滚动区，不挤占右侧可视化） */}
+        <div className="sample-linear__left">
+          <SampleSidebar
+            sections={SECTIONS}
+            sample={sample}
+            partner={compareActive ? partner : undefined}
+            compareActive={compareActive}
+            toggleableIds={VIZ_SECTIONS}
+            visible={visibleSections}
+            onToggleVisible={toggleVisible}
+            selectedTypes={selectedTypes}
+            onToggleType={toggleType}
+            onDownload={scrollToFiles}
+          >
+            <CollapsibleSection
+              id="overview"
+              title={t('sample.sections.overview')}
+              collapsed={Boolean(collapsedSections.overview)}
+              onToggle={() => toggleCollapsed('overview')}
+            >
+              <OverviewSection sample={sample} partner={compareActive ? partner : undefined} />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              id="files"
+              title={t('sample.sections.files')}
+              collapsed={Boolean(collapsedSections.files)}
+              onToggle={() => toggleCollapsed('files')}
+            >
+              <FilesSection sampleId={sample.id} compareActive={compareActive} />
+            </CollapsibleSection>
+          </SampleSidebar>
+        </div>
+
+        {/* 右侧：主区线性堆叠（可视化） */}
         <div className="sample-linear__main">
-          <CollapsibleSection
-            id="overview"
-            title={t('sample.sections.overview')}
-            collapsed={Boolean(collapsedSections.overview)}
-            onToggle={() => toggleCollapsed('overview')}
-          >
-            <OverviewSection sample={sample} partner={compareActive ? partner : undefined} />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            id="files"
-            title={t('sample.sections.files')}
-            collapsed={Boolean(collapsedSections.files)}
-            onToggle={() => toggleCollapsed('files')}
-          >
-            <FilesSection sampleId={sample.id} compareActive={compareActive} />
-          </CollapsibleSection>
-
           {visibleSections.hic !== false && (
             <section id="hic" data-section="hic" className="sample-section">
-              <h3 className="sample-section__title">{t('sample.sections.hic')}</h3>
+              <h3 className="sample-section__title">
+                <span>{t('sample.sections.hic')}</span>
+              </h3>
               {hicSection}
             </section>
           )}
 
-          {visibleSections.tracks !== false && (
-            <section id="tracks" data-section="tracks" className="sample-section">
-              <h3 className="sample-section__title">{t('sample.sections.tracks')}</h3>
-              {tracksSection}
-            </section>
-          )}
-
-          {visibleSections['3d'] !== false && (
-            <section id="3d" data-section="3d" className="sample-section">
-              <h3 className="sample-section__title">{t('sample.sections.3d')}</h3>
-              {threeDSection}
-            </section>
-          )}
-
-          {visibleSections.ctcf !== false && (
-            <section id="ctcf" data-section="ctcf" className="sample-section">
-              <h3 className="sample-section__title">{t('sample.sections.ctcf')}</h3>
-              {ctcfSection}
-            </section>
-          )}
+          {/* 轨道 / 3D / CTCF 已合并进 Hi-C 区块（见 hicSection 内子块） */}
         </div>
-
-        <SampleAnchorNav
-          sections={SECTIONS}
-          compareActive={compareActive}
-          a={sample.id}
-          b={partner?.id}
-          toggleableIds={VIZ_SECTIONS}
-          visible={visibleSections}
-          onToggle={toggleVisible}
-        />
       </div>
     </RouteShell>
   );

@@ -28,6 +28,7 @@ import * as THREE from 'three';
 import { fetchBed, fetchDerivedThreeD } from '../../../api/client';
 import type { DerivedThreeDResponse } from '../../../api/client';
 import type { PeiRecord } from '../../../api/types';
+import { useCursor } from '../../../store/cursor';
 import { useViewport } from '../../../store/viewport';
 import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
 import './three-d-chromatin.css';
@@ -84,7 +85,7 @@ const ORGAN_PARAMS: Record<
 // 防止 enhancer 数量爆炸；超过即截断，避免 GPU 顶点数失控
 const ENHANCER_LIMIT = 6;
 // loop 弧的管半径：与主 tube 一致（0.034），形成统一的视觉层级
-const LOOP_TUBE_RADIUS = 0.034;
+const LOOP_TUBE_RADIUS = 0.02;
 
 // ─────── deterministic PRNG / math (mirrors chromatin3d.html:29-51) ─────────
 //
@@ -102,12 +103,19 @@ function mulberry32(seed: number) {
 
 /**
  * rainbow(t) → 颜色
- * 把 t∈[0,1] 映射成蓝→青→绿→黄→红的彩虹渐变（HSL 色环绕一圈）。
- * 通过 `(240 * (1-t) / 360)` 让 t=0 对应蓝色 240°，t=1 对应红色 0°——形成"路径端点=冷色 → 中间=暖色"的视觉。
+ * 柔和彩虹：把 t∈[0,1] 映射成蓝→青→绿→黄→红的全谱渐变（HSL 色环绕一圈，
+ * t=0 蓝色 240°，t=1 红色 0°），但饱和度降到 0.5~0.6、亮度提到 0.58~0.66：
+ *  - 保留"彩色鲜活"的视觉层次（区别于单调单色系），在白底上不刺眼；
+ *  - 相比最初的全饱和版（0.72/0.52），更通透柔和，细管（0.010）更精致；
+ *  - 与锁定高亮黄球（0xffd43b）同属暖色端，联动时黄球在彩色纤维上依然醒目。
+ * 同一函数被 tube / beads / loop 弧共用，改一处全模型配色统一。
  */
 function rainbow(t: number): THREE.Color {
-  // hsl2rgb(240 * (1-t), 0.72, 0.52)  → blue→cyan→green→yellow→red
-  return new THREE.Color().setHSL(240 * (1 - t) / 360, 0.72, 0.52);
+  const clamped = Math.min(1, Math.max(0, t));
+  const hue = 240 * (1 - clamped);       // 240°→0°（蓝→青→绿→黄→红）
+  const sat = 0.60 - 0.12 * clamped;     // 0.60→0.48
+  const light = 0.58 + 0.08 * clamped;   // 0.58→0.66
+  return new THREE.Color().setHSL(hue / 360, sat, light);
 }
 
 /**
@@ -119,37 +127,62 @@ function rainbow(t: number): THREE.Color {
  *
  * 注意：归一化到固定半径意味着不同 organ 的"管子大小"在屏幕上看起来一致——只比较形状差异
  */
+/**
+ * 平滑值噪声 + 余弦插值：确定性、处处连续，无折角。
+ */
+function makeNoise(rng: () => number): (t: number) => number {
+  const lattice: number[] = [];
+  for (let i = 0; i < 64; i += 1) lattice.push(rng() * 2 - 1);
+  return (t: number) => {
+    const x = t * 8;
+    const i = Math.floor(x);
+    const f = x - i;
+    const u = (1 - Math.cos(f * Math.PI)) / 2;
+    const a = lattice[((i % 64) + 64) % 64];
+    const b = lattice[(((i + 1) % 64) + 64) % 64];
+    return a + (b - a) * u;
+  };
+}
+
+/**
+ * fBm（分形布朗运动）：3 个 octave 叠加，振幅递减（0.6 / 0.3 / 0.1）。
+ * 生成 fractal-globule 风格的自然丝滑弯曲——比正弦更"有机"，无规则感。
+ */
+function makeFbm(rng: () => number): (t: number) => number {
+  const n1 = makeNoise(rng);
+  const n2 = makeNoise(rng);
+  const n3 = makeNoise(rng);
+  return (t: number) =>
+    n1(t) * 0.6 + n2(t * 2.13) * 0.3 + n3(t * 4.7) * 0.1;
+}
+
 function makePath(seed: number, steps: number): THREE.Vector3[] {
+  // fBm 噪声路径：每轴一条独立噪声曲线，低频主导 → 大尺度平滑弯曲，
+  // 高频只是细微起伏；整条纤维没有折角，弯曲丝滑自然。
   const rng = mulberry32(seed);
-  let d = new THREE.Vector3(rng() - 0.5, rng() - 0.5, rng() - 0.5).normalize();
-  let p = new THREE.Vector3(0, 0, 0);
-  const raw: THREE.Vector3[] = [p.clone()];
-  for (let i = 0; i < steps; i += 1) {
-    d = new THREE.Vector3(
-      d.x + (rng() - 0.5) * 1.85,
-      d.y + (rng() - 0.5) * 1.85,
-      d.z + (rng() - 0.5) * 1.85,
-    ).normalize();
-    p = p.clone().add(d.clone().multiplyScalar(0.42));
-    raw.push(p.clone());
+  const fx = makeFbm(rng);
+  const fy = makeFbm(rng);
+  const fz = makeFbm(rng);
+  const pts: THREE.Vector3[] = [];
+  const N = Math.max(24, steps);
+  for (let i = 0; i <= N; i += 1) {
+    const t = i / N;
+    pts.push(new THREE.Vector3(fx(t) * 1.15, fy(t) * 1.15, fz(t) * 1.15));
   }
 
-  // Catmull-Rom 样条：用控制点 raw 插值生成密集的"曲线点"
-  const curve = new THREE.CatmullRomCurve3(raw, false, 'catmullrom', 0.5);
-  const totalLen = raw.length - 1;
-  // 原 demo 每对控制点间采 10 个点——已经够密，TubeGeometry 自身也会再分段
-  const ptsPerSeg = 10;
+  // Catmull-Rom 平滑（tension 0.5 最圆润），每段 20 个采样点
+  const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+  const totalLen = pts.length - 1;
+  const ptsPerSeg = 20;
   const smooth: THREE.Vector3[] = [];
   for (let i = 0; i < totalLen; i += 1) {
     for (let s = 0; s < ptsPerSeg; s += 1) {
-      const t = (i + s / ptsPerSeg) / totalLen;
-      smooth.push(curve.getPoint(t));
+      smooth.push(curve.getPoint((i + s / ptsPerSeg) / totalLen));
     }
   }
-  smooth.push(raw[raw.length - 1]);
+  smooth.push(pts[totalLen].clone());
 
-  // 归一化到半径 1.25（与原 demo 的 normalizePts 等价）：
-  // 1) 中心化到原点；2) 找最大距离 R；3) 缩放到 1.25 / R
+  // 归一化到半径 1.25：中心化 → 找最大距离 R → 缩放到 1.25 / R
   const center = new THREE.Vector3(0, 0, 0);
   for (const pt of smooth) center.add(pt);
   center.divideScalar(smooth.length);
@@ -168,9 +201,19 @@ function makePath(seed: number, steps: number): THREE.Vector3[] {
  * 颜色按"沿路径长度归一化"算 t → 用 rainbow(t) 着色，再写到 vertex color。
  * 这样整条管子从一端蓝渐变到另一端红。
  */
-function addTube(path: THREE.Vector3[], scene: THREE.Scene): void {
+/**
+ * 把 path 转成 rainbow 渐变的 tube 几何并加到 scene。
+ * 半径参数化：细粒度建模下主纤维更细（0.028），让"每 bin 一颗珠子"成为视觉主体。
+ * 分段数随 path 长度加密（每点 3 段起步，下限 200）——加密后的路径保证折角平滑。
+ */
+function addTube(
+  path: THREE.Vector3[],
+  scene: THREE.Scene,
+  radius = 0.010,
+): void {
   const curve = new THREE.CatmullRomCurve3(path, false, 'catmullrom', 0);
-  const tubeGeo = new THREE.TubeGeometry(curve, 200, 0.034, 10, false);
+  const segments = Math.max(200, path.length * 3);
+  const tubeGeo = new THREE.TubeGeometry(curve, segments, radius, 12, false);
   const colors = new Float32Array(tubeGeo.attributes.position.count * 3);
   const pos = tubeGeo.attributes.position;
   const tmp = new THREE.Vector3();
@@ -187,8 +230,8 @@ function addTube(path: THREE.Vector3[], scene: THREE.Scene): void {
   tubeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   const mat = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    metalness: 0,
-    roughness: 0.7,
+    metalness: 0.04,
+    roughness: 0.28,
   });
   scene.add(new THREE.Mesh(tubeGeo, mat));
 }
@@ -202,12 +245,127 @@ function addSphere(
   color: number,
   scene: THREE.Scene,
 ): THREE.Mesh {
-  const geo = new THREE.SphereGeometry(radius, 16, 20);
-  const mat = new THREE.MeshStandardMaterial({ color });
+  const geo = new THREE.SphereGeometry(radius, 24, 24);
+  const mat = new THREE.MeshPhysicalMaterial({
+    color,
+    roughness: 0.32,
+    metalness: 0.08,
+    clearcoat: 0.6,
+    clearcoatRoughness: 0.3,
+  });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.copy(pos);
   scene.add(mesh);
   return mesh;
+}
+
+/**
+ * 辉光 Sprite：canvas 径向渐变纹理 + AdditiveBlending，
+ * 给 marker / enhancer / 高亮球加柔光光晕，提升 3D 质感。
+ */
+function makeGlowSprite(
+  color: number,
+  size = 0.4,
+  opacity = 0.5,
+): THREE.Sprite {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const ctx = c.getContext('2d') as CanvasRenderingContext2D;
+  const g = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,0.95)');
+  g.addColorStop(0.35, 'rgba(255,255,255,0.4)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({
+    map: tex,
+    color,
+    transparent: true,
+    opacity,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(size, size, 1);
+  return sprite;
+}
+
+/**
+ * Catmull-Rom 加密路径：真实 MDS 坐标每个 bin 只有一个点（如 1Mb 视口 / 50kb bin
+ * → 约 20 个点），直接连管会有明显折角。加密后每对控制点间插 ptsPerSeg 个点，
+ * 让染色质纤维在 3D 中平滑连续（mock 随机游走路径已足够密，不再二次加密）。
+ */
+function densify(path: THREE.Vector3[], ptsPerSeg = 8): THREE.Vector3[] {
+  if (path.length < 3) return path;
+  const curve = new THREE.CatmullRomCurve3(path, false, 'catmullrom', 0.5);
+  const out: THREE.Vector3[] = [];
+  const segs = path.length - 1;
+  for (let i = 0; i < segs; i += 1) {
+    for (let s = 0; s < ptsPerSeg; s += 1) {
+      out.push(curve.getPoint((i + s / ptsPerSeg) / segs));
+    }
+  }
+  out.push(path[segs].clone());
+  return out;
+}
+
+interface BeadHandle {
+  mesh: THREE.Mesh;
+  /** 珠子沿路径的归一化位置 t∈[0,1]，用于锁定区间高亮判断。 */
+  t: number;
+  /** 恢复为 rainbow 本色。 */
+  restore: () => void;
+  /** 高亮为黄色自发光（锁定 bin 区间内的珠子）。 */
+  highlight: () => void;
+}
+
+/**
+ * 细粒度建模核心：beads-on-a-string。
+ * 沿路径均匀放 count 颗半透明小珠（半径 0.05，略大于纤维管 0.028），
+ * 每颗珠子对应一个基因组 bin，颜色用 rainbow(t) 与主纤维渐变一致。
+ * 返回句柄供锁定联动：区间内的珠子切换为黄色自发光。
+ */
+function addBeads(
+  path: THREE.Vector3[],
+  count: number,
+  scene: THREE.Scene,
+): BeadHandle[] {
+  const handles: BeadHandle[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const t = count === 1 ? 0 : i / (count - 1);
+    const idx = Math.max(0, Math.min(path.length - 1, Math.round(t * (path.length - 1))));
+    const color = rainbow(t);
+    const geo = new THREE.SphereGeometry(0.026, 20, 20);
+    const mat = new THREE.MeshPhysicalMaterial({
+      color,
+      transparent: true,
+      opacity: 0.7,
+      roughness: 0.24,
+      metalness: 0.05,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.25,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(path[idx]);
+    scene.add(mesh);
+    handles.push({
+      mesh,
+      t,
+      restore: () => {
+        mat.color.copy(color);
+        mat.emissive.setHex(0x000000);
+        mat.emissiveIntensity = 0;
+      },
+      highlight: () => {
+        mat.color.setHex(0xffd43b);
+        mat.emissive.setHex(0xffd43b);
+        mat.emissiveIntensity = 0.9;
+      },
+    });
+  }
+  return handles;
 }
 
 /**
@@ -271,6 +429,8 @@ export function ThreeDChromatin({
   // 避免重建整个 scene 来更新 enhancer 几何
   const sceneHandleRef = useRef<{
     attachEnhancers: (records: PeiRecord[]) => void;
+    /** 锁定区域高亮：t0/t1 为 bin 区间沿路径的归一化范围；null 移除高亮。 */
+    setHighlight: (t0: number | null, t1: number | null) => void;
   } | null>(null);
 
   // 主 effect：建 scene + renderer + controls + 几何；cleanup 全量释放
@@ -286,35 +446,55 @@ export function ThreeDChromatin({
       threeDQuery.data?.source === 'real' &&
       coords !== undefined &&
       coords.length >= 2;
-    const path = useRealCoords
+    // 原始坐标点：真实 MDS 每 bin 一个点；mock 是随机游走控制点
+    const pathRaw = useRealCoords
       ? coords.map(([x, y, z]) => new THREE.Vector3(x, y, z))
       : makePath(seed, steps);
+    // 细粒度：真实坐标加密（每段 8 点），mock 已密不重复加密
+    const path = useRealCoords ? densify(pathRaw, 12) : pathRaw;
     // clientWidth/Height 在 mount 时可能为 0（layout 未就绪），用 max(.., 1) 兜底
     const panelW = Math.max(mount.clientWidth, 1);
     const panelH = Math.max(mount.clientHeight, 1);
 
     // ── Scene / Camera / Renderer ──────────────────────────────────────
     const scene = new THREE.Scene();
+    // 白色背景：科研可视化页面基调，深色纤维与彩色珠子在白底上清晰
     scene.background = new THREE.Color(0xffffff);
 
     const camera = new THREE.PerspectiveCamera(42, panelW / panelH, 0.1, 100);
     camera.position.set(0, 0, 3.5);
     camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // preserveDrawingBuffer=true：详情页"导出 PDF"用 html2canvas 截图时
+    // 需要读取绘制缓冲（连续 rAF 渲染默认会清空缓冲导致截图空白）。
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      preserveDrawingBuffer: true,
+    });
     renderer.setSize(panelW, panelH);
     // 限到 2：4K 屏上 setPixelRatio(window.devicePixelRatio) 会让 fragment shader 跑爆
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mount.appendChild(renderer.domElement);
 
-    // 灯光——匹配原 demo 的 uLight 参数：环境光 + 一个方向光
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const dl = new THREE.DirectionalLight(0xffffff, 0.7);
-    dl.position.set(5, 7, 8);
+    // 灯光——半球光 + 主光 + 冷补光 + 轮廓光，营造立体层次
+    scene.add(new THREE.AmbientLight(0xffffff, 0.22));
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x22252e, 0.5);
+    scene.add(hemi);
+    const dl = new THREE.DirectionalLight(0xfff2dd, 1.05);
+    dl.position.set(4, 6, 5);
     scene.add(dl);
+    const fill = new THREE.DirectionalLight(0x6f9bff, 0.35);
+    fill.position.set(-5, -3, -4);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.3);
+    rim.position.set(0, -2, 6);
+    scene.add(rim);
 
-    // ── Rainbow tube ───────────────────────────────────────────────────
+    // ── Rainbow tube（细管 0.028）─────────────────────────────────────
     addTube(path, scene);
+
+    // 所有 marker 辉光 sprite：随 effect cleanup 统一 dispose
+    const glowSprites: THREE.Sprite[] = [];
 
     // ── 路径标记球 ─────────────────────────────────────────────────────
     // 把球和位置都存下来——后面 attach enhancer 时要复用球位置（作为 promoter 锚点）
@@ -323,17 +503,24 @@ export function ThreeDChromatin({
     for (const m of markers) {
       const idx = Math.round(m.t * (path.length - 1));
       spherePositions.push(path[idx].clone());
-      sphereMeshes.push(
-        addSphere(path[idx], 0.11, m.color, scene),
-      );
+      sphereMeshes.push(addSphere(path[idx], 0.06, m.color, scene));
+      const glow = makeGlowSprite(m.color, 0.42, 0.5);
+      glow.position.copy(path[idx]);
+      scene.add(glow);
+      glowSprites.push(glow);
     }
+
+    // ── 每 bin 一颗珠子（beads-on-a-string，细粒度主体）──────────────
+    // 真实数据：珠子数 = bin 数（coords 长度）；mock：均匀取 20 颗
+    const beadCount = useRealCoords ? coords.length : 20;
+    const beads = addBeads(path, beadCount, scene);
 
     // ── 交互 group（PEI enhancer 球 + loop 弧）───────────────────────
     // 把 PEI 相关几何都放一个 Group，方便 attachEnhancers 时整体清掉再重建
     const interactionGroup = new THREE.Group();
     scene.add(interactionGroup);
 
-    const enhancerRad = 0.09;
+    const enhancerRad = 0.06;
     const enhancerGeo = new THREE.SphereGeometry(enhancerRad, 16, 16);
     const enhancerMat = new THREE.MeshStandardMaterial({ color: 0x5ba854 });
 
@@ -346,6 +533,10 @@ export function ThreeDChromatin({
         const child = interactionGroup.children[0];
         interactionGroup.remove(child);
         if (child instanceof THREE.Mesh) child.geometry.dispose();
+        if (child instanceof THREE.Sprite) {
+          child.material.map?.dispose();
+          child.material.dispose();
+        }
       }
       const enhancers = records.slice(0, ENHANCER_LIMIT);
       if (enhancers.length === 0) return;
@@ -369,6 +560,9 @@ export function ThreeDChromatin({
         const enhancer = new THREE.Mesh(enhancerGeo, enhancerMat);
         enhancer.position.copy(enhancerPos);
         interactionGroup.add(enhancer);
+        const glow = makeGlowSprite(0x7dffa8, 0.36, 0.45);
+        glow.position.copy(enhancerPos);
+        interactionGroup.add(glow);
 
         // spanBp（PEI 跨度）越大 → 弧越高
         const spanBp = Math.max(0, record.end - record.start);
@@ -446,9 +640,9 @@ export function ThreeDChromatin({
       lastX: 0,
       lastY: 0,
       pointerId: -1,
-      theta: Math.random() * Math.PI * 2,
-      phi: Math.PI / 2 - 0.32,
-      dist: 3.5,
+      theta: 0.72,
+      phi: Math.PI / 2 - 0.42,
+      dist: 3.1,
       rot: 0,
       vel: 0,
     };
@@ -549,8 +743,50 @@ export function ThreeDChromatin({
     // 在下一帧再 resize 一次：layout 此时已经稳定，避免首帧画错比例
     requestAnimationFrame(() => resize());
 
+    // ── 锁定区域高亮球 ────────────────────────────────────────────────
+    // 点击锁定 Hi-C 后，把选定 bin 映射到路径 t∈[0,1]，在对应位置放一个
+    // 黄色自发光球（3D 联动"该区域在染色质结构上的位置"）。
+    // 中心标记球：尺寸 0.30、强自发光——标出锁定区间的几何中点
+    const highlightGeo = new THREE.SphereGeometry(0.026, 20, 20);
+    const highlightMat = new THREE.MeshStandardMaterial({
+      color: 0xffd43b,
+      emissive: 0xffd43b,
+      emissiveIntensity: 1.2,
+    });
+    let highlightMesh: THREE.Mesh | null = null;
+    let highlightGlow: THREE.Sprite | null = null;
+    // 锁定区域 3D 联动（细粒度）：t0/t1 为 bin 区间沿路径的归一化范围
+    const setHighlight = (t0: number | null, t1: number | null): void => {
+      if (highlightMesh) {
+        scene.remove(highlightMesh);
+        highlightMesh = null;
+      }
+      if (highlightGlow) {
+        scene.remove(highlightGlow);
+        highlightGlow = null;
+      }
+      // 先把所有珠子还原为 rainbow 本色
+      for (const bead of beads) bead.restore();
+      if (t0 === null || t1 === null || path.length < 2) return;
+      const lo = Math.min(t0, t1);
+      const hi = Math.max(t0, t1);
+      // 区间内的珠子整颗高亮为黄色——"该 bin 区间占据染色质的哪些珠子"
+      for (const bead of beads) {
+        if (bead.t >= lo && bead.t <= hi) bead.highlight();
+      }
+      // 中心标记球放在区间中点
+      const midT = (lo + hi) / 2;
+      const idx = Math.max(0, Math.min(path.length - 1, Math.round(midT * (path.length - 1))));
+      highlightMesh = new THREE.Mesh(highlightGeo, highlightMat);
+      highlightMesh.position.copy(path[idx]);
+      scene.add(highlightMesh);
+      highlightGlow = makeGlowSprite(0xffd43b, 0.3, 0.6);
+      highlightGlow.position.copy(path[idx]);
+      scene.add(highlightGlow);
+    };
+
     // 把 attachEnhancers 暴露给第二个 effect；首次挂载时如果 PEI 数据已就绪，立即渲染
-    sceneHandleRef.current = { attachEnhancers };
+    sceneHandleRef.current = { attachEnhancers, setHighlight };
     if (peiQuery.data) attachEnhancers(peiQuery.data);
 
     return () => {
@@ -569,6 +805,24 @@ export function ThreeDChromatin({
       interactionGroup.traverse((child) => {
         if (child instanceof THREE.Mesh) child.geometry.dispose();
       });
+      if (highlightMesh) scene.remove(highlightMesh);
+      if (highlightGlow) {
+        scene.remove(highlightGlow);
+        highlightGlow.material.map?.dispose();
+        highlightGlow.material.dispose();
+      }
+      highlightGeo.dispose();
+      highlightMat.dispose();
+      for (const glow of glowSprites) {
+        scene.remove(glow);
+        glow.material.map?.dispose();
+        glow.material.dispose();
+      }
+      for (const bead of beads) {
+        scene.remove(bead.mesh);
+        bead.mesh.geometry.dispose();
+        (bead.mesh.material as THREE.Material).dispose();
+      }
       sceneHandleRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -579,6 +833,29 @@ export function ThreeDChromatin({
   useEffect(() => {
     sceneHandleRef.current?.attachEnhancers(peiQuery.data ?? []);
   }, [peiQuery.data]);
+
+  // 锁定区域 3D 联动：cursor store 锁定后，把 bin 中心映射到路径 t
+  // （相对当前视口比例），驱动高亮球；解锁后自动移除。
+  const cursorLocked = useCursor((state) => state.locked);
+  const cursorBinStart = useCursor((state) => state.binStart);
+  const cursorBinEnd = useCursor((state) => state.binEnd);
+  // 锁定区间沿视口归一化为 [t0, t1]，驱动 3D 珠子高亮 + 中心标记球
+  useEffect(() => {
+    const handle = sceneHandleRef.current;
+    if (!handle) return;
+    if (!cursorLocked || cursorBinStart === null || cursorBinEnd === null) {
+      handle.setHighlight(null, null);
+      return;
+    }
+    const vw = viewport.end - viewport.start;
+    if (vw <= 0) {
+      handle.setHighlight(null, null);
+      return;
+    }
+    const t0 = Math.max(0, Math.min(1, (cursorBinStart - viewport.start) / vw));
+    const t1 = Math.max(0, Math.min(1, (cursorBinEnd - viewport.start) / vw));
+    handle.setHighlight(t0, t1);
+  }, [cursorLocked, cursorBinStart, cursorBinEnd, viewport.start, viewport.end]);
 
   return (
     <div
