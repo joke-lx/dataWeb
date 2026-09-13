@@ -53,6 +53,7 @@ function parseBp(text: string): number {
  * 非法输入静默忽略。
  */
 export function RegionInput(): JSX.Element {
+  const store = usePanelViewportStore();
   const chr = usePanelViewport((state) => state.chr);
   const start = usePanelViewport((state) => state.start);
   const end = usePanelViewport((state) => state.end);
@@ -75,7 +76,7 @@ export function RegionInput(): JSX.Element {
     if (nextEnd <= nextStart) return;
 
     // 一次 setState 写入，避免触发额外的中间渲染。
-    usePanelViewportStore().setState({
+    store.setState({
       start: nextStart,
       end: nextEnd,
     });
@@ -86,12 +87,12 @@ export function RegionInput(): JSX.Element {
   };
 
   const onChrChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-    usePanelViewportStore().setState({ chr: e.target.value, start: 0, end: 5_000_000 });
+    store.setState({ chr: e.target.value, start: 0, end: 5_000_000 });
   };
   const onSizeChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const bp = Number(e.target.value);
     const center = (start + end) / 2;
-    usePanelViewportStore().setState({
+    store.setState({
       start: Math.max(0, Math.round(center - bp / 2)),
       end: Math.round(center + bp / 2),
     });
@@ -142,7 +143,6 @@ export function RegionInput(): JSX.Element {
         {VIEW_SIZES.map((v) => (
           <option key={v.label} value={v.bp}>{v.label}</option>
         ))}
-        <option value={currentSize}>{sizeLabel}</option>
       </select>
     </div>
   );
