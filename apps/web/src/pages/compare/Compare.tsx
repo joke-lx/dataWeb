@@ -25,7 +25,6 @@ import { useEffect, useRef, useState, type JSX } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
-import { useAppIntl } from '../../i18n';
 import { ComparePanel } from './ComparePanel';
 import { CompareRail } from './CompareRail';
 import './compare.css';
@@ -34,7 +33,6 @@ import './compare.css';
  * Compare 工作区路由组件。
  */
 export function Compare(): JSX.Element {
-  const { t } = useAppIntl();
   const { samples, isLoading } = useSampleCatalog();
   const [searchParams, setSearchParams] = useSearchParams();
 
