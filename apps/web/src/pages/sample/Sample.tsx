@@ -409,6 +409,15 @@ export function Sample(): JSX.Element {
         </>
       ) : (
         <div className="gbv-hic-host" data-crosshair-host ref={hicWrapRef}>
+          <div className="hic-viewbar">
+            <span className="hic-viewbar__sample">{sample.id}</span>
+            <button type="button" className="hic-viewbar__refresh" aria-label="Refresh view">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M2.5 8a5.5 5.5 0 1 1 1.6 3.9M2.5 8V4.5M2.5 8H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <span className="hic-viewbar__hap">Haplotype ID</span>
+          </div>
           <GenomeBrowserView
             sampleId={sample.id}
             tracks={visibleSections.tracks !== false ? selectedTypes : []}

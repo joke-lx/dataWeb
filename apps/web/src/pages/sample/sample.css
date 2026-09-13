@@ -797,3 +797,23 @@
   align-items: center;
 }
 .gene-search__btn:hover { color: var(--color-accent, #1f6fb8); }
+
+.hic-viewbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 2px 4px 6px;
+  font-size: 13px;
+}
+.hic-viewbar__sample { font-weight: 600; color: #1a2128; }
+.hic-viewbar__refresh {
+  border: none;
+  background: transparent;
+  color: #9aa3ad;
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+}
+.hic-viewbar__refresh:hover { color: #1f6fb8; }
+.hic-viewbar__hap { color: #d51031; font-weight: 600; }
