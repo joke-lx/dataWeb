@@ -278,7 +278,11 @@ export function GenomeBrowserView({
           return (
             <div
               className="gbv-lane gbv-lane--loops"
-              style={{ height: `${LOOPS_HEIGHT}px` }}
+              style={{
+                height: `${LOOPS_HEIGHT}px`,
+                display: 'flex',
+                alignItems: 'stretch',
+              }}
             >
               <div
                 className="gbv-lane__label"
@@ -292,6 +296,10 @@ export function GenomeBrowserView({
                   overflow: 'hidden',
                   textAlign: 'right',
                   fontSize: 'var(--font-size-small)',
+                  width: LABEL_GUTTER,
+                  flex: '0 0 auto',
+                  borderRight: 'var(--track-separator) solid var(--color-border)',
+                  background: 'var(--color-surface-1)',
                 }}
               >
                 <span className="lane-sample">{sampleId}</span>
