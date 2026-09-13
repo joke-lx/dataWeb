@@ -145,7 +145,7 @@ export function Sample(): JSX.Element {
   const [selectedTypes, setSelectedTypes] = useState<TrackId[]>(initialTypes);
 
   // ── Hi-C 快速调整工具栏状态（独立一行，受控下发给 GenomeBrowserView）──
-  const [triangle, setTriangle] = useState(false);
+  const [triangle, setTriangle] = useState(true);
   const [autoColor, setAutoColor] = useState(true);
   const [lockResolution, setLockResolution] = useState(false);
   const [normalization, setNormalization] = useState<HicNormalization>('log2');
