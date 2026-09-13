@@ -315,6 +315,25 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
         if (rect.width <= 0) return;
         const localX = event.clientX - rect.left;
         const localY = event.clientY - rect.top;
+
+        // 三角形模式：canvas 是正方形，上三角（y < x）被 discard 透明。
+        // 鼠标落在透明区域时不画十字线，否则空白处也会跟随。
+        const canvasEl = canvasRef.current;
+        if (canvasEl) {
+          const cr = canvasEl.getBoundingClientRect();
+          const cx = event.clientX - cr.left;
+          const cy = event.clientY - cr.top;
+          // 鼠标在 canvas 外：清除十字线
+          if (cx < 0 || cy < 0 || cx > cr.width || cy > cr.height) {
+            useCursor.getState().clearCursor();
+            return;
+          }
+          // triangle 模式：上三角（cy/cr.height < cx/cr.width）被 discard，不响应
+          if (triangle && cy / cr.height < cx / cr.width) {
+            useCursor.getState().clearCursor();
+            return;
+          }
+        }
         // 热图方块（canvas）在 .hic-matrix 容器内水平居中：
         // bp 映射必须基于方块区域，容器左右有留白 + colormap 条，
         // 用全宽映射会让鼠标位置与碱基坐标错位。
