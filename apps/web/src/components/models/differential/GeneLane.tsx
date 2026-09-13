@@ -77,7 +77,7 @@ export function GeneLane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         {/* 轻量 loading / error 标记，叠加在 Plotly canvas 之上 */}
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <span className="track-loading">Loading…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

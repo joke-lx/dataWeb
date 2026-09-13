@@ -92,7 +92,7 @@ export function InsulationLane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         <ModelSourceBadge source={data?.source} />
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <span className="track-loading">Loading…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

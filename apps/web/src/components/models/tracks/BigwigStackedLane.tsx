@@ -181,7 +181,7 @@ export function BigwigStacked({
           <PlotlyTrack data={plot.data} layout={plot.layout} height={stackedLaneHeight} />
         )}
         {useActivity && <ModelSourceBadge source={activitySource ?? 'ab_proxy'} />}
-        {overlayLoading && <span className="track-loading">…</span>}
+        {overlayLoading && <span className="track-loading">Loading…</span>}
         {overlayError && (
           <span className="track-error" title={overlayError.message}>
             !

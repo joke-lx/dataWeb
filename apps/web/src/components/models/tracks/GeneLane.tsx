@@ -76,7 +76,7 @@ export function GeneLane({
         data-track-name="gene"
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <span className="track-loading">Loading…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

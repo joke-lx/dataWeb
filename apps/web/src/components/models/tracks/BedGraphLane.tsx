@@ -77,7 +77,7 @@ export function BedGraphLane({
         data-track-name={trackName}
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <span className="track-loading">Loading…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

@@ -119,7 +119,7 @@ export function BigwigLane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         {useActivity && <ModelSourceBadge source={source ?? 'ab_proxy'} />}
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <span className="track-loading">Loading…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !
