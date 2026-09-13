@@ -109,7 +109,7 @@ void main() {
   // Triangle Mode：只显示对角线下方的下三角（Hi-C 矩阵对称，上半部分裁掉）。
   // v_uv.y 向下递增（纹理行 0 = 矩阵顶部），矩阵元素 (row=i, col=j) 落在
   // (x=j/W, y=i/H)：i < j（上三角）即 uv.y < uv.x。
-  if (u_triangle == 1 && v_uv.y < v_uv.x) {
+  if (u_triangle == 1 && v_uv.y > v_uv.x) {
     discard;
   }
   float v = texture(u_matrix, v_uv).r;

@@ -328,8 +328,8 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
             useCursor.getState().clearCursor();
             return;
           }
-          // triangle 模式：上三角（cy/cr.height < cx/cr.width）被 discard，不响应
-          if (triangle && cy / cr.height < cx / cr.width) {
+          // triangle 模式：下三角（cy/cr.height > cx/cr.width）被 discard，不响应
+          if (triangle && cy / cr.height > cx / cr.width) {
             useCursor.getState().clearCursor();
             return;
           }
