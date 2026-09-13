@@ -27,7 +27,7 @@ export function FilesSection({ sampleId, compareActive }: FilesSectionProps): JS
           ? t('sample.files.descCompare')
           : t('sample.files.desc', { id: sampleId })}
       </p>
-      <FileTable sampleId={sampleId} />
+      <FileTable sampleId={sampleId} compact />
     </div>
   );
 }

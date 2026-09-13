@@ -38,8 +38,8 @@ export function OverviewSection({ sample, partner }: OverviewSectionProps): JSX.
   if (partner) {
     return (
       <div className="sample-overview sample-overview--compare">
-        <Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }} items={itemsFor(sample)} title={sample.id} />
-        <Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }} items={itemsFor(partner)} title={partner.id} />
+        <Descriptions bordered size="small" column={1} items={itemsFor(sample)} title={sample.id} />
+        <Descriptions bordered size="small" column={1} items={itemsFor(partner)} title={partner.id} />
       </div>
     );
   }
@@ -47,7 +47,7 @@ export function OverviewSection({ sample, partner }: OverviewSectionProps): JSX.
     <Descriptions
       bordered
       size="small"
-      column={{ xs: 1, sm: 2, md: 3 }}
+      column={1}
       items={itemsFor(sample)}
       title={t('sample.metadata.overview')}
     />

@@ -19,12 +19,14 @@ import './download.css';
 
 interface FileTableProps {
   sampleId: string;
+  /** 紧凑模式：侧边栏窄宽度时隐藏 format / size 列。 */
+  compact?: boolean;
 }
 
 /**
  * 文件表格。
  */
-export function FileTable({ sampleId }: FileTableProps): JSX.Element {
+export function FileTable({ sampleId, compact = false }: FileTableProps): JSX.Element {
   const { t } = useAppIntl();
   const { data, isLoading, error } = useQuery({
     queryKey: ['sample-files', sampleId],
@@ -40,27 +42,29 @@ export function FileTable({ sampleId }: FileTableProps): JSX.Element {
         <span className="ft-filename">{name}</span>
       ),
     },
-    {
-      title: t('file.format'),
-      dataIndex: 'format',
-      key: 'format',
-      width: 100,
-      render: (format: string) => <Tag className="ft-format">{format}</Tag>,
-    },
-    {
-      title: t('file.size'),
-      dataIndex: 'size_bytes',
-      key: 'size_bytes',
-      width: 110,
-      align: 'right' as const,
-      render: (size: number) => (
-        <span className="ft-size">{formatBytes(size)}</span>
-      ),
-    },
+    ...(compact ? [] : [
+      {
+        title: t('file.format'),
+        dataIndex: 'format',
+        key: 'format',
+        width: 100,
+        render: (format: string) => <Tag className="ft-format">{format}</Tag>,
+      },
+      {
+        title: t('file.size'),
+        dataIndex: 'size_bytes',
+        key: 'size_bytes',
+        width: 110,
+        align: 'right' as const,
+        render: (size: number) => (
+          <span className="ft-size">{formatBytes(size)}</span>
+        ),
+      },
+    ]),
     {
       title: '',
       key: 'action',
-      width: 170,
+      width: compact ? 100 : 170,
       align: 'right' as const,
       render: (_: unknown, file: SampleFileMeta) => (
         <DownloadItem sampleId={sampleId} file={file} />
