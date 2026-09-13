@@ -462,7 +462,7 @@ export function ThreeDChromatin({
     scene.background = new THREE.Color(0xffffff);
 
     const camera = new THREE.PerspectiveCamera(42, panelW / panelH, 0.1, 100);
-    camera.position.set(0, 0, 3.5);
+    camera.position.set(0, 0, 1.6);
     camera.lookAt(0, 0, 0);
 
     // preserveDrawingBuffer=true：详情页"导出 PDF"用 html2canvas 截图时
