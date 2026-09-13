@@ -167,7 +167,7 @@ function makePath(seed: number, steps: number): THREE.Vector3[] {
   const N = Math.max(24, steps);
   for (let i = 0; i <= N; i += 1) {
     const t = i / N;
-    pts.push(new THREE.Vector3(fx(t) * 1.15, fy(t) * 1.15, fz(t) * 1.15));
+    pts.push(new THREE.Vector3(fx(t) * 1.15, fy(t) * 1.15, fz(t) * 0.7));
   }
 
   // Catmull-Rom 平滑（tension 0.5 最圆润），每段 20 个采样点
@@ -209,7 +209,7 @@ function makePath(seed: number, steps: number): THREE.Vector3[] {
 function addTube(
   path: THREE.Vector3[],
   scene: THREE.Scene,
-  radius = 0.010,
+  radius = 0.016,
 ): void {
   const curve = new THREE.CatmullRomCurve3(path, false, 'catmullrom', 0);
   const segments = Math.max(200, path.length * 3);
@@ -337,11 +337,11 @@ function addBeads(
     const t = count === 1 ? 0 : i / (count - 1);
     const idx = Math.max(0, Math.min(path.length - 1, Math.round(t * (path.length - 1))));
     const color = rainbow(t);
-    const geo = new THREE.SphereGeometry(0.026, 20, 20);
+    const geo = new THREE.SphereGeometry(0.04, 20, 20);
     const mat = new THREE.MeshPhysicalMaterial({
       color,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.95,
       roughness: 0.24,
       metalness: 0.05,
       clearcoat: 0.8,
@@ -459,7 +459,7 @@ export function ThreeDChromatin({
     // ── Scene / Camera / Renderer ──────────────────────────────────────
     const scene = new THREE.Scene();
     // 白色背景：科研可视化页面基调，深色纤维与彩色珠子在白底上清晰
-    scene.background = new THREE.Color(0xffffff);
+    scene.background = new THREE.Color(0xfafbfc);
 
     const camera = new THREE.PerspectiveCamera(42, panelW / panelH, 0.1, 100);
     camera.position.set(0, 0, 1.6);
@@ -642,7 +642,7 @@ export function ThreeDChromatin({
       pointerId: -1,
       theta: 0.72,
       phi: Math.PI / 2 - 0.42,
-      dist: 3.1,
+      dist: 2.3,
       rot: 0,
       vel: 0,
     };
@@ -700,7 +700,7 @@ export function ThreeDChromatin({
       // 2) stopPropagation：同 parent 的兄弟 canvas 不会同时缩放。
       event.preventDefault();
       event.stopPropagation();
-      orbit.dist = Math.max(2, Math.min(15, orbit.dist + event.deltaY * 0.01));
+      orbit.dist = Math.max(1.2, Math.min(15, orbit.dist + event.deltaY * 0.01));
       updateCamera();
     };
     const onContextMenu = (event: MouseEvent) => { event.preventDefault(); };
@@ -747,7 +747,7 @@ export function ThreeDChromatin({
     // 点击锁定 Hi-C 后，把选定 bin 映射到路径 t∈[0,1]，在对应位置放一个
     // 黄色自发光球（3D 联动"该区域在染色质结构上的位置"）。
     // 中心标记球：尺寸 0.30、强自发光——标出锁定区间的几何中点
-    const highlightGeo = new THREE.SphereGeometry(0.026, 20, 20);
+    const highlightGeo = new THREE.SphereGeometry(0.04, 20, 20);
     const highlightMat = new THREE.MeshStandardMaterial({
       color: 0xffd43b,
       emissive: 0xffd43b,
