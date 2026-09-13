@@ -110,7 +110,7 @@
 /* 主体：左侧数据/轨道控制台 + 右侧主列 */
 .sample-linear {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 380px minmax(0, 1fr);
   gap: var(--space-4);
   padding: var(--space-4);
   align-items: stretch;
