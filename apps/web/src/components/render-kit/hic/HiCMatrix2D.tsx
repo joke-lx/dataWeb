@@ -320,8 +320,11 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
         const localX = event.clientX - rect.left;
         const localY = event.clientY - rect.top;
 
-        // 三角形模式：canvas 是正方形，上三角（y < x）被 discard 透明。
-        // 鼠标落在透明区域时不画十字线，否则空白处也会跟随。
+        // 三角形模式：斜边水平在垂直中间，三角形向上展开。
+        // 可见区域条件（与 fragment.glsl 同步）：
+        //   cv <= 0.5（上半）
+        //   off = (0.5 - cv) * sqrt2
+        //   off <= cu <= 1 - off（在两斜边之间）
         const canvasEl = canvasRef.current;
         if (canvasEl) {
           const cr = canvasEl.getBoundingClientRect();
@@ -332,10 +335,14 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
             useCursor.getState().clearCursor();
             return;
           }
-          // triangle 模式：下三角（cy/cr.height > cx/cr.width）被 discard，不响应
-          if (triangle && cy / cr.height > cx / cr.width) {
-            useCursor.getState().clearCursor();
-            return;
+          if (triangle) {
+            const cu = cx / cr.width;
+            const cv = cy / cr.height;
+            const off = (0.5 - cv) * 1.4142;
+            if (cv > 0.5 || cu < off || cu > 1 - off) {
+              useCursor.getState().clearCursor();
+              return;
+            }
           }
         }
         // 热图方块（canvas）在 .hic-matrix 容器内水平居中：
