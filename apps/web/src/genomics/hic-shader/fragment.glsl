@@ -106,8 +106,8 @@ vec3 reds(float t) {
 }
 
 void main() {
-  // Triangle Mode：斜边（对角线）水平在垂直方向中间，三角形向上展开。
-  // 仅旋转上三角一半，不拉伸：off 系数控制三角形高度，保持原三角比例。
+  // Triangle Mode：斜边（对角线）水平在垂直中间，三角形向上展开。
+  // canvas x 直接映射沿对角线方向（tu=tv=cu），canvas y 向上映射偏离距离。
   vec2 sampleUv = v_uv;
   if (u_triangle == 1) {
     float cu = v_uv.x;
@@ -116,8 +116,8 @@ void main() {
       discard;
     }
     float off = (0.5 - cv) * 1.4142;
-    float tu = (cu + off) * 0.5;
-    float tv = (cu - off) * 0.5;
+    float tu = cu + off;
+    float tv = cu - off;
     if (tu < 0.0 || tu > 1.0 || tv < 0.0 || tv > 1.0) {
       discard;
     }
