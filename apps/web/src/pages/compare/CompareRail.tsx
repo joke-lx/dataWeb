@@ -14,7 +14,6 @@
  */
 
 import type { JSX } from 'react';
-import { Link } from 'react-router-dom';
 
 import type { Sample } from '../../api/types';
 import { Popover } from '../../components/popover/Popover';
@@ -190,10 +189,6 @@ export function CompareRail({
           );
         })}
       </div>
-
-      <Link to="/compare/cases" className="compare-rail__cases">
-        {t('compare.workspace.casesLink')} →
-      </Link>
     </aside>
   );
 }

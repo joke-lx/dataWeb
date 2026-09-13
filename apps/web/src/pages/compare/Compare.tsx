@@ -148,15 +148,12 @@ export function Compare(): JSX.Element {
                   type="button"
                   className="compare-landing__card"
                   onClick={() => {
-                    if (samples && samples.length >= 2) {
-                      setAdded([samples[0].id, samples[1].id]);
-                    }
+                    window.location.href = '/compare/cases';
                   }}
-                  disabled={!samples || samples.length < 2}
                 >
                   <span className="compare-landing__card-title">查看预设案例</span>
                   <span className="compare-landing__card-body">
-                    自动加载 {samples?.[0]?.id ?? 'Brain_BF3'} 与 {samples?.[1]?.id ?? 'Brain_TM4'} 并排对比
+                    浏览预制对比案例
                   </span>
                 </button>
                 <button
