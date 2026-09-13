@@ -137,6 +137,10 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
     canvas.style.height = `${side}px`;
     gl.viewport(0, 0, drawingSide, drawingSide);
 
+    // 清屏，避免 triangle toggle / resize 后旧像素残留叠加
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
     gl.useProgram(program);
     gl.uniform1i(gl.getUniformLocation(program, 'u_matrix'), 0);
     gl.uniform1f(gl.getUniformLocation(program, 'u_vmin'), vmin);
