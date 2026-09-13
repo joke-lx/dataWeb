@@ -106,13 +106,23 @@ vec3 reds(float t) {
 }
 
 void main() {
-  // Triangle Mode：只显示对角线下方的下三角（Hi-C 矩阵对称，上半部分裁掉）。
-  // v_uv.y 向下递增（纹理行 0 = 矩阵顶部），矩阵元素 (row=i, col=j) 落在
-  // (x=j/W, y=i/H)：i < j（上三角）即 uv.y < uv.x。
-  if (u_triangle == 1 && v_uv.y > v_uv.x) {
-    discard;
+  // Triangle Mode：斜边（对角线）水平在底部，三角形向上展开。
+  // canvas 像素 (cu, cv) 映射到纹理坐标：
+  //   cv=1（底部）→ 对角线 tu=tv（斜边水平）
+  //   cv<1（上方）→ 远离对角线
+  //   沿对角线方向 tu+tv = cu*2；垂直方向 tu-tv = 1-cv
+  vec2 sampleUv = v_uv;
+  if (u_triangle == 1) {
+    float cu = v_uv.x;
+    float cv = v_uv.y;
+    float tu = (cu * 2.0 + (1.0 - cv)) * 0.5;
+    float tv = (cu * 2.0 - (1.0 - cv)) * 0.5;
+    if (tu < 0.0 || tu > 1.0 || tv < 0.0 || tv > 1.0) {
+      discard;
+    }
+    sampleUv = vec2(tu, tv);
   }
-  float v = texture(u_matrix, v_uv).r;
+  float v = texture(u_matrix, sampleUv).r;
   float t = clamp((v - u_vmin) / (u_vmax - u_vmin + 1e-9), 0.0, 1.0);
   vec3 rgb;
   if (u_colorMap == 0)      rgb = rdbu(t);
