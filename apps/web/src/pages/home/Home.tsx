@@ -88,6 +88,30 @@ export function Home(): JSX.Element {
         </div>
       </section>
 
+      {/* ── 物种选择：Pig / Chicken ── */}
+      <section className="home-species">
+        <div className="home-species__card">
+          <div className="home-species__img-wrap">
+            <img src="/assets/pig.png" alt="Pig" className="home-species__img" />
+          </div>
+          <h3 className="home-species__name">Pig</h3>
+          <div className="home-species__btns">
+            <Link className="home-species__btn" to="/database?species=pig">Summary mode</Link>
+            <Link className="home-species__btn" to="/visual?species=pig">Visualization mode</Link>
+          </div>
+        </div>
+        <div className="home-species__card">
+          <div className="home-species__img-wrap">
+            <img src="/assets/chicken.png" alt="Chicken" className="home-species__img" />
+          </div>
+          <h3 className="home-species__name">Chicken</h3>
+          <div className="home-species__btns">
+            <Link className="home-species__btn" to="/database?species=chicken">Summary mode</Link>
+            <Link className="home-species__btn" to="/visual?species=chicken">Visualization mode</Link>
+          </div>
+        </div>
+      </section>
+
       <FeatureGrid id="home-features" />
       <HomeFooter />
     </main>
