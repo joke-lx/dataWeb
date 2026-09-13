@@ -410,17 +410,6 @@ export function GenomeBrowserView({
               onMouseLeave={onTrackLeave}
             >
               {renderTrack(id)}
-              <button
-                type="button"
-                className="gbv-track-gear"
-                aria-label="Track settings"
-                title="Track settings"
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.3"/>
-                  <path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-                </svg>
-              </button>
               {/* 锁定区域在每条轨道内的 bin 高亮列（轨道自身联动，不跨画布） */}
               <TrackBinIndicator
                 contentWidth={trackContentWidth}
