@@ -27,6 +27,18 @@ import './nav.css';
 /** 匹配允许千位逗号的正整数。 */
 const INT_RE = /^\d+(?:,\d+)*$/;
 
+/** mock 染色体列表。 */
+const CHROMOSOMES = ['chr1','chr2','chr3','chr4','chr5','chr6','chr7','chr8','chr9','chr10','chrX'];
+
+/** 视口大小选项（bp）。 */
+const VIEW_SIZES = [
+  { label: '1 Mb', bp: 1_000_000 },
+  { label: '5 Mb', bp: 5_000_000 },
+  { label: '10 Mb', bp: 10_000_000 },
+  { label: '50 Mb', bp: 50_000_000 },
+  { label: '100 Mb', bp: 100_000_000 },
+];
+
 /** 把 `1234567` 或 `1,234,567` 解析为 number；解析失败返回 NaN。 */
 function parseBp(text: string): number {
   if (!INT_RE.test(text)) return Number.NaN;
@@ -73,9 +85,32 @@ export function RegionInput(): JSX.Element {
     if (event.key === 'Enter') onSubmit();
   };
 
+  const onChrChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    usePanelViewportStore().setState({ chr: e.target.value, start: 0, end: 5_000_000 });
+  };
+  const onSizeChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+    const bp = Number(e.target.value);
+    const center = (start + end) / 2;
+    usePanelViewportStore().setState({
+      start: Math.max(0, Math.round(center - bp / 2)),
+      end: Math.round(center + bp / 2),
+    });
+  };
+  const currentSize = end - start;
+  const sizeLabel = VIEW_SIZES.find((v) => Math.abs(v.bp - currentSize) < currentSize * 0.15)?.label ?? 'Custom';
+
   return (
     <div className="region-input">
-      <span className="region-input__chr" aria-hidden="true">{chr}:</span>
+      <select
+        aria-label="Select chromosome"
+        className="region-input__chr-select"
+        value={CHROMOSOMES.includes(chr) ? chr : 'chr1'}
+        onChange={onChrChange}
+      >
+        {CHROMOSOMES.map((c) => (
+          <option key={c} value={c}>{c}</option>
+        ))}
+      </select>
       <input
         aria-label={`Start position on ${chr}`}
         type="text"
@@ -98,6 +133,17 @@ export function RegionInput(): JSX.Element {
       <button type="button" onClick={onSubmit}>
         Go
       </button>
+      <select
+        aria-label="Viewport size"
+        className="region-input__size-select"
+        value={currentSize}
+        onChange={onSizeChange}
+      >
+        {VIEW_SIZES.map((v) => (
+          <option key={v.label} value={v.bp}>{v.label}</option>
+        ))}
+        <option value={currentSize}>{sizeLabel}</option>
+      </select>
     </div>
   );
 }

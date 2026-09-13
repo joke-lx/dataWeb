@@ -37,3 +37,16 @@
   background: var(--color-bg);
   color: var(--color-text-primary);
 }
+.region-input__chr-select,
+.region-input__size-select {
+  border: 1px solid var(--color-border, #d8dde2);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 13px;
+  background: #fff;
+  color: var(--color-text-primary, #1a2128);
+  outline: none;
+}
+.region-input__chr-select {
+  font-weight: 600;
+}
