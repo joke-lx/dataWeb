@@ -151,6 +151,18 @@ export function Sample(): JSX.Element {
   const [normalization, setNormalization] = useState<HicNormalization>('log2');
   const [vmaxScale, setVmaxScale] = useState(1);
   const [colorMap, setColorMap] = useState<'rdbu' | 'viridis' | 'ref' | 'reds'>('ref');
+  const [geneQuery, setGeneQuery] = useState('');
+  const onGeneSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = geneQuery.trim();
+    if (!q) return;
+    // 后端 mock：跳转到 /sample/{id}?g=gene
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('g', q);
+      return next;
+    });
+  };
   const hicWrapRef = useRef<HTMLDivElement>(null);
   const enterHicFullscreen = () => {
     const el = hicWrapRef.current;
@@ -471,6 +483,21 @@ export function Sample(): JSX.Element {
           <div className="sample-toolbar__title">
             {compareActive && partner ? `${sample.id} vs ${partner.id}` : sample.id}
           </div>
+          <form className="gene-search" onSubmit={onGeneSearch} role="search">
+            <input
+              className="gene-search__input"
+              value={geneQuery}
+              onChange={(e) => setGeneQuery(e.target.value)}
+              placeholder="Search genes or input positions"
+              aria-label="Search genes"
+            />
+            <button type="submit" className="gene-search__btn" aria-label="Search">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M10.5 10.5 L13.5 13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </form>
           <div className="sample-region">
             <RegionInput />
             <span className="sample-region__sep" aria-hidden="true">·</span>
