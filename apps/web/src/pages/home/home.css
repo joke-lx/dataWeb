@@ -511,11 +511,17 @@
   padding: 10px;
   border-radius: 6px;
   border: 1px solid #e6e8eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  height: 160px;
+  overflow: hidden;
 }
 .home-species__img {
   display: block;
-  height: 130px;
-  width: auto;
+  max-height: 100%;
+  max-width: 100%;
   object-fit: contain;
 }
 .home-species__name {
