@@ -281,10 +281,24 @@ export function GenomeBrowserView({
               style={{ height: `${LOOPS_HEIGHT}px` }}
             >
               <div className="gbv-lane__label">
-                <span className="lane-title">{loopsTitle}</span>
                 <span className="lane-sample">{sampleId}</span>
               </div>
-              <div className="gbv-lane__content">
+              <div className="gbv-lane__content" style={{ position: 'relative' }}>
+                <span
+                  className="gbv-lane__over-title"
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: 'var(--font-size-small)',
+                    color: 'var(--color-text-secondary)',
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }}
+                >
+                  {loopsTitle}
+                </span>
                 <CTCFLoops sampleId={sampleId} height={LOOPS_HEIGHT} width={plotWidth} />
               </div>
             </div>

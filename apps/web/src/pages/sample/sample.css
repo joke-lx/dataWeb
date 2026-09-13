@@ -479,6 +479,17 @@
   color: var(--color-text-tertiary);
 }
 
+.gbv-lane__over-title {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+
 
 /* ── Hi-C 区块合并子块（轨道 / 3D / CTCF 基序） ────────────────── */
 .sample-section__title {
