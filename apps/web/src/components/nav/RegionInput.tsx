@@ -98,7 +98,6 @@ export function RegionInput(): JSX.Element {
     });
   };
   const currentSize = end - start;
-  const sizeLabel = VIEW_SIZES.find((v) => Math.abs(v.bp - currentSize) < currentSize * 0.15)?.label ?? 'Custom';
 
   return (
     <div className="region-input">
