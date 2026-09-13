@@ -49,6 +49,8 @@ export function Compare(): JSX.Element {
   const clearedRef = useRef(false);
   // 进入页面时 URL 是否已带 samples 参数。
   const hadSamplesParamRef = useRef(searchParams.get('samples') !== null);
+  // landing 引导是否已关闭（用户选择了"自行选择"后隐藏引导卡片）。
+  const [dismissLanding, setDismissLanding] = useState(false);
 
   // 目录加载后清洗 URL 中已不存在的样本 id（旧书签/过期链接）。
   useEffect(() => {
@@ -133,6 +135,11 @@ export function Compare(): JSX.Element {
 
         <div className="compare-workspace__panels">
           {added.length === 0 ? (
+            dismissLanding ? (
+              <div className="compare-empty">
+                <p>从左侧边栏「添加数据」选择样本开始对比</p>
+              </div>
+            ) : (
             <div className="compare-landing">
               <h2 className="compare-landing__title">选择对比方式</h2>
               <p className="compare-landing__desc">从预设案例快速查看，或自行选择样本并排对比。</p>
@@ -157,6 +164,7 @@ export function Compare(): JSX.Element {
                   className="compare-landing__card"
                   onClick={() => {
                     clearedRef.current = true;
+                    setDismissLanding(true);
                   }}
                 >
                   <span className="compare-landing__card-title">自行选择对比</span>
@@ -166,6 +174,7 @@ export function Compare(): JSX.Element {
                 </button>
               </div>
             </div>
+            )
           ) : (
             added.map((id) => {
               const sample = samples?.find((s) => s.id === id);
