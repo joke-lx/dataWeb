@@ -1,4 +1,4 @@
-/* Design tokens — single source of truth for visual primitives.
+﻿/* Design tokens — single source of truth for visual primitives.
  * Mirrors `docx/plan/architecture.md` §7.1. Keep in sync with that section.
  *
  * Palette: Style E · Cool Slate
@@ -26,11 +26,11 @@
   --color-text-tertiary: #6e7884;
   --color-text-on-accent: #ffffff;
 
-  /* accent — low-saturation slate blue (~30% saturation) */
-  --color-accent: #4d6e8c;
-  --color-accent-soft: #d8e1eb;
-  --color-accent-deep: #3a556e;
-  --color-accent-tint: #eef2f6;
+  /* accent — bright royal blue (design mockup top bar) */
+  --color-accent: #1f6fb8;
+  --color-accent-soft: #d3e3f3;
+  --color-accent-deep: #1660a4;
+  --color-accent-tint: #eaf2fa;
 
   /* footer — deep slate (home page dark footer) */
   --color-footer-bg: #22303d;
@@ -43,8 +43,9 @@
   --color-a-compartment: #9d2c44;
   --color-b-compartment: #2e7d4e;
   --color-tad-boundary: #2a3540;
-  --color-tad-body: #f3f5f7;
-  --color-loop-arc: #4d6e8c;
+  --color-tad-body: #e6c25a;
+  --color-tad-alt: #2c4d80;
+  --color-loop-arc: #9c27b0;
   --color-sv-del: #9d2c44;
   --color-sv-dup: #2e7d4e;
   --color-sv-inv: #a8651b;

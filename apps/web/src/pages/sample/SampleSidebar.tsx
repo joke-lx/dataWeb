@@ -129,26 +129,42 @@ export function SampleSidebar({
 
   return (
     <aside className="sample-sidebar" aria-label={t('sample.sidebar.label')}>
-      {/* ── 样本卡 ── */}
-      <div className="sample-sidebar__sample">
-        <div className="sample-sidebar__sample-id">
-          {sample.id}
-          {compareActive && partner && (
-            <span className="sample-sidebar__vs">
-              <em>vs</em> {partner.id}
-            </span>
-          )}
-        </div>
-        <dl className="sample-sidebar__meta">
-          <div><dt>{t('common.species')}</dt><dd>{sample.species}</dd></div>
-          <div><dt>{t('database.filter.tissue')}</dt><dd>{sample.tissue}</dd></div>
-          <div><dt>{t('database.filter.breed')}</dt><dd>{sample.breed}</dd></div>
-          <div><dt>{t('common.sampleId')}</dt><dd>{sample.sex} · {sample.dev_stage}</dd></div>
-          <div><dt>{t('sample.sidebar.assembly')}</dt><dd>{assembly}</dd></div>
-        </dl>
-        <button type="button" className="sample-sidebar__btn" onClick={onDownload}>
-          {t('sample.sidebar.download')} ↓
+      {/* ── 顶部操作按钮组（对齐设计稿：Add Data / Clear All / Save Session / Synchronize） ── */}
+      <div className="sample-sidebar__actions">
+        <button type="button" className="sample-sidebar__btn--primary">
+          + {t('compare.workspace.addData', 'Add Data')}
         </button>
+        <button type="button" className="sample-sidebar__btn--danger">
+          <span aria-hidden="true">🗑</span> {t('compare.workspace.clearAll', 'Clear All')}
+        </button>
+        <button type="button" className="sample-sidebar__btn--ghost">
+          {t('compare.workspace.saveSession', 'Save Session')}
+        </button>
+        <label className="sample-sidebar__sync">
+          <span>{t('compare.workspace.sync', 'Synchronize All Charts')}</span>
+          <input type="checkbox" defaultChecked />
+        </label>
+      </div>
+
+      {/* ── 样本卡（对齐设计稿：编号 + GSE 徽章 + Type/Assembly） ── */}
+      <div className="sample-sidebar__sample">
+        <div className="sample-sidebar__row-head">
+          <span className="sample-sidebar__num">1.</span>
+          <span className="sample-sidebar__sample-name">
+            {sample.id}
+            {compareActive && partner && (
+              <span className="sample-sidebar__vs">
+                <em>vs</em> {partner.id}
+              </span>
+            )}
+          </span>
+          <button type="button" className="sample-sidebar__remove" aria-label="remove">×</button>
+        </div>
+        <div className="sample-sidebar__gse">GSE-mock</div>
+        <dl className="sample-sidebar__meta">
+          <div><dt>Type</dt><dd>Hi-C</dd></div>
+          <div><dt>Assembly</dt><dd>{assembly}</dd></div>
+        </dl>
       </div>
 
       {/* ── 视图区块 ── */}

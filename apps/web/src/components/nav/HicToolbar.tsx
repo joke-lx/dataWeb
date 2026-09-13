@@ -1,8 +1,12 @@
 /**
  * HicToolbar —— Hi-C 接触图的「快速调整工具栏」（对应参考 3D Genome Browser 2.0）。
  *
- * 独立成行、渲染在图表卡片**外部**（不压在 Hi-C 矩阵上）。全部开关受控：
+ * 独立成行、渲染在图表**外部**（不压在 Hi-C 矩阵上）。全部开关受控：
  * 视觉状态由父级持有并通过 props 传入；本组件只渲染 + 派发变更。
+ *
+ * 布局（对齐设计稿 quick adjust bar）：
+ *   [色阶滑杆 + 数值] [色图 Reds▾] | [⊕ ⊖ ⟲] | [🔒 Auto] | [Triangle Mode 开关]
+ *   | [Norm▾] | [PNG SVG ⛶] …… [Export PDF]
  *
  * 图标一律内联单色 SVG（stroke/fill=currentColor），不依赖原生 emoji。
  *
@@ -12,6 +16,7 @@
 import type { JSX, ReactNode } from 'react';
 
 import type { HicNormalization } from '../../api/client';
+import type { ColormapName } from '../render-kit/hic/ColormapBar';
 import { usePanelViewportStore } from '../../hooks/usePanelViewport';
 import './hic-toolbar.css';
 
@@ -29,7 +34,7 @@ function downloadCanvasPng(canvas: HTMLCanvasElement, filename: string): void {
   a.remove();
 }
 
-/** 把 canvas 光栅内嵌进独立 .svg 文件下载。 */
+/** 把 canvas 光栅内容内嵌进一个独立 .svg 文件下载。 */
 function downloadCanvasSvg(canvas: HTMLCanvasElement, filename: string): void {
   const dataUrl = canvas.toDataURL('image/png');
   const w = canvas.width;
@@ -61,6 +66,9 @@ interface HicToolbarProps {
   /** 数据归一化方式。 */
   normalization: HicNormalization;
   onNormalizationChange: (value: HicNormalization) => void;
+  /** 色图（Reds/ref/Rdbu_r/viridis）。 */
+  colorMap: ColormapName;
+  onColorMapChange: (cm: ColormapName) => void;
   /** 取当前 Hi-C canvas（用于 PNG/SVG 导出）。 */
   getCanvas: () => HTMLCanvasElement | null;
   /** 导出文件名前缀（如样本 id）。 */
@@ -145,14 +153,6 @@ function ResetIcon(): JSX.Element {
   );
 }
 
-function TriangleIcon(): JSX.Element {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-      <path d="M8 3 L13.5 12 H2.5 Z" fill="currentColor" />
-    </svg>
-  );
-}
-
 function FullscreenIcon(): JSX.Element {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -179,6 +179,8 @@ export function HicToolbar({
   onLockResolutionChange,
   normalization,
   onNormalizationChange,
+  colorMap,
+  onColorMapChange,
   getCanvas,
   filenamePrefix,
   onFullscreen,
@@ -199,6 +201,37 @@ export function HicToolbar({
 
   return (
     <div className="hic-toolbar" role="toolbar" aria-label="Hi-C quick adjust">
+      {/* 色阶滑杆 + 数值（最左，对齐设计稿 b） */}
+      <label className="hic-toolbar__slider-wrap" title="Color scale upper bound">
+        <input
+          type="range"
+          min={0.1}
+          max={1}
+          step={0.05}
+          value={vmaxScale}
+          onChange={(event) => onVmaxScaleChange(Number.parseFloat(event.target.value))}
+        />
+        <span className="hic-toolbar__slider-value">
+          {Math.round(vmaxScale * 100)}%
+        </span>
+      </label>
+      {/* 色图下拉 */}
+      <label className="hic-toolbar__select-wrap">
+        <select
+          aria-label="Contact map color scheme"
+          className="hic-toolbar__select"
+          value={colorMap}
+          onChange={(event) => onColorMapChange(event.target.value as ColormapName)}
+        >
+          <option value="reds">Reds</option>
+          <option value="ref">Ref</option>
+          <option value="rdbu">RdBu_r</option>
+          <option value="viridis">Viridis</option>
+        </select>
+      </label>
+
+      <span className="hic-toolbar__sep" aria-hidden="true" />
+
       {/* 缩放 */}
       <ToolButton title="Zoom in" onClick={() => viewportStore.getState().zoom(ZOOM_STEP)}>
         <ZoomInIcon />
@@ -231,29 +264,19 @@ export function HicToolbar({
       >
         Auto
       </ToolButton>
-      <ToolButton
-        title={triangle ? 'Triangle mode on' : 'Triangle mode off'}
-        active={triangle}
-        onClick={() => onTriangleChange(!triangle)}
-      >
-        <TriangleIcon />
-      </ToolButton>
 
-      <span className="hic-toolbar__sep" aria-hidden="true" />
-
-      {/* 手动色阶上界滑杆 */}
-      <label className="hic-toolbar__slider-wrap" title="Color scale upper bound">
-        <input
-          type="range"
-          min={0.1}
-          max={1}
-          step={0.05}
-          value={vmaxScale}
-          onChange={(event) => onVmaxScaleChange(Number.parseFloat(event.target.value))}
-        />
-        <span className="hic-toolbar__slider-value">
-          {Math.round(vmaxScale * 100)}%
-        </span>
+      {/* Triangle Mode 文字开关（对齐设计稿 m） */}
+      <label className="hic-toolbar__switch-wrap" title="Triangle Mode">
+        <span className="hic-toolbar__switch-label">Triangle Mode</span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={triangle}
+          className={'hic-toolbar__switch' + (triangle ? ' is-on' : '')}
+          onClick={() => onTriangleChange(!triangle)}
+        >
+          <span className="hic-toolbar__switch-knob" />
+        </button>
       </label>
 
       <span className="hic-toolbar__sep" aria-hidden="true" />

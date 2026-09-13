@@ -70,6 +70,7 @@ function ComparePanelBody({
   const [lockResolution, setLockResolution] = useState(false);
   const [normalization, setNormalization] = useState<HicNormalization>('log2');
   const [vmaxScale, setVmaxScale] = useState(1);
+  const [colorMap, setColorMap] = useState<'rdbu' | 'viridis' | 'ref' | 'reds'>('ref');
   const bodyRef = useRef<HTMLDivElement>(null);
   const enterFullscreen = () => {
     const el = bodyRef.current;
@@ -127,6 +128,8 @@ function ComparePanelBody({
             onLockResolutionChange={setLockResolution}
             normalization={normalization}
             onNormalizationChange={setNormalization}
+            colorMap={colorMap}
+            onColorMapChange={setColorMap}
             getCanvas={() => bodyRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas') ?? null}
             filenamePrefix={sample.id}
             onFullscreen={enterFullscreen}
@@ -148,6 +151,8 @@ function ComparePanelBody({
               normalization,
               lockResolution,
               vmaxScale,
+              colorMap,
+              onColorMapChange: setColorMap,
             }}
           />
           <CrosshairLayer hostId={sample.id} />

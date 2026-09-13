@@ -270,15 +270,16 @@ export function buildPc1Score(
 ): PlotlyBuild {
   const visible = (records ?? []).filter((r) => r.chrom === viewport.chr);
   const x = visible.map((r) => (r.start + r.end) / 2);
+  const scores = visible.map((r) => r.score);
   const data: PlotlyData[] = [
     {
       x,
-      y: visible.map((r) => r.score),
-      type: 'scatter',
-      mode: 'lines',
-      line: { color: '#4d6e8c', width: 1.5, shape: 'spline' },
-      fill: 'tozeroy',
-      fillcolor: 'rgba(77,110,140,0.12)',
+      y: scores,
+      type: 'bar',
+      marker: {
+        color: scores.map((v) => (v >= 0 ? '#d51031' : '#1f4e8c')),
+        line: { width: 0 },
+      },
       hoverinfo: 'skip',
     },
   ];
@@ -316,11 +317,12 @@ export function buildTadBar(
   title: string,
   height: number,
 ): PlotlyBuild {
-  const body = cssVar('--color-tad-body', '#f3f5f7');
+  const body = cssVar('--color-tad-body', '#e6c25a');
+  const alt = cssVar('--color-tad-alt', '#2c4d80');
   const boundary = cssVar('--color-tad-boundary', '#1f2c2a');
   const shapes = (records ?? [])
     .filter((r) => r.chrom === viewport.chr)
-    .map((r) => ({
+    .map((r, i) => ({
       type: 'rect',
       xref: 'x',
       yref: 'paper',
@@ -328,7 +330,7 @@ export function buildTadBar(
       x1: r.end,
       y0: 0,
       y1: 1,
-      fillcolor: body,
+      fillcolor: i % 2 === 0 ? body : alt,
       line: { color: boundary, width: 1 },
     }));
   return {

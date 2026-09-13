@@ -150,6 +150,7 @@ export function Sample(): JSX.Element {
   const [lockResolution, setLockResolution] = useState(false);
   const [normalization, setNormalization] = useState<HicNormalization>('log2');
   const [vmaxScale, setVmaxScale] = useState(1);
+  const [colorMap, setColorMap] = useState<'rdbu' | 'viridis' | 'ref' | 'reds'>('ref');
   const hicWrapRef = useRef<HTMLDivElement>(null);
   const enterHicFullscreen = () => {
     const el = hicWrapRef.current;
@@ -417,6 +418,8 @@ export function Sample(): JSX.Element {
               normalization,
               lockResolution,
               vmaxScale,
+              colorMap,
+              onColorMapChange: setColorMap,
             }}
           />
           {/* 十字准线 + 区域说明：悬浮 Hi-C 时竖线贯穿全部轨道 */}
@@ -495,6 +498,8 @@ export function Sample(): JSX.Element {
               onLockResolutionChange={setLockResolution}
               normalization={normalization}
               onNormalizationChange={setNormalization}
+              colorMap={colorMap}
+              onColorMapChange={setColorMap}
               getCanvas={() => hicWrapRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas') ?? null}
               filenamePrefix={sample.id}
               onFullscreen={enterHicFullscreen}

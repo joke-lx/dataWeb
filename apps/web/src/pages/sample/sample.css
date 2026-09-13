@@ -1,5 +1,6 @@
 .sample-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
@@ -7,6 +8,10 @@
   top: 0;
   z-index: 5;
   background: var(--color-surface-1);
+  padding-bottom: var(--space-2);
+}
+.sample-toolbar .hic-toolbar {
+  flex: 1 0 100%;
 }
 
 /* 区间输入条：从 body 移到 toolbar 后，靠右对齐 */
@@ -650,4 +655,76 @@
 
 .gbv-ruler__tick {
   flex: 1 1 0;
+}
+
+/* ── 左栏操作按钮组 + 样本卡（对齐设计稿） ── */
+.sample-sidebar__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sample-sidebar__btn--primary {
+  background: var(--color-accent, #1f6fb8);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sample-sidebar__btn--danger {
+  background: #fff;
+  color: #d51031;
+  border: 1px solid #f0a0ac;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sample-sidebar__btn--ghost {
+  background: var(--color-surface-2, #e7eaee);
+  color: var(--color-text-primary, #1a2128);
+  border: 1px solid var(--color-border, #d8dde2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sample-sidebar__sync {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary, #4b5560);
+  padding: 8px 10px;
+  border: 1px solid var(--color-border, #d8dde2);
+  border-radius: 6px;
+}
+.sample-sidebar__sync input { accent-color: var(--color-accent, #1f6fb8); }
+
+.sample-sidebar__row-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.sample-sidebar__num { color: var(--color-text-secondary, #4b5560); }
+.sample-sidebar__sample-name { flex: 1; }
+.sample-sidebar__remove {
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary, #6e7884);
+  font-size: 16px;
+  cursor: pointer;
+}
+.sample-sidebar__gse {
+  display: inline-block;
+  margin: 6px 0;
+  padding: 2px 8px;
+  background: var(--color-accent-soft, #d3e3f3);
+  color: var(--color-accent, #1f6fb8);
+  border-radius: 4px;
+  font-size: 12px;
 }

@@ -93,13 +93,49 @@
   gap: 4px;
 }
 
-/* 嵌入页面顶部 sample-toolbar 时：去掉自身灰底/边框，融入顶条 */
+/* Triangle Mode 文字 + 开关 */
+.hic-toolbar__switch-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hic-toolbar__switch-label {
+  font-size: 12px;
+  color: #4b5560;
+}
+.hic-toolbar__switch {
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid #d6dae0;
+  background: #fff;
+  padding: 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.hic-toolbar__switch.is-on {
+  background: var(--color-accent, #1f6fb8);
+  border-color: var(--color-accent, #1f6fb8);
+}
+.hic-toolbar__switch-knob {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s;
+}
+.hic-toolbar__switch.is-on .hic-toolbar__switch-knob {
+  transform: translateX(14px);
+}
+
+/* 嵌入页面顶部 sample-toolbar 时：去掉自身灰底/边框，独占第二行 */
 .sample-toolbar .hic-toolbar {
   background: transparent;
   border: none;
   border-radius: 0;
   padding: 0;
   margin: 0;
-  margin-left: auto;
   flex-wrap: nowrap;
 }
