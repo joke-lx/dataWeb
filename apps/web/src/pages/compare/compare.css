@@ -522,6 +522,79 @@
   background: var(--color-bg, #fafbfc);
 }
 
+/* ── 初始引导面板 ── */
+
+.compare-landing {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 24px;
+}
+
+.compare-landing__title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a2128);
+}
+
+.compare-landing__desc {
+  margin: 0 0 32px;
+  font-size: 14px;
+  color: var(--color-text-secondary, #4b5560);
+}
+
+.compare-landing__cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 640px;
+}
+
+.compare-landing__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px 24px;
+  background: #ffffff;
+  border: 1px solid var(--color-border, #d8dde2);
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+.compare-landing__card:hover:not(:disabled) {
+  border-color: var(--color-accent, #4d6e8c);
+  box-shadow: 0 6px 20px rgba(15, 31, 36, 0.06);
+}
+
+.compare-landing__card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.compare-landing__card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a2128);
+}
+
+.compare-landing__card-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #4b5560);
+}
+
+@media (max-width: 720px) {
+  .compare-landing__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 单个对比面板 */
 
 .compare-panel {

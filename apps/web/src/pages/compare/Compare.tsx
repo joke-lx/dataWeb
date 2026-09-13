@@ -38,7 +38,7 @@ export function Compare(): JSX.Element {
   const { samples, isLoading } = useSampleCatalog();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // 初始数据集：从 URL ?samples= 恢复；无参数时先置空，等目录加载后自动预置。
+  // 初始数据集：从 URL ?samples= 恢复；无参数时显示引导面板。
   const [added, setAdded] = useState<string[]>(() => {
     const param = searchParams.get('samples');
     if (param === null) return [];
@@ -47,24 +47,10 @@ export function Compare(): JSX.Element {
   const [sync, setSync] = useState(true);
   const [saved, setSaved] = useState(false);
   const savedTimerRef = useRef<number | null>(null);
-  // 只允许"首次访问自动预置"一次，避免清空后又被填回。
-  const autoFilledRef = useRef(false);
   // 用户是否显式清空过（清空后即使 URL 无参数也不重新预置）。
   const clearedRef = useRef(false);
-  // 进入页面时 URL 是否已带 samples 参数（决定"清空后是否保留空参数"）。
+  // 进入页面时 URL 是否已带 samples 参数。
   const hadSamplesParamRef = useRef(searchParams.get('samples') !== null);
-
-  // 首次访问（URL 从未带过 ?samples=）且目录加载完 → 预置前两个样本，两面板并排起步。
-  useEffect(() => {
-    if (autoFilledRef.current || clearedRef.current) return;
-    if (searchParams.get('samples') !== null) {
-      autoFilledRef.current = true;
-      return;
-    }
-    if (!samples || samples.length < 2) return;
-    autoFilledRef.current = true;
-    setAdded([samples[0].id, samples[1].id]);
-  }, [samples, searchParams]);
 
   // 目录加载后清洗 URL 中已不存在的样本 id（旧书签/过期链接）。
   useEffect(() => {
@@ -149,8 +135,38 @@ export function Compare(): JSX.Element {
 
         <div className="compare-workspace__panels">
           {added.length === 0 ? (
-            <div className="compare-workspace__empty">
-              {t('compare.workspace.empty')}
+            <div className="compare-landing">
+              <h2 className="compare-landing__title">选择对比方式</h2>
+              <p className="compare-landing__desc">从预设案例快速查看，或自行选择样本并排对比。</p>
+              <div className="compare-landing__cards">
+                <button
+                  type="button"
+                  className="compare-landing__card"
+                  onClick={() => {
+                    if (samples && samples.length >= 2) {
+                      setAdded([samples[0].id, samples[1].id]);
+                    }
+                  }}
+                  disabled={!samples || samples.length < 2}
+                >
+                  <span className="compare-landing__card-title">查看预设案例</span>
+                  <span className="compare-landing__card-body">
+                    自动加载 {samples?.[0]?.id ?? 'Brain_BF3'} 与 {samples?.[1]?.id ?? 'Brain_TM4'} 并排对比
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="compare-landing__card"
+                  onClick={() => {
+                    clearedRef.current = true;
+                  }}
+                >
+                  <span className="compare-landing__card-title">自行选择对比</span>
+                  <span className="compare-landing__card-body">
+                    从左侧「添加数据」选择样本，自由组合多面板对比
+                  </span>
+                </button>
+              </div>
             </div>
           ) : (
             added.map((id) => {
