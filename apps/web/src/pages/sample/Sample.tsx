@@ -109,7 +109,7 @@ export function Sample(): JSX.Element {
   const { samples, isLoading } = useSampleCatalog();
   const setActive = useSamples((state) => state.setActive);
   const setSamples = useSamples((state) => state.setSamples);
-  const viewport = useViewport();
+  useViewport();
   const partnerId = params.get('vs');
   // 概览/文件标题折叠（默认展开）；4 个 viz 区块侧边栏勾选展示（默认全展示）。
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
@@ -269,10 +269,7 @@ export function Sample(): JSX.Element {
 
   const compareActive = isCompareMode && Boolean(partner);
 
-  const region = `${viewport.chr}:${viewport.start.toLocaleString()}-${viewport.end.toLocaleString()}`;
-  const subtitle = compareActive && partner
-    ? `${sample.tissue} vs ${partner.tissue} · ${sample.species} · ${sample.breed} vs ${partner.breed} · ${region}`
-    : `${sample.species} · ${sample.tissue} · ${sample.breed} · ${sample.sex} · ${sample.dev_stage}`;
+  // title/subtitle 已按设计稿隐藏（页面不再显示大标题）。
 
   const exitCompare = () => {
     setParams(
@@ -292,9 +289,6 @@ export function Sample(): JSX.Element {
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const title = compareActive && partner
-    ? `${sample.id} vs ${partner.id}`
-    : `${sample.id} — ${sample.tissue} (${sample.species})`;
 
   // ── 各区块内容 ──
 
@@ -442,13 +436,9 @@ export function Sample(): JSX.Element {
   );
   return (
     <RouteShell
-      title={title}
-      subtitle={subtitle}
-      breadcrumb={
-        compareActive && partner
-          ? `${sample.species} › ${sample.tissue} › ${sample.id} vs ${partner.id}`
-          : `${sample.species} › ${sample.tissue} › ${sample.id}`
-      }
+      title=""
+      subtitle=""
+      breadcrumb=""
       actions={
         compareActive && partner ? (
           <div className="sample-actions">
