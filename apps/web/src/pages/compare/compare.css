@@ -523,6 +523,25 @@
   margin-bottom: 4px;
 }
 
+.compare-rail__item-files .ft-table .ant-table-cell {
+  padding: 2px 4px !important;
+}
+
+.compare-rail__item-files .ft-table .dl-direct .ant-btn,
+.compare-rail__item-files .ft-table .dl-stream .ant-btn {
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+.compare-rail__item-files .ft-table .dl-chunked__row {
+  flex-wrap: wrap;
+}
+
+.compare-rail__item-files .ft-filename {
+  font-size: 11px;
+  word-break: break-all;
+}
+
 .compare-rail__cases {
   display: inline-flex;
   align-items: center;
