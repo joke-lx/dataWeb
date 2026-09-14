@@ -299,18 +299,6 @@ export function GenomeBrowserView({
   // 是否渲染某条轨道：tracks 未传视为全部（旧行为）；否则以集合为准。
   const enabled = tracks ?? ([] as TrackId[]);
 
-  const exportPng = () => {
-    const canvas =
-      hicCanvasRef.current ??
-      containerRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas');
-    if (canvas) downloadCanvasPng(canvas, `${sampleId}_hic.png`);
-  };
-  const exportSvg = () => {
-    const canvas =
-      hicCanvasRef.current ??
-      containerRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas');
-    if (canvas) downloadCanvasSvg(canvas, `${sampleId}_hic.svg`);
-  };
   const enterFullscreen = () => {
     const el = containerRef.current;
     if (el && document.fullscreenElement !== el) {
@@ -417,8 +405,8 @@ export function GenomeBrowserView({
         onLockResolutionChange={setLockResolution}
         normalization={normalization}
         onNormalizationChange={setNormalization}
-        colorMap={colorMap}
-        onColorMapChange={onColorMapChange}
+        colorMap={hicOptions?.colorMap ?? 'ref'}
+        onColorMapChange={hicOptions?.onColorMapChange ?? (() => {})}
         getCanvas={() => hicCanvasRef.current ?? containerRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas') ?? null}
         filenamePrefix={sampleId}
         onFullscreen={enterFullscreen}
