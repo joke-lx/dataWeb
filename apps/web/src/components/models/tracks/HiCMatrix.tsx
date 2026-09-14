@@ -1,26 +1,14 @@
-/**
- * HiCMatrix —— Hi-C 接触矩阵 lane（tracks 模型专用）。
- *
- * 职责：
- *  - 拉取当前视口范围内的 Hi-C 矩阵；
- *  - 自适应选择合适的 bin 大小（不超过 `MAX_MATRIX_DIM`）；
- *  - 渲染 ColormapBar + WebGL 渲染的 `<HiCMatrix2D />`。
- *
- * 与 hic 模型下的同名组件视觉一致——本组件是 tracks 模型目录下的独立副本，
- * 避免跨模型共享（详见 ref1 决策）。
- *
- * 架构位置：被 `<LoopTrack />`、`<GenomeBrowserView />` 调用。
- *
- * 面板增强（Compare 工作区 / 一体化视图）：
- *  - `colorMap` / `onColorMapChange`：色标受控（工具栏下拉），不再走本地状态；
- *  - `hideColorBar`：工具栏已带色标下拉时，隐藏 lane 内的 ColormapBar；
- *  - `triangle`：Triangle Mode，只显示上三角；
- *  - `colorMode`：`'auto'` = 用 API 返回的 vmin/vmax（自动色标），
- *    `'full'` = 固定 [0, 矩阵最大值]（关闭 Auto，全量程着色）；
- *  - `normalization`：后端显示归一化（log2 / raw / ice）；
- *  - `lockResolution`：true = 固定用户选的 bin，缩放不自动变粗；
- *    false（默认）= 宽视口时自动把 bin 变粗以控制矩阵维度。
- */
+﻿/**
+ * HiCMatrix 鈥斺€?Hi-C 鎺ヨЕ鐭╅樀 lane锛坱racks 妯″瀷涓撶敤锛夈€? *
+ * 鑱岃矗锛? *  - 鎷夊彇褰撳墠瑙嗗彛鑼冨洿鍐呯殑 Hi-C 鐭╅樀锛? *  - 鑷€傚簲閫夋嫨鍚堥€傜殑 bin 澶у皬锛堜笉瓒呰繃 `MAX_MATRIX_DIM`锛夛紱
+ *  - 娓叉煋 ColormapBar + WebGL 娓叉煋鐨?`<HiCMatrix2D />`銆? *
+ * 涓?hic 妯″瀷涓嬬殑鍚屽悕缁勪欢瑙嗚涓€鑷粹€斺€旀湰缁勪欢鏄?tracks 妯″瀷鐩綍涓嬬殑鐙珛鍓湰锛? * 閬垮厤璺ㄦā鍨嬪叡浜紙璇﹁ ref1 鍐崇瓥锛夈€? *
+ * 鏋舵瀯浣嶇疆锛氳 `<LoopTrack />`銆乣<GenomeBrowserView />` 璋冪敤銆? *
+ * 闈㈡澘澧炲己锛圕ompare 宸ヤ綔鍖?/ 涓€浣撳寲瑙嗗浘锛夛細
+ *  - `colorMap` / `onColorMapChange`锛氳壊鏍囧彈鎺э紙宸ュ叿鏍忎笅鎷夛級锛屼笉鍐嶈蛋鏈湴鐘舵€侊紱
+ *  - `hideColorBar`锛氬伐鍏锋爮宸插甫鑹叉爣涓嬫媺鏃讹紝闅愯棌 lane 鍐呯殑 ColormapBar锛? *  - `triangle`锛歍riangle Mode锛屽彧鏄剧ず涓婁笁瑙掞紱
+ *  - `colorMode`锛歚'auto'` = 鐢?API 杩斿洖鐨?vmin/vmax锛堣嚜鍔ㄨ壊鏍囷級锛? *    `'full'` = 鍥哄畾 [0, 鐭╅樀鏈€澶у€糫锛堝叧闂?Auto锛屽叏閲忕▼鐫€鑹诧級锛? *  - `normalization`锛氬悗绔樉绀哄綊涓€鍖栵紙log2 / raw / ice锛夛紱
+ *  - `lockResolution`锛歵rue = 鍥哄畾鐢ㄦ埛閫夌殑 bin锛岀缉鏀句笉鑷姩鍙樼矖锛? *    false锛堥粯璁わ級= 瀹借鍙ｆ椂鑷姩鎶?bin 鍙樼矖浠ユ帶鍒剁煩闃电淮搴︺€? */
 
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
@@ -41,37 +29,33 @@ const MAX_MATRIX_DIM = 512;
 const HIC_LANE_HEIGHT = 480;
 
 interface HiCMatrixProps {
-  /** 覆盖当前样本。 */
+  /** 瑕嗙洊褰撳墠鏍锋湰銆?*/
   sampleId?: string;
-  /** 覆盖 lane 像素高度。 */
+  /** 瑕嗙洊 lane 鍍忕礌楂樺害銆?*/
   height?: number;
-  /** 受控色标（缺省走本地状态，缺省 'ref'）。 */
+  /** 鍙楁帶鑹叉爣锛堢己鐪佽蛋鏈湴鐘舵€侊紝缂虹渷 'ref'锛夈€?*/
   colorMap?: ColormapName;
-  /** 色标变更回调（与 `colorMap` 同时传入即为受控模式）。 */
+  /** 鑹叉爣鍙樻洿鍥炶皟锛堜笌 `colorMap` 鍚屾椂浼犲叆鍗充负鍙楁帶妯″紡锛夈€?*/
   onColorMapChange?: (cm: ColormapName) => void;
-  /** 隐藏 lane 内的 ColormapBar（色标下拉已放到面板工具栏时用）。 */
+  /** 闅愯棌 lane 鍐呯殑 ColormapBar锛堣壊鏍囦笅鎷夊凡鏀惧埌闈㈡澘宸ュ叿鏍忔椂鐢級銆?*/
   hideColorBar?: boolean;
-  /** Triangle Mode：只显示上三角。 */
+  /** Triangle Mode锛氬彧鏄剧ず涓婁笁瑙掋€?*/
   triangle?: boolean;
-  /** 色标量程：'auto' = API vmin/vmax；'full' = [0, 矩阵最大值]。 */
+  /** 鑹叉爣閲忕▼锛?auto' = API vmin/vmax锛?full' = [0, 鐭╅樀鏈€澶у€糫銆?*/
   colorMode?: 'auto' | 'full';
-  /** 后端显示归一化：log2 / raw / ice。 */
+  /** 鍚庣鏄剧ず褰掍竴鍖栵細log2 / raw / ice銆?*/
   normalization?: HicNormalization;
-  /** 锁定分辨率：true 时缩放不自动把 bin 变粗。 */
+  /** 閿佸畾鍒嗚鲸鐜囷細true 鏃剁缉鏀句笉鑷姩鎶?bin 鍙樼矖銆?*/
   lockResolution?: boolean;
-  /** 手动色阶上界缩放：1.0=Auto/full 全上界，0.1=压到 10%。 */
+  /** 鎵嬪姩鑹查樁涓婄晫缂╂斁锛?.0=Auto/full 鍏ㄤ笂鐣岋紝0.1=鍘嬪埌 10%銆?*/
   vmaxScale?: number;
 }
 
 /**
- * Hi-C 接触矩阵 lane：左侧 ColormapBar + WebGL 渲染的 2D 热图。
- *
- * bin 自适应：保证矩阵像素不超过 `MAX_MATRIX_DIM`，bin 向上对齐到 1000 的倍数
- * （匹配后端 cache key 的离散化粒度）。
- *
- * @param sampleId 覆盖默认 sample（缺省走 activeSample，再缺省 Brain_BF3）
- * @param height lane 高度（默认 480px，LoopTrack 用 320px）
- */
+ * Hi-C 鎺ヨЕ鐭╅樀 lane锛氬乏渚?ColormapBar + WebGL 娓叉煋鐨?2D 鐑浘銆? *
+ * bin 鑷€傚簲锛氫繚璇佺煩闃靛儚绱犱笉瓒呰繃 `MAX_MATRIX_DIM`锛宐in 鍚戜笂瀵归綈鍒?1000 鐨勫€嶆暟
+ * 锛堝尮閰嶅悗绔?cache key 鐨勭鏁ｅ寲绮掑害锛夈€? *
+ * @param sampleId 瑕嗙洊榛樿 sample锛堢己鐪佽蛋 activeSample锛屽啀缂虹渷 Brain_BF3锛? * @param height lane 楂樺害锛堥粯璁?480px锛孡oopTrack 鐢?320px锛? */
 export function HiCMatrix({
   sampleId: sampleIdOverride,
   height = HIC_LANE_HEIGHT,
@@ -88,25 +72,20 @@ export function HiCMatrix({
   const activeSample = useActiveSample();
   const sampleId = sampleIdOverride ?? activeSample ?? 'Brain_BF3';
 
-  // 本地色标兜底：未受控时本 lane 内自选，不写 URL。
-  const [localMap, setLocalMap] = useState<ColormapName>('ref');
+  // 鏈湴鑹叉爣鍏滃簳锛氭湭鍙楁帶鏃舵湰 lane 鍐呰嚜閫夛紝涓嶅啓 URL銆?  const [localMap, setLocalMap] = useState<ColormapName>('ref');
   const colorMap = colorMapProp ?? localMap;
   const setColorMap = onColorMapChange ?? setLocalMap;
 
-  // colorMode='full' 时需要的矩阵最大值（关闭 Auto 的全量程上界）。
-  const [matrixMax, setMatrixMax] = useState<number | null>(null);
+  // colorMode='full' 鏃堕渶瑕佺殑鐭╅樀鏈€澶у€硷紙鍏抽棴 Auto 鐨勫叏閲忕▼涓婄晫锛夈€?  const [matrixMax, setMatrixMax] = useState<number | null>(null);
 
   const viewportWidth = viewport.end - viewport.start;
   const targetBin = Math.ceil(viewportWidth / MAX_MATRIX_DIM);
-  // bin 必须不小于当前 viewport 自带的 bin（防止过采样），同时向上对齐 1000 倍数
-  // ——后端按这个粒度缓存，命中 cache 比精确粒度更省时。
-  // lockResolution=true 时跳过自动变粗，严格用用户选的 viewport.bin。
-  const hicBin = lockResolution
+  // bin 蹇呴』涓嶅皬浜庡綋鍓?viewport 鑷甫鐨?bin锛堥槻姝㈣繃閲囨牱锛夛紝鍚屾椂鍚戜笂瀵归綈 1000 鍊嶆暟
+  // 鈥斺€斿悗绔寜杩欎釜绮掑害缂撳瓨锛屽懡涓?cache 姣旂簿纭矑搴︽洿鐪佹椂銆?  // lockResolution=true 鏃惰烦杩囪嚜鍔ㄥ彉绮楋紝涓ユ牸鐢ㄧ敤鎴烽€夌殑 viewport.bin銆?  const hicBin = lockResolution
     ? viewport.bin
     : Math.max(viewport.bin, Math.ceil(targetBin / 1000) * 1000);
 
-  // hicBin / normalization 进 queryKey → zoom / 切归一化时重新拉数据。
-  const { data, isLoading, error } = useQuery<HicMatrixResponse>({
+  // hicBin / normalization 杩?queryKey 鈫?zoom / 鍒囧綊涓€鍖栨椂閲嶆柊鎷夋暟鎹€?  const { data, isLoading, error } = useQuery<HicMatrixResponse>({
     queryKey: [
       'hic',
       sampleId,
@@ -126,12 +105,11 @@ export function HiCMatrix({
         hicBin,
         normalization,
       ),
-    placeholderData: keepPreviousData,
+    
     staleTime: 30_000,
   });
 
-  // colorMode='full' 时统计矩阵最大值（依赖 data，须在 useQuery 之后声明）。
-  useEffect(() => {
+  // colorMode='full' 鏃剁粺璁＄煩闃垫渶澶у€硷紙渚濊禆 data锛岄』鍦?useQuery 涔嬪悗澹版槑锛夈€?  useEffect(() => {
     if (colorMode !== 'full' || !data) return;
     let max = 0;
     const arr = data.matrix;
@@ -141,9 +119,7 @@ export function HiCMatrix({
     setMatrixMax(max);
   }, [colorMode, data]);
 
-  // Auto 开 = 用 API 返回的 vmin/vmax；Auto 关 = [0, 矩阵最大值]。
-  // vmaxScale 是手动色阶滑杆：对选中的上界再乘一个比例（压暗高值/提亮低值）。
-  const baseVmax =
+  // Auto 寮€ = 鐢?API 杩斿洖鐨?vmin/vmax锛汚uto 鍏?= [0, 鐭╅樀鏈€澶у€糫銆?  // vmaxScale 鏄墜鍔ㄨ壊闃舵粦鏉嗭細瀵归€変腑鐨勪笂鐣屽啀涔樹竴涓瘮渚嬶紙鍘嬫殫楂樺€?鎻愪寒浣庡€硷級銆?  const baseVmax =
     colorMode === 'full' ? (matrixMax ?? data?.vmax ?? 1) : (data?.vmax ?? 1);
   const vmin = colorMode === 'full' ? 0 : data?.vmin;
   const vmax = baseVmax * vmaxScale;
@@ -188,3 +164,4 @@ export function HiCMatrix({
     </div>
   );
 }
+

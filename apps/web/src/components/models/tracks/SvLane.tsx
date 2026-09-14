@@ -1,15 +1,9 @@
-/**
- * SvLane —— Structural Variants（结构变异）轨道。
- *
- * 职责：
- *  - 拉取 SV 数据（DEL / DUP / INV / TRA 四种 kind）；
- *  - 委托 `buildSv` 生成 Plotly：按 kind 上色的 marker，文字标签同色。
- *
- * 仅在 aux 路径上使用（主轨道没有 SV 入口），由 `<TracksModel />` 在
- * `kind === 'sv'` 分支调用。
- *
- * 架构位置：tracks 模型目录下的"单样本 SV"lane。
- */
+﻿/**
+ * SvLane 鈥斺€?Structural Variants锛堢粨鏋勫彉寮傦級杞ㄩ亾銆? *
+ * 鑱岃矗锛? *  - 鎷夊彇 SV 鏁版嵁锛圖EL / DUP / INV / TRA 鍥涚 kind锛夛紱
+ *  - 濮旀墭 `buildSv` 鐢熸垚 Plotly锛氭寜 kind 涓婅壊鐨?marker锛屾枃瀛楁爣绛惧悓鑹层€? *
+ * 浠呭湪 aux 璺緞涓婁娇鐢紙涓昏建閬撴病鏈?SV 鍏ュ彛锛夛紝鐢?`<TracksModel />` 鍦? * `kind === 'sv'` 鍒嗘敮璋冪敤銆? *
+ * 鏋舵瀯浣嶇疆锛歵racks 妯″瀷鐩綍涓嬬殑"鍗曟牱鏈?SV"lane銆? */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -29,12 +23,10 @@ interface SvLaneProps {
 }
 
 /**
- * 结构变异轨道：按 kind 上色的 marker，DEL/DUP/INV/TRA 文字标签同色。
- *
- * @param sampleId 当前样本 id
- * @param title 标题
- * @param height lane 高度（默认 120px）
- */
+ * 缁撴瀯鍙樺紓杞ㄩ亾锛氭寜 kind 涓婅壊鐨?marker锛孌EL/DUP/INV/TRA 鏂囧瓧鏍囩鍚岃壊銆? *
+ * @param sampleId 褰撳墠鏍锋湰 id
+ * @param title 鏍囬
+ * @param height lane 楂樺害锛堥粯璁?120px锛? */
 export function SvLane({
   sampleId,
   title,
@@ -42,8 +34,7 @@ export function SvLane({
 }: SvLaneProps): JSX.Element {
   const viewport = useViewport();
 
-  // viewport 进 queryKey → 平移/缩放触发 refetch；30s staleTime 抑制高频抖动。
-  const { data, isLoading, error } = useQuery<SVRecord[]>({
+  // viewport 杩?queryKey 鈫?骞崇Щ/缂╂斁瑙﹀彂 refetch锛?0s staleTime 鎶戝埗楂橀鎶栧姩銆?  const { data, isLoading, error } = useQuery<SVRecord[]>({
     queryKey: [
       'sv',
       sampleId,
@@ -53,7 +44,7 @@ export function SvLane({
     ],
     queryFn: () =>
       fetchSV(sampleId, viewport.chr, viewport.start, viewport.end),
-    placeholderData: keepPreviousData,
+    
     staleTime: 30_000,
   });
 
@@ -70,7 +61,7 @@ export function SvLane({
         data-track-name="sv"
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">Loading…</span>}
+        {isLoading && <span className="track-loading">Loading鈥?/span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

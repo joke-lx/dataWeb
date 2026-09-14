@@ -302,6 +302,7 @@ export function GenomeBrowserView({
                   background: 'var(--color-surface-1)',
                 }}
               >
+                <span style={{fontSize:'var(--font-size-small)',fontWeight:500}}>{loopsTitle}</span>
                 <span className="lane-sample">{sampleId}</span>
               </div>
               <div className="gbv-lane__content" style={{ position: 'relative' }}>

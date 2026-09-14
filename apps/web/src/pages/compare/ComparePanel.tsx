@@ -65,7 +65,7 @@ function ComparePanelBody({
   const { t } = useAppIntl();
 
   // 每面板独立的快速调整工具栏状态。
-  const [triangle, setTriangle] = useState(true);
+  const [triangle, setTriangle] = useState(false);
   const [autoColor, setAutoColor] = useState(true);
   const [lockResolution, setLockResolution] = useState(false);
   const [normalization, setNormalization] = useState<HicNormalization>('log2');

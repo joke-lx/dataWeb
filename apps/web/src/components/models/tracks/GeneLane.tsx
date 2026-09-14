@@ -1,15 +1,8 @@
-/**
- * GeneLane —— Gene model 注释轨道。
- *
- * 职责：
- *  - 拉取 `'gene'` bedGraph 数据（外显子 + 内含子记录）；
- *  - 委托 `buildGene` 生成 Plotly：内含子 backbone + 外显子矩形（多行堆叠）。
- *
- * 与 hic 模型里的 `<GeneLane />` 视觉一致——本组件是 tracks 模型目录下的独立副本，
- * 避免跨模型共享（详见 ref1 关于"拒绝 `models/shared/`"的决策）。
- *
- * 架构位置：tracks 模型目录下的"gene 注释"lane（主/aux 都可能用到）。
- */
+﻿/**
+ * GeneLane 鈥斺€?Gene model 娉ㄩ噴杞ㄩ亾銆? *
+ * 鑱岃矗锛? *  - 鎷夊彇 `'gene'` bedGraph 鏁版嵁锛堝鏄惧瓙 + 鍐呭惈瀛愯褰曪級锛? *  - 濮旀墭 `buildGene` 鐢熸垚 Plotly锛氬唴鍚瓙 backbone + 澶栨樉瀛愮煩褰紙澶氳鍫嗗彔锛夈€? *
+ * 涓?hic 妯″瀷閲岀殑 `<GeneLane />` 瑙嗚涓€鑷粹€斺€旀湰缁勪欢鏄?tracks 妯″瀷鐩綍涓嬬殑鐙珛鍓湰锛? * 閬垮厤璺ㄦā鍨嬪叡浜紙璇﹁ ref1 鍏充簬"鎷掔粷 `models/shared/`"鐨勫喅绛栵級銆? *
+ * 鏋舵瀯浣嶇疆锛歵racks 妯″瀷鐩綍涓嬬殑"gene 娉ㄩ噴"lane锛堜富/aux 閮藉彲鑳界敤鍒帮級銆? */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -24,31 +17,26 @@ import '../../render-kit/lane.css';
 const GENE_LANE_HEIGHT = 120;
 
 interface GeneLaneProps {
-  /** 覆盖当前样本。 */
+  /** 瑕嗙洊褰撳墠鏍锋湰銆?*/
   sampleId?: string;
-  /** 覆盖 lane 像素高度。 */
+  /** 瑕嗙洊 lane 鍍忕礌楂樺害銆?*/
   height?: number;
-  /** lane 标题（可选，缺省不显示标题行）。 */
+  /** lane 鏍囬锛堝彲閫夛紝缂虹渷涓嶆樉绀烘爣棰樿锛夈€?*/
   title?: string;
 }
 
 /**
- * Gene model 注释轨道：内含子 backbone + 外显子矩形（多行堆叠）。
- *
- * @param sampleId 覆盖默认 sample（缺省走 `'Brain_BF3'` 兜底）
- * @param height lane 高度（默认 120px）
- */
+ * Gene model 娉ㄩ噴杞ㄩ亾锛氬唴鍚瓙 backbone + 澶栨樉瀛愮煩褰紙澶氳鍫嗗彔锛夈€? *
+ * @param sampleId 瑕嗙洊榛樿 sample锛堢己鐪佽蛋 `'Brain_BF3'` 鍏滃簳锛? * @param height lane 楂樺害锛堥粯璁?120px锛? */
 export function GeneLane({
   sampleId,
   height = GENE_LANE_HEIGHT,
   title,
 }: GeneLaneProps): JSX.Element {
   const viewport = usePanelViewport();
-  // gene 注释在数据模型里仍挂在某个 sample 下；缺省时回退到 Brain_BF3——和 hic 模型一致。
-  const resolvedSample = sampleId ?? 'Brain_BF3';
+  // gene 娉ㄩ噴鍦ㄦ暟鎹ā鍨嬮噷浠嶆寕鍦ㄦ煇涓?sample 涓嬶紱缂虹渷鏃跺洖閫€鍒?Brain_BF3鈥斺€斿拰 hic 妯″瀷涓€鑷淬€?  const resolvedSample = sampleId ?? 'Brain_BF3';
 
-  // viewport 进 queryKey → 平移/缩放触发 refetch；30s staleTime 抑制高频抖动。
-  const { data, isLoading, error } = useQuery<GeneRecord[]>({
+  // viewport 杩?queryKey 鈫?骞崇Щ/缂╂斁瑙﹀彂 refetch锛?0s staleTime 鎶戝埗楂橀鎶栧姩銆?  const { data, isLoading, error } = useQuery<GeneRecord[]>({
     queryKey: [
       'gene',
       resolvedSample,
@@ -58,7 +46,7 @@ export function GeneLane({
     ],
     queryFn: () =>
       fetchBed<'gene'>(resolvedSample, 'gene', viewport.chr, viewport.start, viewport.end),
-    placeholderData: keepPreviousData,
+    
     staleTime: 30_000,
   });
 
@@ -76,7 +64,7 @@ export function GeneLane({
         data-track-name="gene"
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">Loading…</span>}
+        {isLoading && <span className="track-loading">Loading鈥?/span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

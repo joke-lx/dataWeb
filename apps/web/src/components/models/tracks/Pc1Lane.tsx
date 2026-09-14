@@ -1,15 +1,10 @@
-/**
- * Pc1Lane —— PC1（第一主成分）信号轨道。
- *
- * 职责：
- *  - 拉取 Hi-C 派生 PC1 数据（`/api/derived/pc1`，含 `source`）；
- *  - 委托 `buildPc1Score` 生成 Plotly：平滑曲线 + 淡填充 + 零线
- *    （与参考站点详细页的 PC1 轨道形态一致，accent 主题色区分语义）；
- *  - 在 lane 角落渲染 `ModelSourceBadge`，标注真实数据 / mock 降级。
- *
- * 架构位置：tracks 模型目录下的"单样本 PC1"lane，由
- * `<GenomeBrowserView />` 在 Hi-C 一体化视图中调用。
- */
+﻿/**
+ * Pc1Lane 鈥斺€?PC1锛堢涓€涓绘垚鍒嗭級淇″彿杞ㄩ亾銆? *
+ * 鑱岃矗锛? *  - 鎷夊彇 Hi-C 娲剧敓 PC1 鏁版嵁锛坄/api/derived/pc1`锛屽惈 `source`锛夛紱
+ *  - 濮旀墭 `buildPc1Score` 鐢熸垚 Plotly锛氬钩婊戞洸绾?+ 娣″～鍏?+ 闆剁嚎
+ *    锛堜笌鍙傝€冪珯鐐硅缁嗛〉鐨?PC1 杞ㄩ亾褰㈡€佷竴鑷达紝accent 涓婚鑹插尯鍒嗚涔夛級锛? *  - 鍦?lane 瑙掕惤娓叉煋 `ModelSourceBadge`锛屾爣娉ㄧ湡瀹炴暟鎹?/ mock 闄嶇骇銆? *
+ * 鏋舵瀯浣嶇疆锛歵racks 妯″瀷鐩綍涓嬬殑"鍗曟牱鏈?PC1"lane锛岀敱
+ * `<GenomeBrowserView />` 鍦?Hi-C 涓€浣撳寲瑙嗗浘涓皟鐢ㄣ€? */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -26,7 +21,7 @@ import { buildPc1Score } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
 
 const PC1_LANE_HEIGHT = 140;
-/** 派生 PC1 的输出分箱数（与 insulation 一致，保证曲线平滑度）。 */
+/** 娲剧敓 PC1 鐨勮緭鍑哄垎绠辨暟锛堜笌 insulation 涓€鑷达紝淇濊瘉鏇茬嚎骞虫粦搴︼級銆?*/
 const PC1_N_BINS = 100;
 
 interface Pc1LaneProps {
@@ -37,13 +32,9 @@ interface Pc1LaneProps {
 }
 
 /**
- * PC1 信号轨道：平滑曲线 + 淡填充（参考站点详细页形态）。
- *
- * @param sampleId 当前样本 id
- * @param trackName track 名（目前固定 `'pc1'`，缺省取 `'pc1'`）
- * @param title 标题（缺省 `'PC1'`）
- * @param height lane 高度（默认 140px）
- */
+ * PC1 淇″彿杞ㄩ亾锛氬钩婊戞洸绾?+ 娣″～鍏咃紙鍙傝€冪珯鐐硅缁嗛〉褰㈡€侊級銆? *
+ * @param sampleId 褰撳墠鏍锋湰 id
+ * @param trackName track 鍚嶏紙鐩墠鍥哄畾 `'pc1'`锛岀己鐪佸彇 `'pc1'`锛? * @param title 鏍囬锛堢己鐪?`'PC1'`锛? * @param height lane 楂樺害锛堥粯璁?140px锛? */
 export function Pc1Lane({
   sampleId,
   trackName = 'pc1',
@@ -52,8 +43,7 @@ export function Pc1Lane({
 }: Pc1LaneProps): JSX.Element {
   const viewport = usePanelViewport();
 
-  // viewport + bin 进 queryKey → 平移/缩放/换 bin 触发 refetch；30s staleTime 抑制高频抖动。
-  const { data, isLoading, error } = useQuery<
+  // viewport + bin 杩?queryKey 鈫?骞崇Щ/缂╂斁/鎹?bin 瑙﹀彂 refetch锛?0s staleTime 鎶戝埗楂橀鎶栧姩銆?  const { data, isLoading, error } = useQuery<
     DerivedRecordsResponse<DerivedScoreRecord>
   >({
     queryKey: [
@@ -74,12 +64,11 @@ export function Pc1Lane({
         viewport.bin,
         PC1_N_BINS,
       ),
-    placeholderData: keepPreviousData,
+    
     staleTime: 30_000,
   });
 
-  // records 结构（chrom/start/end/score）与 BedGraphRecord 完全一致，直接复用 builder。
-  const plot = buildPc1Score(data?.records, viewport, title, height);
+  // records 缁撴瀯锛坈hrom/start/end/score锛変笌 BedGraphRecord 瀹屽叏涓€鑷达紝鐩存帴澶嶇敤 builder銆?  const plot = buildPc1Score(data?.records, viewport, title, height);
 
   return (
     <div className="lane" style={{ height: `${height}px` }}>
@@ -94,7 +83,7 @@ export function Pc1Lane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         <ModelSourceBadge source={data?.source} />
-        {isLoading && <span className="track-loading">Loading…</span>}
+        {isLoading && <span className="track-loading">Loading鈥?/span>}
         {error && (
           <span className="track-error" title={error.message}>
             !
@@ -104,3 +93,4 @@ export function Pc1Lane({
     </div>
   );
 }
+

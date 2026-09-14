@@ -1,15 +1,8 @@
-/**
- * TadBar —— TAD（Topologically Associating Domain）边界条轨道。
- *
- * 职责：
- *  - 拉取 `'tad'` bedGraph 数据；
- *  - 委托 `buildTadBar` 把每个 TAD 区间画成"满高度矩形条"，跨整条 lane。
- *
- * 视觉特性：每个 TAD 一根满高矩形（沿基因组轴），没有 lane 上下的空白——
- * 这与 hic 模型里 `<TadBar />` 的视觉一致。
- *
- * 架构位置：tracks 模型目录下的"单样本 TAD"lane。
- */
+﻿/**
+ * TadBar 鈥斺€?TAD锛圱opologically Associating Domain锛夎竟鐣屾潯杞ㄩ亾銆? *
+ * 鑱岃矗锛? *  - 鎷夊彇 `'tad'` bedGraph 鏁版嵁锛? *  - 濮旀墭 `buildTadBar` 鎶婃瘡涓?TAD 鍖洪棿鐢绘垚"婊￠珮搴︾煩褰㈡潯"锛岃法鏁存潯 lane銆? *
+ * 瑙嗚鐗规€э細姣忎釜 TAD 涓€鏍规弧楂樼煩褰紙娌垮熀鍥犵粍杞达級锛屾病鏈?lane 涓婁笅鐨勭┖鐧解€斺€? * 杩欎笌 hic 妯″瀷閲?`<TadBar />` 鐨勮瑙変竴鑷淬€? *
+ * 鏋舵瀯浣嶇疆锛歵racks 妯″瀷鐩綍涓嬬殑"鍗曟牱鏈?TAD"lane銆? */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -24,31 +17,26 @@ import '../../render-kit/lane.css';
 const TAD_LANE_HEIGHT = 120;
 
 interface TadBarProps {
-  /** 覆盖当前样本。 */
+  /** 瑕嗙洊褰撳墠鏍锋湰銆?*/
   sampleId?: string;
-  /** 覆盖 lane 像素高度。 */
+  /** 瑕嗙洊 lane 鍍忕礌楂樺害銆?*/
   height?: number;
-  /** lane 标题（可选，缺省不显示标题行）。 */
+  /** lane 鏍囬锛堝彲閫夛紝缂虹渷涓嶆樉绀烘爣棰樿锛夈€?*/
   title?: string;
 }
 
 /**
- * TAD 边界条轨道：每个 domain 区间一根满高矩形条。
- *
- * @param sampleId 覆盖默认 sample（缺省走 `'Brain_BF3'` 兜底）
- * @param height lane 高度（默认 120px）
- */
+ * TAD 杈圭晫鏉¤建閬擄細姣忎釜 domain 鍖洪棿涓€鏍规弧楂樼煩褰㈡潯銆? *
+ * @param sampleId 瑕嗙洊榛樿 sample锛堢己鐪佽蛋 `'Brain_BF3'` 鍏滃簳锛? * @param height lane 楂樺害锛堥粯璁?120px锛? */
 export function TadBar({
   sampleId,
   height = TAD_LANE_HEIGHT,
   title,
 }: TadBarProps): JSX.Element {
   const viewport = usePanelViewport();
-  // gene / tad 等"非样本特异"轨道在缺省 sample 时回退到 Brain_BF3——见 hic 模型同款约定。
-  const resolvedSample = sampleId ?? 'Brain_BF3';
+  // gene / tad 绛?闈炴牱鏈壒寮?杞ㄩ亾鍦ㄧ己鐪?sample 鏃跺洖閫€鍒?Brain_BF3鈥斺€旇 hic 妯″瀷鍚屾绾﹀畾銆?  const resolvedSample = sampleId ?? 'Brain_BF3';
 
-  // viewport 进 queryKey → 平移/缩放触发 refetch；30s staleTime 抑制高频抖动。
-  const { data, isLoading, error } = useQuery<TadRecord[]>({
+  // viewport 杩?queryKey 鈫?骞崇Щ/缂╂斁瑙﹀彂 refetch锛?0s staleTime 鎶戝埗楂橀鎶栧姩銆?  const { data, isLoading, error } = useQuery<TadRecord[]>({
     queryKey: [
       'tadBar',
       resolvedSample,
@@ -58,7 +46,7 @@ export function TadBar({
     ],
     queryFn: () =>
       fetchBed<'tad'>(resolvedSample, 'tad', viewport.chr, viewport.start, viewport.end),
-    placeholderData: keepPreviousData,
+    
     staleTime: 30_000,
   });
 
@@ -76,7 +64,7 @@ export function TadBar({
         data-track-name="tad"
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">Loading…</span>}
+        {isLoading && <span className="track-loading">Loading鈥?/span>}
         {error && (
           <span className="track-error" title={error.message}>
             !
