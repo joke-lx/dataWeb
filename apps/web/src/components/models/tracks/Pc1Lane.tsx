@@ -11,7 +11,7 @@
  * `<GenomeBrowserView />` 在 Hi-C 一体化视图中调用。
  */
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import {

@@ -12,7 +12,7 @@
  * 通过 `<TracksModel />` 按 kind 分派时调用。
  */
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBed } from '../../../api/client';

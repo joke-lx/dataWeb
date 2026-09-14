@@ -80,6 +80,9 @@ interface GenomeBrowserViewProps {
     hideColorBar?: boolean;
     triangle?: boolean;
     colorMode?: 'auto' | 'full';
+    normalization?: string;
+    lockResolution?: boolean;
+    vmaxScale?: number;
   };
   /** 工具栏行尾右侧附加内容（如 Export PDF 按钮）。 */
   toolbarActions?: ReactNode;

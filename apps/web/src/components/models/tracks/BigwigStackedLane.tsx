@@ -19,7 +19,7 @@
  * `ModelSourceBadge source="ab_proxy"`。
  */
 
-import { keepPreviousData, useQueries } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBigwig, fetchDerivedActivity } from '../../../api/client';

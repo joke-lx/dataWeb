@@ -17,7 +17,7 @@
  * 信号，UI 加 `ModelSourceBadge source="ab_proxy"` 标注。
  */
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchBigwig, fetchDerivedActivity } from '../../../api/client';

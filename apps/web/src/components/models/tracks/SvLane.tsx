@@ -11,7 +11,7 @@
  * 架构位置：tracks 模型目录下的"单样本 SV"lane。
  */
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
 import { fetchSV, type SVRecord } from '../../../api/client';
