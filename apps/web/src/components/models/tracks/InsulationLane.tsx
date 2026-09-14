@@ -1,9 +1,14 @@
-﻿/**
- * InsulationLane 鈥斺€?Insulation Score锛堣竟鐣屽己搴︼級杞ㄩ亾銆? *
- * 鑱岃矗锛? *  - 鎷夊彇 Hi-C 娲剧敓 insulation 鏁版嵁锛坄/api/derived/insulation`锛屽惈 `source`锛夛紱
- *  - 濮旀墭 `buildInsulationScore` 鐢熸垚 Plotly锛氬钩婊戞洸绾?+ 娣″～鍏咃紙涓?demo 瀵归綈锛夛紱
- *  - 鍦?lane 瑙掕惤娓叉煋 `ModelSourceBadge`锛屾爣娉ㄧ湡瀹炴暟鎹?/ mock 闄嶇骇銆? *
- * 鏋舵瀯浣嶇疆锛歵racks 妯″瀷鐩綍涓嬬殑"鍗曟牱鏈?IS"lane锛岀敱 `<TracksModel />` 鍦? * `kind === 'is'` 鍒嗘敮璋冪敤銆? */
+/**
+ * InsulationLane —— Insulation Score（边界强度）轨道。
+ *
+ * 职责：
+ *  - 拉取 Hi-C 派生 insulation 数据（`/api/derived/insulation`，含 `source`）；
+ *  - 委托 `buildInsulationScore` 生成 Plotly：平滑曲线 + 淡填充（与 demo 对齐）；
+ *  - 在 lane 角落渲染 `ModelSourceBadge`，标注真实数据 / mock 降级。
+ *
+ * 架构位置：tracks 模型目录下的"单样本 IS"lane，由 `<TracksModel />` 在
+ * `kind === 'is'` 分支调用。
+ */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -20,7 +25,7 @@ import { buildInsulationScore } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
 
 const INSULATION_LANE_HEIGHT = 150;
-/** 娲剧敓 insulation 鐨勮緭鍑哄垎绠辨暟锛堝悗绔粯璁?100锛屼笌 demo 瀵嗗害涓€鑷达級銆?*/
+/** 派生 insulation 的输出分箱数（后端默认 100，与 demo 密度一致）。 */
 const INSULATION_N_BINS = 100;
 
 interface InsulationLaneProps {
@@ -31,10 +36,13 @@ interface InsulationLaneProps {
 }
 
 /**
- * Insulation Score 杞ㄩ亾锛氬钩婊戞洸绾?+ 娣″～鍏咃紙涓?demo.html 瑙嗚涓€鑷达級銆? *
- * @param sampleId 褰撳墠鏍锋湰 id
- * @param trackName track 鍚嶏紙鐩墠鍥哄畾 `'is'`锛? * @param title 鏍囬
- * @param height lane 楂樺害锛堥粯璁?150px锛? */
+ * Insulation Score 轨道：平滑曲线 + 淡填充（与 demo.html 视觉一致）。
+ *
+ * @param sampleId 当前样本 id
+ * @param trackName track 名（目前固定 `'is'`）
+ * @param title 标题
+ * @param height lane 高度（默认 150px）
+ */
 export function InsulationLane({
   sampleId,
   trackName,
@@ -43,7 +51,8 @@ export function InsulationLane({
 }: InsulationLaneProps): JSX.Element {
   const viewport = useViewport();
 
-  // viewport + bin 杩?queryKey 鈫?骞崇Щ/缂╂斁/鎹?bin 瑙﹀彂 refetch锛?0s staleTime 鎶戝埗楂橀鎶栧姩銆?  const { data, isLoading, error } = useQuery<
+  // viewport + bin 进 queryKey → 平移/缩放/换 bin 触发 refetch；30s staleTime 抑制高频抖动。
+  const { data, isLoading, error } = useQuery<
     DerivedRecordsResponse<DerivedScoreRecord>
   >({
     queryKey: [
@@ -68,7 +77,8 @@ export function InsulationLane({
     staleTime: 30_000,
   });
 
-  // records 缁撴瀯锛坈hrom/start/end/score锛変笌 BedGraphRecord 瀹屽叏涓€鑷达紝鐩存帴澶嶇敤 builder銆?  const plot = buildInsulationScore(data?.records, viewport, title, height);
+  // records 结构（chrom/start/end/score）与 BedGraphRecord 完全一致，直接复用 builder。
+  const plot = buildInsulationScore(data?.records, viewport, title, height);
 
   return (
     <div className="lane" style={{ height: `${height}px` }}>
@@ -82,7 +92,7 @@ export function InsulationLane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         <ModelSourceBadge source={data?.source} />
-        {isLoading && <span className="track-loading">Loading鈥?/span>}
+        {isLoading && <span className="track-loading">…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

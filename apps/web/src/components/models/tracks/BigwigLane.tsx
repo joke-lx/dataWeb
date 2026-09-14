@@ -1,14 +1,21 @@
-﻿/**
- * BigwigLane 鈥斺€?鍗曟牱鏈?bigwig 淇″彿杞ㄩ亾銆? *
- * 鑱岃矗锛? *  - 鏍规嵁褰撳墠 viewport 瀹藉害鑷€傚簲璁＄畻鍒嗙鏁帮紙bins锛夛紝淇濊瘉 lane 鍦ㄧ缉鏀炬椂瀵嗗害鍚堥€傦紱
- *  - 鎷夊彇鎸囧畾 sample + trackName 鐨?bigwig 鏁版嵁锛? *  - 濮旀墭 `buildBigwig` 鐢熸垚 Plotly trace锛堜笌 multi-sample 鐨?`BigwigStacked` 鍖哄垎锛夈€? *
- * 涓?`BigwigStacked` 鐨勫叧绯伙細浠呬竴涓牱鏈椂浣跨敤鏈粍浠讹紙鍙犲姞鐗堝 N=1 閫€鍖栨垚鍗曡酱锛夛紝
- * 鐢?`<TracksModel />` 鍦?`aux` 娓叉煋鍒嗘敮閲岄€夋湰缁勪欢銆? *
- * 鏋舵瀯浣嶇疆锛歛ux 璺緞涓婂敮涓€鐨?bigwig lane锛涗富杞ㄩ亾璧?`BigwigStacked`銆? *
- * Activity proxy (Hi-C 娲剧敓)锛氬綋 trackName 灞炰簬 `ACTIVITY_PROXY_TRACKS`锛圧NA-seq /
- * H3K4me3 / H3K27ac锛夛紝鎴戜滑娌℃湁鐪熷疄娴嬪簭鏁版嵁锛屼絾 Hi-C 鐨?A/B compartment 涓庤〃杈?/
- * 缁勮泲鐧戒慨楗?/ 寮€鏀炬€ф湁寮虹浉鍏?鈥斺€?鐢?`fetchDerivedActivity` 缁欎竴涓?[0, 1] 鍖洪棿
- * 淇″彿锛孶I 鍔?`ModelSourceBadge source="ab_proxy"` 鏍囨敞銆? */
+/**
+ * BigwigLane —— 单样本 bigwig 信号轨道。
+ *
+ * 职责：
+ *  - 根据当前 viewport 宽度自适应计算分箱数（bins），保证 lane 在缩放时密度合适；
+ *  - 拉取指定 sample + trackName 的 bigwig 数据；
+ *  - 委托 `buildBigwig` 生成 Plotly trace（与 multi-sample 的 `BigwigStacked` 区分）。
+ *
+ * 与 `BigwigStacked` 的关系：仅一个样本时使用本组件（叠加版对 N=1 退化成单轴），
+ * 由 `<TracksModel />` 在 `aux` 渲染分支里选本组件。
+ *
+ * 架构位置：aux 路径上唯一的 bigwig lane；主轨道走 `BigwigStacked`。
+ *
+ * Activity proxy (Hi-C 派生)：当 trackName 属于 `ACTIVITY_PROXY_TRACKS`（RNA-seq /
+ * H3K4me3 / H3K27ac），我们没有真实测序数据，但 Hi-C 的 A/B compartment 与表达 /
+ * 组蛋白修饰 / 开放性有强相关 —— 用 `fetchDerivedActivity` 给一个 [0, 1] 区间
+ * 信号，UI 加 `ModelSourceBadge source="ab_proxy"` 标注。
+ */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -22,36 +29,43 @@ import '../../render-kit/lane.css';
 
 const BIGWIG_LANE_HEIGHT = 180;
 
-/** Activity proxy 閫傜敤鐨?track name 鈥斺€?Hi-C A/B 娲剧敓鐨勮〃杈?ChIP/ATAC 浠ｇ悊銆?*/
+/** Activity proxy 适用的 track name —— Hi-C A/B 派生的表达/ChIP/ATAC 代理。 */
 const ACTIVITY_PROXY_TRACKS = new Set(['rna_seq', 'h3k4me3', 'h3k27ac']);
 const isActivityProxy = (t: string) => ACTIVITY_PROXY_TRACKS.has(t);
 
 interface BigwigLaneProps {
-  /** 褰撳墠鏍锋湰 id銆?*/
+  /** 当前样本 id。 */
   sampleId: string;
-  /** Track 鍚嶏紙濡?"rna_seq"锛夈€?*/
+  /** Track 名（如 "rna_seq"）。 */
   trackName: string;
-  /** 瑕嗙洊 lane 鍍忕礌楂樺害銆?*/
+  /** 覆盖 lane 像素高度。 */
   height?: number;
 }
 
 /**
- * 鍗曟牱鏈?bigwig 杞ㄩ亾锛歊NA-seq / 缁勮泲鐧戒慨楗帮紙ChIP-seq锛夌瓑杩炵画淇″彿銆? *
- * @param sampleId 褰撳墠鏍锋湰 id
- * @param trackName 杞ㄩ亾鍚嶏紙濡?`'rna_seq'`銆乣'h3k4me3'` 绛夛級
- * @param height lane 楂樺害锛堥粯璁?180px锛? */
+ * 单样本 bigwig 轨道：RNA-seq / 组蛋白修饰（ChIP-seq）等连续信号。
+ *
+ * @param sampleId 当前样本 id
+ * @param trackName 轨道名（如 `'rna_seq'`、`'h3k4me3'` 等）
+ * @param height lane 高度（默认 180px）
+ */
 export function BigwigLane({
   sampleId,
   trackName,
   height = BIGWIG_LANE_HEIGHT,
 }: BigwigLaneProps): JSX.Element {
   const viewport = useViewport();
-  // bin 鏁伴殢 viewport 瀹藉害绾挎€у鍑忥細姣?1kb 瑙嗗彛瀹藉害 鈫?1 bin锛?  // 涓嬮檺 50 闃叉鏋佺獎瑙嗗彛涓㈠け缁嗚妭锛屼笂闄?800 閬垮厤璇锋眰浣撹繃澶с€?  const viewportWidth = viewport.end - viewport.start;
+  // bin 数随 viewport 宽度线性增减：每 1kb 视口宽度 → 1 bin，
+  // 下限 50 防止极窄视口丢失细节，上限 800 避免请求体过大。
+  const viewportWidth = viewport.end - viewport.start;
   const bins = Math.max(50, Math.min(800, Math.ceil(viewportWidth / 1000)));
 
   const useActivity = isActivityProxy(trackName);
 
-  // bins 杩?queryKey鈥斺€攝oom/pan 瑙﹀彂 bins 鍙樺寲 鈫?閲嶆柊鎷夋暟鎹€?  // activity 璺緞杩斿洖 {values: number[], source}锛沚igwig 璺緞杩斿洖 {values: Float32Array, vmin, vmax}銆?  // 鏄惧紡鏍?union 璁?useQuery 涓嶆寫閿欍€?  type BigwigData =
+  // bins 进 queryKey——zoom/pan 触发 bins 变化 → 重新拉数据。
+  // activity 路径返回 {values: number[], source}；bigwig 路径返回 {values: Float32Array, vmin, vmax}。
+  // 显式标 union 让 useQuery 不挑错。
+  type BigwigData =
     | { values: Float32Array; vmin: number; vmax: number; source?: undefined }
     | { values: number[]; source: string };
   const { data, isLoading, error } = useQuery<BigwigData>({
@@ -84,7 +98,8 @@ export function BigwigLane({
     staleTime: 30_000,
   });
 
-  // buildBigwig 鎺ュ彈 Float32Array锛沘ctivity 杩斿洖 number[]锛屼紶涔嬪墠杞?Float32Array銆?  const plotValues = data
+  // buildBigwig 接受 Float32Array；activity 返回 number[]，传之前转 Float32Array。
+  const plotValues = data
     ? data.values instanceof Float32Array
       ? data.values
       : new Float32Array(data.values)
@@ -104,7 +119,7 @@ export function BigwigLane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         {useActivity && <ModelSourceBadge source={source ?? 'ab_proxy'} />}
-        {isLoading && <span className="track-loading">Loading鈥?/span>}
+        {isLoading && <span className="track-loading">…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

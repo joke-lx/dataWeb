@@ -1,9 +1,15 @@
-﻿/**
- * PeiLane 鈥斺€?Promoter-Enhancer Interaction 閿氱偣杞ㄩ亾銆? *
- * 鑱岃矗锛? *  - 鎷夊彇 `'pei'` bedGraph 鏁版嵁锛堟瘡鏉¤褰曚唬琛ㄤ竴瀵?P-E 閿氱偣锛夛紱
- *  - 濮旀墭 `buildPei` 鎶婃瘡涓氦浜掔敾鎴愯法瓒?lane 鐨勪簩娆″姬绾裤€? *
- * 瑙嗚鐗规€э細姣忔潯 PEI 涓€鏍?妗?鈥斺€斾粠 interval start 璺ㄥ埌 interval end锛? * 寮х嚎楂樺害鐢?lane 楂樺害鍐冲畾锛屼笉甯︽偓鍋滀氦浜掞紙hover 鐢?Plotly 榛樿锛夈€? *
- * 鏋舵瀯浣嶇疆锛歵racks 妯″瀷鐩綍涓嬬殑"鍗曟牱鏈?PEI"lane銆? */
+/**
+ * PeiLane —— Promoter-Enhancer Interaction 锚点轨道。
+ *
+ * 职责：
+ *  - 拉取 `'pei'` bedGraph 数据（每条记录代表一对 P-E 锚点）；
+ *  - 委托 `buildPei` 把每个交互画成跨越 lane 的二次弧线。
+ *
+ * 视觉特性：每条 PEI 一根"桥"——从 interval start 跨到 interval end，
+ * 弧线高度由 lane 高度决定，不带悬停交互（hover 由 Plotly 默认）。
+ *
+ * 架构位置：tracks 模型目录下的"单样本 PEI"lane。
+ */
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
@@ -25,10 +31,13 @@ interface PeiLaneProps {
 }
 
 /**
- * PEI锛圥romoter-Enhancer Interaction锛夐敋鐐硅建閬擄細璺?lane 鐨勪簩娆″姬绾裤€? *
- * @param sampleId 褰撳墠鏍锋湰 id
- * @param trackName track 鍚嶏紙鐩墠鍥哄畾 `'pei'`锛? * @param title 鏍囬
- * @param height lane 楂樺害锛堥粯璁?180px锛? */
+ * PEI（Promoter-Enhancer Interaction）锚点轨道：跨 lane 的二次弧线。
+ *
+ * @param sampleId 当前样本 id
+ * @param trackName track 名（目前固定 `'pei'`）
+ * @param title 标题
+ * @param height lane 高度（默认 180px）
+ */
 export function PeiLane({
   sampleId,
   trackName,
@@ -37,7 +46,8 @@ export function PeiLane({
 }: PeiLaneProps): JSX.Element {
   const viewport = useViewport();
 
-  // viewport 杩?queryKey 鈫?骞崇Щ/缂╂斁瑙﹀彂 refetch锛?0s staleTime 鎶戝埗楂橀鎶栧姩銆?  const { data, isLoading, error } = useQuery<PeiRecord[]>({
+  // viewport 进 queryKey → 平移/缩放触发 refetch；30s staleTime 抑制高频抖动。
+  const { data, isLoading, error } = useQuery<PeiRecord[]>({
     queryKey: [
       'pei',
       sampleId,
@@ -65,7 +75,7 @@ export function PeiLane({
         data-track-name={trackName}
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">Loading鈥?/span>}
+        {isLoading && <span className="track-loading">…</span>}
         {error && (
           <span className="track-error" title={error.message}>
             !

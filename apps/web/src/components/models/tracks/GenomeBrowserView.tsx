@@ -11,8 +11,9 @@
  *   Gene model        （基因注释）
  *   AB index / Insulation / RNA-seq / H3K4me3 / H3K27ac …（信号轨道，Plotly lane）
  *
- * 工具栏（HicToolbar）由父级渲染在**本组件外部、图表卡片外的独立一行**，
- * 全部开关状态通过 `hicOptions` 受控下发；本组件只负责矩阵 + 轨道堆叠。
+ * 顶部内置 HicToolbar：zoom in/out/reset、锁定分辨率、Auto 色阶、Triangle Mode、
+ * 归一化（log2/raw/ice）、导出 PNG/SVG。工具栏状态由本组件持有并下发给
+ * HiCMatrix；HiCMatrix2D 的 canvas 同时用于 PNG/SVG 导出。
  *
  * 轨道显隐由 `tracks` 驱动（即详情页左侧面板的轨道勾选）：勾选集按传入
  * 顺序（= URL `?types=` 顺序 = 左侧勾选顺序）渲染，Hi-C 热图始终在顶。
@@ -22,7 +23,7 @@
  * 内**按 bp 比例高亮选定 bin 列；十字细线只在 Hi-C 热图内（见 CrosshairLayer）。
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { JSX } from 'react';
 
 import type { HicNormalization } from '../../../api/client';
@@ -30,6 +31,7 @@ import { CTCFLoops } from '../../overlay/CTCFLoops';
 import { formatBp } from '../../../genomics/coords';
 import { useCursor } from '../../../store/cursor';
 import { usePanelViewport } from '../../../hooks/usePanelViewport';
+import { HicToolbar } from '../../nav/HicToolbar';
 import { BedGraphLane } from './BedGraphLane';
 import { BigwigStacked } from './BigwigStackedLane';
 import { GeneLane } from './GeneLane';
@@ -58,23 +60,6 @@ const LABEL_GUTTER = 120;
 /** Hi-C lane 内 colormap 条的估算宽度（px），用于 SVG 对齐热图内容列。 */
 const COLORMAP_BAR = 32;
 
-/** 完整受控的 Hi-C 视觉选项（工具栏状态由父级持有并下发）。 */
-export interface HicViewOptions {
-  colorMap?: 'rdbu' | 'viridis' | 'ref' | 'reds';
-  onColorMapChange?: (colorMap: 'rdbu' | 'viridis' | 'ref' | 'reds') => void;
-  hideColorBar?: boolean;
-  /** Triangle Mode：只显示上三角。 */
-  triangle?: boolean;
-  /** 色阶模式：auto=API vmin/vmax，full=固定 [0, 矩阵最大值]。 */
-  colorMode?: 'auto' | 'full';
-  /** 数据归一化。 */
-  normalization?: HicNormalization;
-  /** 锁定分辨率（缩放不自动变粗 bin）。 */
-  lockResolution?: boolean;
-  /** 手动色阶上界缩放（1.0=全上界）。 */
-  vmaxScale?: number;
-}
-
 interface GenomeBrowserViewProps {
   sampleId: string;
   /** 勾选轨道 id 集合（按传入顺序 = 堆叠顺序）。缺省/空数组 → 只渲染 Hi-C 热图。 */
@@ -88,10 +73,22 @@ interface GenomeBrowserViewProps {
   };
   /** Compare 面板：显示顶部坐标标尺。 */
   showRuler?: boolean;
-  /** Hi-C 视觉选项（工具栏状态由父级持有并受控下发）。 */
-  hicOptions?: HicViewOptions;
+  /** Compare 面板：Hi-C lane 受控选项（色图 / 三角形 / 全量程等）。 */
+  hicOptions?: {
+    colorMap?: 'rdbu' | 'viridis' | 'ref' | 'reds';
+    onColorMapChange?: (colorMap: 'rdbu' | 'viridis' | 'ref' | 'reds') => void;
+    hideColorBar?: boolean;
+    triangle?: boolean;
+    colorMode?: 'auto' | 'full';
+  };
+  /** 工具栏行尾右侧附加内容（如 Export PDF 按钮）。 */
+  toolbarActions?: ReactNode;
 }
 
+/**
+ * 轨道内锁定区域指示：点击锁定后，在**本条轨道 lane 的内容列**内按 bp
+ * 比例高亮选定 bin（左标签 gutter 120px + 内容列映射到视口 [start, end]）。
+ */
 /**
  * 轨道内锁定区域指示：点击锁定后，在**本条轨道 lane 的内容列**内按 bp
  * 比例高亮选定 bin（与 Hi-C 热图方块同基准：hicLeft/hicWidth 由父组件
@@ -124,9 +121,42 @@ function TrackBinIndicator({
   return (
     <div
       className="gbv-track-bin-indicator"
-      style={{ left: `${x0}px`, width: `${Math.max(1, x1 - x0)}` }}
+      style={{ left: `${x0}px`, width: `${Math.max(1, x1 - x0)}px` }}
     />
   );
+}
+
+/** 把 canvas 光栅内容触发为浏览器下载（PNG）。 */
+function downloadCanvasPng(canvas: HTMLCanvasElement, filename: string): void {
+  // toDataURL 同步且对 WebGL（preserveDrawingBuffer=true）可靠；
+  // 不依赖 toBlob 回调时序，避免 download 属性在 iframe/异步下被拦截。
+  const url = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+/** 把 canvas 光栅内容内嵌进一个独立 .svg 文件下载。 */
+function downloadCanvasSvg(canvas: HTMLCanvasElement, filename: string): void {
+  const dataUrl = canvas.toDataURL('image/png');
+  const w = canvas.width;
+  const h = canvas.height;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
+    `<image href="${dataUrl}" width="${w}" height="${h}"/>` +
+    `</svg>`;
+  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  // 给浏览器一帧再释放，避免 Firefox 在 click 后立即 revoke 取消下载。
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /**
@@ -135,7 +165,6 @@ function TrackBinIndicator({
  * @param sampleId 当前样本 id（同时驱动 Hi-C 与全部轨道 lane）
  * @param tracks 勾选的轨道 id 列表（有序 = 堆叠顺序）；Hi-C 热图始终显示
  * @param labels 轨道标题覆盖（缺省英文：TAD boundary / Loops / PC1 / Gene model）
- * @param hicOptions 受控视觉选项（工具栏在父级）
  */
 export function GenomeBrowserView({
   sampleId,
@@ -143,6 +172,7 @@ export function GenomeBrowserView({
   labels,
   showRuler = false,
   hicOptions,
+  toolbarActions,
 }: GenomeBrowserViewProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewport = usePanelViewport();
@@ -156,6 +186,15 @@ export function GenomeBrowserView({
     left: number;
     width: number;
   }>({ left: LABEL_GUTTER, width: 0 });
+  // Hi-C canvas 元素引用：用于 PNG/SVG 导出。
+  const hicCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // ── 工具栏状态（本组件持有，下发给 HiCMatrix）──
+  const [triangle, setTriangle] = useState(false);
+  const [autoColor, setAutoColor] = useState(true);
+  const [lockResolution, setLockResolution] = useState(false);
+  const [normalization, setNormalization] = useState<HicNormalization>('log2');
+  const [vmaxScale, setVmaxScale] = useState(1);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -177,6 +216,7 @@ export function GenomeBrowserView({
         rafId = requestAnimationFrame(measureHic);
         return;
       }
+      hicCanvasRef.current = canvas;
       const containerRect = el.getBoundingClientRect();
       const cr = canvas.getBoundingClientRect();
       setHicCanvasBox({
@@ -253,15 +293,29 @@ export function GenomeBrowserView({
   const pc1Title = labels?.pc1 ?? 'PC1';
   const geneTitle = labels?.gene ?? 'Gene model';
 
-  // 工具栏受控值（带默认）
-  const triangle = hicOptions?.triangle ?? false;
-  const colorMode = hicOptions?.colorMode ?? 'auto';
-  const normalization = hicOptions?.normalization ?? 'log2';
-  const lockResolution = hicOptions?.lockResolution ?? false;
-  const vmaxScale = hicOptions?.vmaxScale ?? 1;
-
   // 是否渲染某条轨道：tracks 未传视为全部（旧行为）；否则以集合为准。
   const enabled = tracks ?? ([] as TrackId[]);
+
+  const exportPng = () => {
+    const canvas =
+      hicCanvasRef.current ??
+      containerRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas');
+    if (canvas) downloadCanvasPng(canvas, `${sampleId}_hic.png`);
+  };
+  const exportSvg = () => {
+    const canvas =
+      hicCanvasRef.current ??
+      containerRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas');
+    if (canvas) downloadCanvasSvg(canvas, `${sampleId}_hic.svg`);
+  };
+  const enterFullscreen = () => {
+    const el = containerRef.current;
+    if (el && document.fullscreenElement !== el) {
+      el.requestFullscreen?.().catch(() => {});
+    } else if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    }
+  };
 
   /**
    * 按 TRACK_CATALOG.kind 把一条轨道分派到对应 lane 组件。
@@ -278,49 +332,13 @@ export function GenomeBrowserView({
           return (
             <div
               className="gbv-lane gbv-lane--loops"
-              style={{
-                height: `${LOOPS_HEIGHT}px`,
-                display: 'flex',
-                alignItems: 'stretch',
-              }}
+              style={{ height: `${LOOPS_HEIGHT}px` }}
             >
-              <div
-                className="gbv-lane__label"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  justifyContent: 'center',
-                  gap: 2,
-                  padding: 'var(--space-2)',
-                  overflow: 'hidden',
-                  textAlign: 'right',
-                  fontSize: 'var(--font-size-small)',
-                  width: LABEL_GUTTER,
-                  flex: '0 0 auto',
-                  borderRight: 'var(--track-separator) solid var(--color-border)',
-                  background: 'var(--color-surface-1)',
-                }}
-              >
-                <span style={{fontSize:'var(--font-size-small)',fontWeight:500}}>{loopsTitle}</span>
+              <div className="gbv-lane__label">
+                <span className="lane-title">{loopsTitle}</span>
                 <span className="lane-sample">{sampleId}</span>
               </div>
-              <div className="gbv-lane__content" style={{ position: 'relative' }}>
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: 'var(--font-size-small)',
-                    color: 'var(--color-text-secondary)',
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                    fontWeight: 500,
-                  }}
-                >
-                  {loopsTitle}
-                </span>
+              <div className="gbv-lane__content">
                 <CTCFLoops sampleId={sampleId} height={LOOPS_HEIGHT} width={plotWidth} />
               </div>
             </div>
@@ -386,6 +404,23 @@ export function GenomeBrowserView({
           <span className="gbv-ruler__tick">{formatBp(viewport.end)}</span>
         </div>
       )}
+      {/* 快速调整工具栏 */}
+      <HicToolbar
+        triangle={triangle}
+        onTriangleChange={setTriangle}
+        autoColor={autoColor}
+        onAutoColorChange={setAutoColor}
+        lockResolution={lockResolution}
+        onLockResolutionChange={setLockResolution}
+        normalization={normalization}
+        onNormalizationChange={setNormalization}
+        onExportPng={exportPng}
+        onExportSvg={exportSvg}
+        onFullscreen={enterFullscreen}
+        vmaxScale={vmaxScale}
+        onVmaxScaleChange={setVmaxScale}
+        actions={toolbarActions}
+      />
       <HiCMatrix
         sampleId={sampleId}
         height={HIC_HEIGHT}
@@ -393,7 +428,7 @@ export function GenomeBrowserView({
         onColorMapChange={hicOptions?.onColorMapChange}
         hideColorBar={hicOptions?.hideColorBar}
         triangle={triangle}
-        colorMode={colorMode}
+        colorMode={autoColor ? 'auto' : 'full'}
         normalization={normalization}
         lockResolution={lockResolution}
         vmaxScale={vmaxScale}
@@ -430,5 +465,3 @@ export function GenomeBrowserView({
     </div>
   );
 }
-
-export default GenomeBrowserView;
