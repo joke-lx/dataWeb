@@ -129,38 +129,6 @@ function TrackBinIndicator({
   );
 }
 
-/** 把 canvas 光栅内容触发为浏览器下载（PNG）。 */
-function downloadCanvasPng(canvas: HTMLCanvasElement, filename: string): void {
-  // toDataURL 同步且对 WebGL（preserveDrawingBuffer=true）可靠；
-  // 不依赖 toBlob 回调时序，避免 download 属性在 iframe/异步下被拦截。
-  const url = canvas.toDataURL('image/png');
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
-
-/** 把 canvas 光栅内容内嵌进一个独立 .svg 文件下载。 */
-function downloadCanvasSvg(canvas: HTMLCanvasElement, filename: string): void {
-  const dataUrl = canvas.toDataURL('image/png');
-  const w = canvas.width;
-  const h = canvas.height;
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">` +
-    `<image href="${dataUrl}" width="${w}" height="${h}"/>` +
-    `</svg>`;
-  const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  // 给浏览器一帧再释放，避免 Firefox 在 click 后立即 revoke 取消下载。
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 /**
  * 参考站点详细页式的一体化 Hi-C 视图。
