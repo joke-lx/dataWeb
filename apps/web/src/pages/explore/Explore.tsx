@@ -24,10 +24,6 @@ const VIEWER_ORDER = ['hic', 'tracks', '3d', 'ctcf-motif'] as const;
  * that this file does not need to solve. The lookup below uses
  * `String.prototype.includes`, so widening to `string` is safe.
  */
-const VALID_TYPES = new Set<string>(['hic', 'tracks', '3d', 'ctcf-motif']);
-// URL /explore/:viewerType 用的是 ctcfMotif（驼峰），但 MODEL_REGISTRY key 是 ctcf-motif。
-// 一个 key 两套命名 — 在 URL param 层转换。
-function normalizeViewerType(raw: string): string {
 /**
  * Viewer-type landing page. Each viewer (hic / tracks / 3d / ctcfMotif)
  * gets a dedicated landing that:
