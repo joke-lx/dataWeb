@@ -14,9 +14,11 @@
  */
 
 import type { JSX } from 'react';
+import { useState } from 'react';
 
 import type { Sample } from '../../api/types';
 import { Popover } from '../../components/popover/Popover';
+import { FileTable } from '../../components/download/FileTable';
 import { useAppIntl } from '../../i18n';
 
 interface CompareRailProps {
@@ -161,32 +163,7 @@ export function CompareRail({
         {added.map((id, index) => {
           const s = samples?.find((item) => item.id === id);
           if (!s) return null;
-          return (
-            <div key={id} className="compare-rail__item">
-              <div className="compare-rail__item-head">
-                <span className="compare-rail__item-id">
-                  {index + 1}. {s.id}
-                </span>
-                <button
-                  type="button"
-                  className="compare-rail__item-remove"
-                  onClick={() => onRemove(id)}
-                  aria-label={t('compare.workspace.remove')}
-                >
-                  ×
-                </button>
-              </div>
-              <div className="compare-rail__item-meta">
-                {s.tissue} · {s.breed} · {s.sex}
-              </div>
-              <div className="compare-rail__item-meta">
-                {t('compare.workspace.type')}
-              </div>
-              <div className="compare-rail__item-meta">
-                {t('compare.workspace.assembly')}: {s.species}
-              </div>
-            </div>
-          );
+          return <RailItem key={id} sample={s} index={index} onRemove={() => onRemove(id)} />;
         })}
       </div>
     </aside>
@@ -194,3 +171,70 @@ export function CompareRail({
 }
 
 export default CompareRail;
+
+/** 侧边栏单个样本项：可展开/收起详细信息（元数据 + 文件列表）。 */
+function RailItem({
+  sample,
+  index,
+  onRemove,
+}: {
+  sample: Sample;
+  index: number;
+  onRemove: () => void;
+}): JSX.Element {
+  const { t } = useAppIntl();
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className={'compare-rail__item' + (expanded ? ' is-expanded' : '')}>
+      <div className="compare-rail__item-head">
+        <button
+          type="button"
+          className="compare-rail__item-toggle"
+          onClick={() => setExpanded((p) => !p)}
+          aria-expanded={expanded}
+          aria-label={expanded ? '收起' : '展开'}
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+            <path
+              d={expanded ? 'M2 3 L5 6 L8 3' : 'M3 2 L6 5 L3 8'}
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <span className="compare-rail__item-id">
+          {index + 1}. {sample.id}
+        </span>
+        <button
+          type="button"
+          className="compare-rail__item-remove"
+          onClick={onRemove}
+          aria-label={t('compare.workspace.remove')}
+        >
+          ×
+        </button>
+      </div>
+      {expanded ? (
+        <div className="compare-rail__item-body">
+          <div className="compare-rail__item-meta">
+            {sample.tissue} · {sample.breed} · {sample.sex}
+          </div>
+          <div className="compare-rail__item-meta">Type: Hi-C</div>
+          <div className="compare-rail__item-meta">Assembly: {sample.species}</div>
+          <div className="compare-rail__item-files">
+            <div className="compare-rail__item-files-title">Files</div>
+            <FileTable sampleId={sample.id} compact />
+          </div>
+        </div>
+      ) : (
+        <div className="compare-rail__item-meta">
+          {sample.tissue} · {sample.breed} · {sample.sex}
+        </div>
+      )}
+    </div>
+  );
+}
