@@ -417,8 +417,6 @@ export function GenomeBrowserView({
         onLockResolutionChange={setLockResolution}
         normalization={normalization}
         onNormalizationChange={setNormalization}
-        onExportPng={exportPng}
-        onExportSvg={exportSvg}
         onFullscreen={enterFullscreen}
         vmaxScale={vmaxScale}
         onVmaxScaleChange={setVmaxScale}
