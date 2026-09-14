@@ -130,3 +130,32 @@
     grid-template-columns: 1fr;
   }
 }
+.explore-preview {
+  position: relative;
+}
+
+.explore-preview__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border, #d8dde2);
+  background: #ffffff;
+  color: var(--color-text-primary, #1a2128);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: background 0.15s;
+}
+
+.explore-preview__nav:hover {
+  background: #f5f7fa;
+}
+
+.explore-preview__nav--prev { left: -18px; }
+.explore-preview__nav--next { right: -18px; }

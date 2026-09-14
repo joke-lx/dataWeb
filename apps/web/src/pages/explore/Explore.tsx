@@ -1,5 +1,5 @@
-import { useMemo, type JSX } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useMemo, useState, type JSX } from 'react';
+import { Link } from 'react-router-dom';
 
 import { RouteShell } from '../../components/route/RouteShell';
 import { useAppIntl } from '../../i18n';
@@ -9,6 +9,9 @@ import type { ModelType } from '../../components/models';
 import { TracksModel } from '../../components/models/tracks';
 import { SUB_TABS } from '../../components/models/tracks/trackSpec';
 import './explore.css';
+
+/** 轮播的四种可视化类型顺序。 */
+const VIEWER_ORDER = ['hic', 'tracks', '3d', 'ctcf-motif'] as const;
 
 /**
  * Viewer-type values that have a real ModelFactory component. The URL
@@ -25,10 +28,6 @@ const VALID_TYPES = new Set<string>(['hic', 'tracks', '3d', 'ctcf-motif']);
 // URL /explore/:viewerType 用的是 ctcfMotif（驼峰），但 MODEL_REGISTRY key 是 ctcf-motif。
 // 一个 key 两套命名 — 在 URL param 层转换。
 function normalizeViewerType(raw: string): string {
-  if (raw === 'ctcfMotif') return 'ctcf-motif';
-  return raw;
-}
-
 /**
  * Viewer-type landing page. Each viewer (hic / tracks / 3d / ctcfMotif)
  * gets a dedicated landing that:
@@ -45,8 +44,8 @@ function normalizeViewerType(raw: string): string {
  */
 export function Explore(): JSX.Element {
   const { t } = useAppIntl();
-  const { viewerType: rawType = 'hic' } = useParams<{ viewerType: string }>();
-  const viewerType = normalizeViewerType(rawType);
+  const [viewerIdx, setViewerIdx] = useState(0);
+  const viewerType = VIEWER_ORDER[viewerIdx];
   const { samples } = useSampleCatalog();
 
   const sortedSamples = useMemo(
@@ -55,19 +54,20 @@ export function Explore(): JSX.Element {
   );
 
   const defaultSample = sortedSamples[0];
-
-  // URL param 的 viewerType 经过 normalize 后是连字符格式（ctcf-motif），
-  // 但 EXPLORE_META 的 key 是驼峰格式（ctcfMotif）。做一次映射。
   const exploreKey = viewerType === 'ctcf-motif' ? 'ctcfMotif' : viewerType;
   const meta = EXPLORE_META[exploreKey] ?? EXPLORE_META.hic;
+  const canRenderModel = defaultSample !== undefined;
 
-  const canRenderModel =
-    defaultSample !== undefined && VALID_TYPES.has(viewerType);
+  const prev = () => setViewerIdx((i) => (i - 1 + VIEWER_ORDER.length) % VIEWER_ORDER.length);
+  const next = () => setViewerIdx((i) => (i + 1) % VIEWER_ORDER.length);
 
   return (
     <RouteShell title={meta.title} subtitle={meta.subtitle}>
       {/* ── Visual preview + legend ── */}
       <div className="explore-preview">
+        <button type="button" className="explore-preview__nav explore-preview__nav--prev" onClick={prev} aria-label="Previous visualization">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M10 3 L5 8 L10 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
         <div className="explore-preview__visual">
           {canRenderModel && defaultSample ? (
             <>
@@ -88,6 +88,9 @@ export function Explore(): JSX.Element {
             meta.preview ?? <DefaultPreview viewer={viewerType} />
           )}
         </div>
+        <button type="button" className="explore-preview__nav explore-preview__nav--next" onClick={next} aria-label="Next visualization">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M6 3 L11 8 L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
         <div className="explore-preview__legend">
           <h3>{t('explore.legend.title')}</h3>
           <dl>

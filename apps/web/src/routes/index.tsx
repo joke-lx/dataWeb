@@ -49,7 +49,8 @@ export function AppRoutes(): JSX.Element {
         <Route path="/" element={<Home />} />
         <Route path="/database" element={<Database />} />
         <Route path="/species/:species" element={<Species />} />
-        <Route path="/explore/:viewerType" element={<Explore />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/explore/:viewerType" element={<Navigate to="/explore" replace />} />
         <Route path="/sample/:id" element={<Sample />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/compare/cases" element={<CompareCases />} />
