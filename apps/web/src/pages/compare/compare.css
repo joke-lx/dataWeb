@@ -528,9 +528,20 @@
 }
 
 .compare-rail__item-files .ft-table .dl-direct .ant-btn,
-.compare-rail__item-files .ft-table .dl-stream .ant-btn {
-  padding: 0 4px;
+.compare-rail__item-files .ft-table .dl-stream .ant-btn,
+.compare-rail__item-files .ft-table .dl-chunked .ant-btn {
+  padding: 0 6px;
   font-size: 11px;
+}
+
+.compare-rail__item-files .ft-table .dl-direct .ant-btn > span:last-child,
+.compare-rail__item-files .ft-table .dl-stream .ant-btn > span:last-child,
+.compare-rail__item-files .ft-table .dl-chunked__row .ant-btn > span:last-child {
+  display: none;
+}
+
+.compare-rail__item-files .ft-table .dl-chunked__status {
+  font-size: 10px;
 }
 
 .compare-rail__item-files .ft-table .dl-chunked__row {
