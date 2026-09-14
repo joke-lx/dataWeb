@@ -417,6 +417,10 @@ export function GenomeBrowserView({
         onLockResolutionChange={setLockResolution}
         normalization={normalization}
         onNormalizationChange={setNormalization}
+        colorMap={colorMap}
+        onColorMapChange={onColorMapChange}
+        getCanvas={() => hicCanvasRef.current ?? containerRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas') ?? null}
+        filenamePrefix={sampleId}
         onFullscreen={enterFullscreen}
         vmaxScale={vmaxScale}
         onVmaxScaleChange={setVmaxScale}
