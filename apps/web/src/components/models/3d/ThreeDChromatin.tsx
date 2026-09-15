@@ -292,25 +292,6 @@ function makeGlowSprite(
   return sprite;
 }
 
-/**
- * Catmull-Rom 加密路径：真实 MDS 坐标每个 bin 只有一个点（如 1Mb 视口 / 50kb bin
- * → 约 20 个点），直接连管会有明显折角。加密后每对控制点间插 ptsPerSeg 个点，
- * 让染色质纤维在 3D 中平滑连续（mock 随机游走路径已足够密，不再二次加密）。
- */
-function densify(path: THREE.Vector3[], ptsPerSeg = 8): THREE.Vector3[] {
-  if (path.length < 3) return path;
-  const curve = new THREE.CatmullRomCurve3(path, false, 'catmullrom', 0.5);
-  const out: THREE.Vector3[] = [];
-  const segs = path.length - 1;
-  for (let i = 0; i < segs; i += 1) {
-    for (let s = 0; s < ptsPerSeg; s += 1) {
-      out.push(curve.getPoint((i + s / ptsPerSeg) / segs));
-    }
-  }
-  out.push(path[segs].clone());
-  return out;
-}
-
 interface BeadHandle {
   mesh: THREE.Mesh;
   /** 珠子沿路径的归一化位置 t∈[0,1]，用于锁定区间高亮判断。 */
