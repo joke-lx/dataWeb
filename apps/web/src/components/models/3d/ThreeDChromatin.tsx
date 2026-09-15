@@ -715,8 +715,8 @@ export function ThreeDChromatin({
       const dt = now - lastTime;
       lastTime = now;
       if (!orbit.isDragging) {
-        // 基础自动旋转 + 拖拽惯性 vel（vel 在每次 move 中累积，0.94 衰减）
-        orbit.theta += dt * 0.00045 + orbit.vel;
+        // 仅保留拖拽松手后的惯性衰减；不再自动旋转
+        orbit.theta += orbit.vel;
         orbit.vel *= 0.94;
       }
       updateCamera();
@@ -784,6 +784,56 @@ export function ThreeDChromatin({
     sceneHandleRef.current = { attachEnhancers, setHighlight };
     if (peiQuery.data) attachEnhancers(peiQuery.data);
 
+    // ── Hover tooltip：鼠标移到纤维上显示对应基因组位置 ──────────────
+    // 用不可见的小球挂在 path 每个点上，Raycaster 命中后映射到 bp
+    const raycaster = new THREE.Raycaster();
+    const mouseNdc = new THREE.Vector2();
+    const hitGroup = new THREE.Group();
+    const hitGeo = new THREE.SphereGeometry(0.025, 6, 6);
+    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+    path.forEach((p, i) => {
+      const m = new THREE.Mesh(hitGeo, hitMat);
+      m.position.copy(p);
+      m.userData.pathIdx = i;
+      hitGroup.add(m);
+    });
+    scene.add(hitGroup);
+
+    const tooltip = document.createElement('div');
+    tooltip.style.cssText =
+      'position:absolute;pointer-events:none;background:rgba(20,22,30,0.92);color:#e8ecf1;' +
+      'padding:4px 8px;border-radius:6px;font-size:12px;font-family:ui-monospace,monospace;' +
+      'z-index:10;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+    mount.style.position = 'relative';
+    mount.appendChild(tooltip);
+
+    const fmtBp = (bp: number): string => {
+      if (bp >= 1e6) return `${(bp / 1e6).toFixed(2)} Mb`;
+      if (bp >= 1e3) return `${(bp / 1e3).toFixed(1)} kb`;
+      return `${bp} bp`;
+    };
+
+    const onHover = (event: PointerEvent) => {
+      if (orbit.isDragging) { tooltip.style.display = 'none'; return; }
+      const rect = canvas.getBoundingClientRect();
+      mouseNdc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseNdc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouseNdc, camera);
+      const hits = raycaster.intersectObjects(hitGroup.children, false);
+      if (hits.length === 0) {
+        tooltip.style.display = 'none';
+        return;
+      }
+      const idx = hits[0].object.userData.pathIdx as number;
+      const bp = viewport.start + idx * viewport.bin;
+      const bpEnd = bp + viewport.bin;
+      tooltip.textContent = `${viewport.chr}:${fmtBp(bp)} – ${fmtBp(bpEnd)}`;
+      tooltip.style.left = `${event.clientX - rect.left + 12}px`;
+      tooltip.style.top = `${event.clientY - rect.top - 28}px`;
+      tooltip.style.display = 'block';
+    };
+    canvas.addEventListener('pointermove', onHover);
+
     return () => {
       cancelAnimationFrame(frameId);
       resizeObserver.disconnect();
@@ -793,7 +843,11 @@ export function ThreeDChromatin({
       canvas.removeEventListener('pointercancel', onPointerUp);
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('contextmenu', onContextMenu);
+      canvas.removeEventListener('pointermove', onHover);
       mount.removeChild(renderer.domElement);
+      mount.removeChild(tooltip);
+      hitGeo.dispose();
+      hitMat.dispose();
       renderer.dispose();
       // 强制丢 WebGL 上下文，避免在某些浏览器/显卡上挂起旧 panel 时上下文被锁
       renderer.forceContextLoss();

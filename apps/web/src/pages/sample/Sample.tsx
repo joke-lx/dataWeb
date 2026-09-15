@@ -31,6 +31,7 @@ import { RouteShell } from '../../components/route/RouteShell';
 import { TracksModel } from '../../components/models/tracks';
 import { GenomeBrowserView } from '../../components/models/tracks/GenomeBrowserView';
 import { ExportPdfButton } from '../../components/feedback/ExportPdfButton';
+import { Loading } from '../../components/feedback/Loading';
 import { CrosshairLayer } from '../../components/overlay/CrosshairLayer';
 import { GeneLane } from '../../components/models/differential/GeneLane';
 import { Log2Heatmap } from '../../components/models/differential/Log2Heatmap';
@@ -276,7 +277,13 @@ export function Sample(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 
-  if (isLoading) return <main className="route-page"><div className="route-content">{t('common.loading')}</div></main>;
+  if (isLoading) return (
+    <main className="route-page">
+      <div className="route-content">
+        <Loading variant="full" label={t('common.loading')} />
+      </div>
+    </main>
+  );
   if (!sample) return <main className="route-page"><div className="model-missing"><strong>{t('sample.notFound.title')}</strong><p>{t('sample.notFound.description', { id: id ?? '' })}</p></div></main>;
 
   const compareActive = isCompareMode && Boolean(partner);

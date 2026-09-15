@@ -25,6 +25,8 @@ import { useEffect, useRef, useState, type JSX } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
+import { Loading } from '../../components/feedback/Loading';
+import { useAppIntl } from '../../i18n';
 import { ComparePanel } from './ComparePanel';
 import { CompareRail } from './CompareRail';
 import './compare.css';

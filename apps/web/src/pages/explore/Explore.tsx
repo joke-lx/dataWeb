@@ -2,6 +2,7 @@ import { useMemo, useState, type JSX } from 'react';
 import { Link } from 'react-router-dom';
 
 import { RouteShell } from '../../components/route/RouteShell';
+import { Loading } from '../../components/feedback/Loading';
 import { useAppIntl } from '../../i18n';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { ModelFactory } from '../../components/models';
@@ -42,7 +43,7 @@ export function Explore(): JSX.Element {
   const { t } = useAppIntl();
   const [viewerIdx, setViewerIdx] = useState(0);
   const viewerType = VIEWER_ORDER[viewerIdx];
-  const { samples } = useSampleCatalog();
+  const { samples, isLoading } = useSampleCatalog();
 
   const sortedSamples = useMemo(
     () => (samples ?? []).slice().sort((a, b) => a.id.localeCompare(b.id)),
@@ -65,7 +66,9 @@ export function Explore(): JSX.Element {
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M10 3 L5 8 L10 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
         <div className="explore-preview__visual">
-          {canRenderModel && defaultSample ? (
+          {isLoading ? (
+            <Loading variant="full" label={t('common.loading')} />
+          ) : canRenderModel && defaultSample ? (
             <>
               <div className="explore-preview__sample-label">
                 {t('explore.preview.sampleLabel', { id: defaultSample.id })}

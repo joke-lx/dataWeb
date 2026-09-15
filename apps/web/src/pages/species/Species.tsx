@@ -15,6 +15,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import type { Sample } from '../../api/types';
 import { RouteShell } from '../../components/route/RouteShell';
+import { Loading } from '../../components/feedback/Loading';
 import { ArrowIcon, SearchIcon, tissueIcon } from '../../components/icons/tissueIcons';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { useAppIntl } from '../../i18n';
@@ -111,7 +112,7 @@ export function Species(): JSX.Element {
 
   return (
     <RouteShell title={meta.title} subtitle={meta.latin}>
-      {isLoading && <div className="sp-state">{t('common.loading')}</div>}
+      {isLoading && <Loading variant="block" label={t('common.loading')} />}
       {error instanceof Error && (
         <div className="sp-state sp-state--error">
           {t('species.error', { message: error.message })}

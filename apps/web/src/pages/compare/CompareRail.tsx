@@ -19,6 +19,7 @@ import { useState } from 'react';
 import type { Sample } from '../../api/types';
 import { Popover } from '../../components/popover/Popover';
 import { FileTable } from '../../components/download/FileTable';
+import { Loading } from '../../components/feedback/Loading';
 import { useAppIntl } from '../../i18n';
 
 interface CompareRailProps {
@@ -83,7 +84,7 @@ export function CompareRail({
           {(close) => (
             <div className="compare-rail__menu" role="listbox">
               {isLoading && (
-                <div className="compare-rail__menu-empty">{t('common.loading')}</div>
+                <Loading variant="inline" size="small" label={t('common.loading')} />
               )}
               {!isLoading && (samples ?? []).length === 0 && (
                 <div className="compare-rail__menu-empty">

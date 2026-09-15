@@ -12,6 +12,9 @@
 import { lazy, Suspense, type JSX } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { Loading } from '../components/feedback/Loading';
+import { useAppIntl } from '../i18n';
+
 // 懒加载：每个页面按需 chunk，缩短首屏 JS 体积。
 // `.then(module => ({ default: module.Home }))` 让默认导出 vs 命名导出兼容。
 const Home = lazy(() => import('../pages/home/Home').then((module) => ({ default: module.Home })));
@@ -25,8 +28,11 @@ const CompareCases = lazy(() => import('../pages/compare/CompareCases').then((mo
 const About = lazy(() => import('../pages/about/About').then((module) => ({ default: module.About })));
 const Help = lazy(() => import('../pages/help/Help').then((module) => ({ default: module.Help })));
 
-/** 路由 chunk 加载中的占位。触发 Suspense 时显示。 */
-const PageFallback = () => <div className="route-loading">Loading…</div>;
+/** 路由 chunk 加载中的占位。触发 Suspense 时显示通用全屏 loading。 */
+const PageFallback = () => {
+  const { t } = useAppIntl();
+  return <Loading variant="full" size="large" label={t('common.loading')} />;
+};
 
 /**
  * 应用路由出口。

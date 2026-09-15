@@ -13,6 +13,7 @@ import { Empty, Pagination, Select, Tabs } from 'antd';
 
 import type { Sample } from '../../api/types';
 import { RouteShell } from '../../components/route/RouteShell';
+import { Loading } from '../../components/feedback/Loading';
 import { useSampleCatalog } from '../../hooks/useSampleCatalog';
 import { useAppIntl } from '../../i18n';
 import { FilterSidebar, type Filters } from './FilterSidebar';
@@ -90,7 +91,7 @@ export function Database(): JSX.Element {
       subtitle={t('database.subtitle', { count: all.length })}
       breadcrumb="6 samples · pig · Sscrofa11.1"
     >
-      {isLoading && <div className="db-state">{t('common.loading')}</div>}
+      {isLoading && <Loading variant="block" label={t('common.loading')} />}
       {error instanceof Error && (
         <div className="db-state db-state--error">{t('species.error', { message: error.message })}</div>
       )}
