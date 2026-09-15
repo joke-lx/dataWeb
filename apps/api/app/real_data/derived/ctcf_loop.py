@@ -9,10 +9,11 @@ variant suited to per-slice detection at ~1 s on a 200x200 matrix:
      with ``d = 5`` (square window, half-width 5 bins per side). Computed
      via a 2D cumulative sum so the per-pixel mean is O(1) once the sum
      table is built.
-  2. Enrichment ratio: ``r = mat / (bg + 1e-6)``. The epsilon keeps the
-     denominator strictly positive even where the local background is
-     exactly zero.
-  3. Threshold + diagonal filter: keep (i, j) where ``r > 1.5`` and
+  2. Enrichment difference: ``r = mat - bg`` in log1p space. The threshold
+     ``r > log(1.5)`` is exactly the difference a 1.5x raw-count enrichment
+     produces after log1p, so it stays meaningful on the real log1p Hi-C
+     cache (a ratio would collapse toward 1 there and detect nothing).
+  3. Threshold + diagonal filter: keep (i, j) where ``r > log(1.5)`` and
      ``j - i > 2`` (strictly upper triangle, skipping the diagonal + 2
      sub-diagonals). Symmetric counterparts (j, i) are merged into the
      same loop by the upper-triangle restriction.
@@ -29,6 +30,8 @@ the loop count.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 from .base import (
@@ -40,10 +43,13 @@ from .base import (
 
 # Algorithm defaults. Locked to the spec; tuning these is out of scope.
 _DEFAULT_HALFWIDTH = 5  # bg window half-width in bins per side
-_DEFAULT_R_THRESHOLD = 1.5
+# The real Hi-C cache is log1p-scaled (values ~3-8), where an enrichment
+# *ratio* collapses toward 1 and can never cross a 1.5x threshold. Detect on
+# the log1p-space absolute difference instead: log(1.5) is exactly the
+# difference a 1.5x raw-count enrichment produces after log1p.
+_DEFAULT_DIFF_THRESHOLD = math.log(1.5)
 _DEFAULT_DEDUP_BINS = 5  # +/- bins for the Chebyshev dedup box
 _DEFAULT_DIAGONAL_SKIP = 2  # skip the diagonal + 2 sub-diagonals
-_EPS = 1e-6  # denominator floor so r stays finite where bg == 0
 
 
 @register
@@ -99,12 +105,14 @@ class CTCFLoopStrategy(HiCDerivedStrategy):
             + cum[i_lo, j_lo]
         ) / area
 
-        # --- 2. Enrichment ratio r.
-        r = mat_f / (bg + _EPS)
+        # --- 2. Enrichment difference in log1p space.
+        # log1p(1.5x raw-count enrichment) == log(1.5); the ratio variant
+        # fails on real data (log1p values ~3-8 make ratios collapse to ~1).
+        r = mat_f - bg
 
         # --- 3. Threshold + diagonal filter. Upper triangle beyond 2 bins.
         diag_skip = _DEFAULT_DIAGONAL_SKIP
-        mask = (r > _DEFAULT_R_THRESHOLD) & (J >= I + diag_skip + 1)
+        mask = (r > _DEFAULT_DIFF_THRESHOLD) & (J >= I + diag_skip + 1)
         cand_i, cand_j = np.where(mask)
         cand_r = r[cand_i, cand_j]
         if cand_r.size == 0:
@@ -129,7 +137,7 @@ class CTCFLoopStrategy(HiCDerivedStrategy):
         representatives: list[tuple[int, int, float]] = []
         w = _DEFAULT_DEDUP_BINS
         n_cand = cand_r.size
-        threshold = _DEFAULT_R_THRESHOLD
+        threshold = _DEFAULT_DIFF_THRESHOLD
 
         for k in range(n_cand):
             ri = cand_r[k]
