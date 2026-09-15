@@ -11,6 +11,7 @@
  * `<GenomeBrowserView />` 在 Hi-C 一体化视图中调用。
  */
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -35,6 +36,8 @@ interface Pc1LaneProps {
   trackName?: string;
   title?: string;
   height?: number;
+  /** 加载状态上报（GenomeBrowserView 用它聚合"全部轨道渲染完成"）。 */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -50,6 +53,7 @@ export function Pc1Lane({
   trackName = 'pc1',
   title = 'PC1',
   height = PC1_LANE_HEIGHT,
+  onLoadingChange,
 }: Pc1LaneProps): JSX.Element {
   const viewport = usePanelViewport();
 
@@ -78,6 +82,15 @@ export function Pc1Lane({
     
     staleTime: 30_000,
   });
+
+  // 向父级上报本 lane 的加载状态；卸载时补报 false，避免聚合计数残留。
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+    return () => {
+      onLoadingChange?.(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   // records 结构（chrom/start/end/score）与 BedGraphRecord 完全一致，直接复用 builder。
   const plot = buildPc1Score(data?.records, viewport, title, height);

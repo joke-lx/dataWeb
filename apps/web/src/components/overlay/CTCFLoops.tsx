@@ -34,6 +34,8 @@ interface CTCFLoopsProps {
   height?: number;
   /** overlay 宽度（像素），与 HiCMatrix 同步——保证 anchor x 坐标精确对齐矩阵 bin */
   width: number;
+  /** 加载状态上报（GenomeBrowserView 用它聚合"全部轨道渲染完成"）。 */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -44,6 +46,7 @@ export function CTCFLoops({
   sampleId,
   height = 60,
   width,
+  onLoadingChange,
 }: CTCFLoopsProps): JSX.Element {
   const viewport = usePanelViewport();
   const [records, setRecords] = useState<DerivedLoopRecord[]>([]);
@@ -64,18 +67,26 @@ export function CTCFLoops({
           viewport.end,
           viewport.bin,
         );
-        setRecords(data.records ?? []);
+        setRecords(data.records);
         setSource(data.source);
       } catch (e) {
         if ((e as Error).name !== 'AbortError') console.error('ctcf loops', e);
       } finally {
         if (!ctrl.signal.aborted) setLoading(false);
       }
-      }
     };
     void run();
     return () => ctrl.abort();
   }, [sampleId, viewport.chr, viewport.start, viewport.end, viewport.bin]);
+
+  // 向父级上报本 lane 的加载状态；卸载时补报 false，避免聚合计数残留。
+  useEffect(() => {
+    onLoadingChange?.(loading);
+    return () => {
+      onLoadingChange?.(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   // 从 CSS 变量读 loop 弧颜色——让主题切换（light/dark）时弧线颜色也跟着变
   // 兜底 #b8b8b8 用于变量未定义的极端情况（SSR / CSS 未加载完成）

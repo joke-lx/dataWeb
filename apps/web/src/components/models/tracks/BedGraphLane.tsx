@@ -12,6 +12,7 @@
  * 通过 `<TracksModel />` 按 kind 分派时调用。
  */
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -30,6 +31,8 @@ interface BedGraphLaneProps {
   trackName: string;
   title: string;
   height?: number;
+  /** 加载状态上报（GenomeBrowserView 用它聚合"全部轨道渲染完成"）。 */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -45,6 +48,7 @@ export function BedGraphLane({
   trackName,
   title,
   height = BEDGRAPH_LANE_HEIGHT,
+  onLoadingChange,
 }: BedGraphLaneProps): JSX.Element {
   const viewport = useViewport();
 
@@ -64,6 +68,15 @@ export function BedGraphLane({
     
     staleTime: 30_000,
   });
+
+  // 向父级上报本 lane 的加载状态；卸载时补报 false，避免聚合计数残留。
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+    return () => {
+      onLoadingChange?.(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   const plot = buildBedGraph(data, viewport, title, height);
 

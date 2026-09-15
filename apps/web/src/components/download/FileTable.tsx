@@ -14,6 +14,7 @@ import { fetchSampleFiles } from '../../api/client';
 import type { SampleFileMeta } from '../../api/types';
 import { useAppIntl } from '../../i18n';
 import { DownloadItem } from './DownloadItem';
+import { Loading } from '../feedback/Loading';
 import { formatBytes } from './downloadUtils';
 import './download.css';
 
@@ -72,7 +73,7 @@ export function FileTable({ sampleId, compact = false }: FileTableProps): JSX.El
     },
   ];
 
-  if (isLoading) return <div className="ft-loading">{t('common.loading')}</div>;
+  if (isLoading) return <Loading variant="block" label={t('common.loading')} />;
   if (error instanceof Error) {
     return <div className="ft-error">{t('species.error', { message: error.message })}</div>;
   }

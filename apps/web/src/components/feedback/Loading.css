@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: var(--space-6, 24px) var(--space-3, 12px);
+  padding: var(--space-5, 24px) var(--space-3, 12px);
   min-height: 96px;
   color: var(--color-text-secondary);
 }

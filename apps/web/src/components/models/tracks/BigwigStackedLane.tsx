@@ -19,6 +19,7 @@
  * `ModelSourceBadge source="ab_proxy"`。
  */
 
+import { useEffect } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -47,6 +48,8 @@ interface BigwigStackedProps {
   groupLabel?: string;
   highlightBands?: Array<{ start: number; end: number }>;
   height?: number;
+  /** 加载状态上报（GenomeBrowserView 用它聚合"全部轨道渲染完成"）。 */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -69,6 +72,7 @@ export function BigwigStacked({
   groupLabel,
   highlightBands,
   height,
+  onLoadingChange,
 }: BigwigStackedProps): JSX.Element {
   const viewport = useViewport();
   // bin 数随 viewport 宽度线性变化：50~800 之间。下限 50 防过疏，上限 800 防请求爆炸。
@@ -153,6 +157,15 @@ export function BigwigStacked({
   // 任一 query 失败 → 在右上角显示错误标记（但不阻断其它已就绪的 trace）
   const overlayError = queries.find((q) => q.error)?.error ?? null;
   const overlayLoading = queries.some((q) => q.isLoading);
+
+  // 向父级上报本 lane 的加载状态；卸载时补报 false，避免聚合计数残留。
+  useEffect(() => {
+    onLoadingChange?.(overlayLoading);
+    return () => {
+      onLoadingChange?.(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overlayLoading]);
   // activity 代理时所有 sample 共享同一 source（ab_proxy）
   const activitySource = queries[0]?.data && 'source' in queries[0].data
     ? (queries[0].data as { source: string }).source
@@ -177,7 +190,10 @@ export function BigwigStacked({
         data-track-name={trackName}
       >
         {series.every((s) => !s.values) ? (
-          <span className="placeholder">No samples selected</span>
+          // 数据加载中不显示"No samples selected"占位（否则切换区域时会误闪）
+          overlayLoading ? null : (
+            <span className="placeholder">No samples selected</span>
+          )
         ) : (
           <PlotlyTrack data={plot.data} layout={plot.layout} height={stackedLaneHeight} />
         )}

@@ -61,6 +61,8 @@ interface HiCMatrixProps {
   lockResolution?: boolean;
   /** 手动色阶上界缩放：1.0=Auto/full 全上界，0.1=压到 10%。 */
   vmaxScale?: number;
+  /** 加载状态上报（GenomeBrowserView 用它聚合"全部轨道渲染完成"）。 */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -83,6 +85,7 @@ export function HiCMatrix({
   normalization = 'log2',
   lockResolution = false,
   vmaxScale = 1,
+  onLoadingChange,
 }: HiCMatrixProps): JSX.Element {
   const viewport = usePanelViewport();
   const activeSample = useActiveSample();
@@ -129,6 +132,16 @@ export function HiCMatrix({
     
     staleTime: 30_000,
   });
+
+  // 向父级上报本 lane 的加载状态；卸载时补报 false，避免聚合计数残留。
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+    return () => {
+      onLoadingChange?.(false);
+    };
+    // onLoadingChange 由父组件渲染期创建，只依赖 isLoading 变化即可正确上报。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   // colorMode='full' 时统计矩阵最大值（依赖 data，须在 useQuery 之后声明）。
   useEffect(() => {

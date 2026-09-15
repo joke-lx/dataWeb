@@ -11,6 +11,7 @@
  * 架构位置：tracks 模型目录下的"单样本 TAD"lane。
  */
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -31,6 +32,8 @@ interface TadBarProps {
   height?: number;
   /** lane 标题（可选，缺省不显示标题行）。 */
   title?: string;
+  /** 加载状态上报（GenomeBrowserView 用它聚合"全部轨道渲染完成"）。 */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -43,6 +46,7 @@ export function TadBar({
   sampleId,
   height = TAD_LANE_HEIGHT,
   title,
+  onLoadingChange,
 }: TadBarProps): JSX.Element {
   const viewport = usePanelViewport();
   // gene / tad 等"非样本特异"轨道在缺省 sample 时回退到 Brain_BF3——见 hic 模型同款约定。
@@ -62,6 +66,15 @@ export function TadBar({
     
     staleTime: 30_000,
   });
+
+  // 向父级上报本 lane 的加载状态；卸载时补报 false，避免聚合计数残留。
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+    return () => {
+      onLoadingChange?.(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   const plot = buildTadBar(data, viewport, 'TAD boundary', height);
 

@@ -111,33 +111,6 @@
   min-width: 0;
 }
 
-.lane-content .track-loading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--color-bg);
-  color: var(--color-text-tertiary);
-  font-size: 13px;
-  z-index: 5;
-}
-
-.lane-content .track-loading::before {
-  content: '';
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary, #2563eb);
-  border-radius: 50%;
-  animation: track-spin 0.8s linear infinite;
-}
-
-@keyframes track-spin {
-  to { transform: rotate(360deg); }
-}
-
 .lane-content .track-error {
   position: absolute;
   top: 4px;

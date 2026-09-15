@@ -23,6 +23,7 @@ import { useAppIntl } from '../../i18n';
 import { fetchSamples } from '../../api/client';
 import type { Sample } from '../../api/types';
 import { useSamples } from '../../store/samples';
+import { Loading } from '../feedback/Loading';
 
 /**
  * 单个样本行。
@@ -104,7 +105,7 @@ export function LeftRail(): JSX.Element {
       </div>
 
       {isLoading && (
-        <div className="left-rail__state">{t('leftRail.loading')}</div>
+        <Loading variant="block" label={t('leftRail.loading')} />
       )}
 
       {error instanceof Error && (

@@ -546,11 +546,8 @@ export function ThreeDChromatin({
 
     // ── 动画循环 ──────────────────────────────────────────────────────
     let frameId = 0;
-    let lastTime = performance.now();
-    const animate = (now: number) => {
+    const animate = () => {
       frameId = requestAnimationFrame(animate);
-      const dt = now - lastTime;
-      lastTime = now;
       if (!orbit.isDragging) {
         // 仅保留拖拽松手后的惯性衰减；不再自动旋转
         orbit.theta += orbit.vel;
@@ -559,7 +556,7 @@ export function ThreeDChromatin({
       updateCamera();
       renderer.render(scene, camera);
     };
-    animate(performance.now());
+    animate();
 
     // ResizeObserver——Three.js renderer 的 canvas 尺寸必须匹配 host 容器的 CSS 尺寸。
     // 没有 observer 时 mount 后 clientHeight=0，首帧会渲染成 0×0；后续 reflow 也不会触发 resize。
@@ -744,12 +741,16 @@ export function ThreeDChromatin({
   }, [cursorLocked, cursorBinStart, cursorBinEnd, viewport.start, viewport.end]);
 
   return (
-    <div
-      className="three-d-chromatin"
-      ref={mountRef}
-      role="img"
-      aria-label={`3D chromatin folding model for ${organ}`}
-    >
+    <div className="three-d-chromatin">
+      {/* stage 是 Three.js 手动挂载点（effect 里 appendChild / innerHTML / removeChild），
+          必须与 React 管理的子组件（ModelSourceBadge / Loading）隔离——
+          否则 React 更新子节点时会与手动 DOM 操作冲突（removeChild 失败）。 */}
+      <div
+        className="three-d-chromatin__stage"
+        ref={mountRef}
+        role="img"
+        aria-label={`3D chromatin folding model for ${organ}`}
+      />
       <ModelSourceBadge source={threeDQuery.data?.source} />
       {(threeDQuery.isLoading || peiQuery.isLoading) && (
         <Loading variant="overlay" size="small" />

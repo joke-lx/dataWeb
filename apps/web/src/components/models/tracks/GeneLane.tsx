@@ -11,6 +11,7 @@
  * 架构位置：tracks 模型目录下的"gene 注释"lane（主/aux 都可能用到）。
  */
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { JSX } from 'react';
 
@@ -31,6 +32,8 @@ interface GeneLaneProps {
   height?: number;
   /** lane 标题（可选，缺省不显示标题行）。 */
   title?: string;
+  /** 加载状态上报（GenomeBrowserView 用它聚合"全部轨道渲染完成"）。 */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 /**
@@ -43,6 +46,7 @@ export function GeneLane({
   sampleId,
   height = GENE_LANE_HEIGHT,
   title,
+  onLoadingChange,
 }: GeneLaneProps): JSX.Element {
   const viewport = usePanelViewport();
   // gene 注释在数据模型里仍挂在某个 sample 下；缺省时回退到 Brain_BF3——和 hic 模型一致。
@@ -62,6 +66,15 @@ export function GeneLane({
     
     staleTime: 30_000,
   });
+
+  // 向父级上报本 lane 的加载状态；卸载时补报 false，避免聚合计数残留。
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+    return () => {
+      onLoadingChange?.(false);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   const plot = buildGene(data, viewport, 'Gene model', height);
 

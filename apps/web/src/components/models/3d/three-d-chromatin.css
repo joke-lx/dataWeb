@@ -97,6 +97,13 @@
   overflow: hidden;
 }
 
+/* Three.js 手动挂载点：绝对定位填满宿主容器。
+ * 与 React 子组件（ModelSourceBadge / Loading overlay）在同一个相对定位父级下共存。 */
+.three-d-chromatin__stage {
+  position: absolute;
+  inset: 0;
+}
+
 .three-d-cell {
   display: flex;
   flex-direction: column;

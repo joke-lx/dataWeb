@@ -23,7 +23,7 @@
  * 内**按 bp 比例高亮选定 bin 列；十字细线只在 Hi-C 热图内（见 CrosshairLayer）。
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { JSX } from 'react';
 
 import type { HicNormalization } from '../../../api/client';
@@ -31,7 +31,9 @@ import { CTCFLoops } from '../../overlay/CTCFLoops';
 import { formatBp } from '../../../genomics/coords';
 import { useCursor } from '../../../store/cursor';
 import { usePanelViewport } from '../../../hooks/usePanelViewport';
+import { useAppIntl } from '../../../i18n/hooks/useAppIntl';
 import { HicToolbar } from '../../nav/HicToolbar';
+import { Loading } from '../../feedback/Loading';
 import { BedGraphLane } from './BedGraphLane';
 import { BigwigStacked } from './BigwigStackedLane';
 import { GeneLane } from './GeneLane';
@@ -147,6 +149,25 @@ export function GenomeBrowserView({
 }: GenomeBrowserViewProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewport = usePanelViewport();
+  const { t } = useAppIntl();
+  // ── 全局加载聚合：任一 lane（Hi-C / 轨道）数据未就绪时，整视图盖 loading
+  //    遮罩，直到全部渲染完成；lane 通过 onLoadingChange 上报并卸载时补报 false。──
+  const laneLoadingRef = useRef<Map<string, boolean>>(new Map());
+  // 初始即视为加载中：Hi-C lane 恒存在且会立即上报真实状态，避免首帧空内容闪烁。
+  const [viewLoading, setViewLoading] = useState(true);
+  const reportLoading = useCallback((laneId: string, loading: boolean): void => {
+    const prev = laneLoadingRef.current.get(laneId);
+    if (prev === loading) return;
+    laneLoadingRef.current.set(laneId, loading);
+    let anyLoading = false;
+    for (const v of laneLoadingRef.current.values()) {
+      if (v) {
+        anyLoading = true;
+        break;
+      }
+    }
+    setViewLoading(anyLoading);
+  }, []);
   // SVG overlay 宽度：容器宽 - 左 gutter - colormap 条；下限 280 防极窄窗口。
   const [plotWidth, setPlotWidth] = useState<number>(800);
   // 轨道内容列宽（容器宽 - 左 gutter）：供 TrackBinIndicator 按 bp 比例定位。
@@ -284,7 +305,7 @@ export function GenomeBrowserView({
     const spec = TRACK_CATALOG[id];
     switch (spec.kind) {
       case 'tadBar':
-        return <TadBar sampleId={sampleId} height={TAD_HEIGHT} title={tadTitle} />;
+        return <TadBar sampleId={sampleId} height={TAD_HEIGHT} title={tadTitle} onLoadingChange={(loading) => reportLoading(id, loading)} />;
       case 'hic':
         // loop：Hi-C + CTCF loop 弧线 overlay（参考图 Loops lane）。
         if (id === 'loop') {
@@ -298,16 +319,16 @@ export function GenomeBrowserView({
                 <span className="lane-sample">{sampleId}</span>
               </div>
               <div className="gbv-lane__content">
-                <CTCFLoops sampleId={sampleId} height={LOOPS_HEIGHT} width={plotWidth} />
+                <CTCFLoops sampleId={sampleId} height={LOOPS_HEIGHT} width={plotWidth} onLoadingChange={(loading) => reportLoading(id, loading)} />
               </div>
             </div>
           );
         }
         return null;
       case 'pc1':
-        return <Pc1Lane sampleId={sampleId} title={pc1Title} height={PC1_HEIGHT} />;
+        return <Pc1Lane sampleId={sampleId} title={pc1Title} height={PC1_HEIGHT} onLoadingChange={(loading) => reportLoading(id, loading)} />;
       case 'gene':
-        return <GeneLane sampleId={sampleId} height={GENE_HEIGHT} title={geneTitle} />;
+        return <GeneLane sampleId={sampleId} height={GENE_HEIGHT} title={geneTitle} onLoadingChange={(loading) => reportLoading(id, loading)} />;
       case 'bedGraph':
         return (
           <BedGraphLane
@@ -315,6 +336,7 @@ export function GenomeBrowserView({
             trackName={spec.trackName ?? id}
             title={spec.title}
             height={spec.defaultHeight}
+            onLoadingChange={(loading) => reportLoading(id, loading)}
           />
         );
       case 'is':
@@ -324,6 +346,7 @@ export function GenomeBrowserView({
             trackName={spec.trackName ?? id}
             title={spec.title}
             height={spec.defaultHeight}
+            onLoadingChange={(loading) => reportLoading(id, loading)}
           />
         );
       case 'bigwig':
@@ -335,6 +358,7 @@ export function GenomeBrowserView({
             title={spec.title}
             groupLabel={spec.title}
             height={spec.defaultHeight}
+            onLoadingChange={(loading) => reportLoading(id, loading)}
           />
         );
       case 'pei':
@@ -344,10 +368,11 @@ export function GenomeBrowserView({
             trackName={spec.trackName ?? id}
             title={spec.title}
             height={spec.defaultHeight}
+            onLoadingChange={(loading) => reportLoading(id, loading)}
           />
         );
       case 'sv':
-        return <SvLane sampleId={sampleId} title={spec.title} height={spec.defaultHeight} />;
+        return <SvLane sampleId={sampleId} title={spec.title} height={spec.defaultHeight} onLoadingChange={(loading) => reportLoading(id, loading)} />;
       default:
         return null;
     }
@@ -393,6 +418,7 @@ export function GenomeBrowserView({
         normalization={normalization}
         lockResolution={lockResolution}
         vmaxScale={vmaxScale}
+        onLoadingChange={(loading) => reportLoading('hic', loading)}
       />
       {/* 轨道堆叠区：全部勾选轨道按顺序排列（data-section 供左侧锚点滚动/显隐）。 */}
       {enabled.length > 0 && (
@@ -423,6 +449,9 @@ export function GenomeBrowserView({
           </div>
         </div>
       )}
+      {/* 全局加载遮罩：任一轨道数据未就绪时覆盖整个视图，直到全部渲染完成。
+          旧图不消失，只加遮罩（Loading overlay 语义），避免切换区域时闪烁。 */}
+      {viewLoading && <Loading variant="overlay" label={t('common.loading')} />}
     </div>
   );
 }
