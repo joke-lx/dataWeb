@@ -30,6 +30,7 @@ from fastapi.responses import Response
 
 from app.mock import bed_records as mock_bed_records
 from app.mock import differential_hic as mock_differential_hic
+from app.mock import hic_matrix as mock_hic_matrix
 from app.mock import activity_signal as mock_activity_signal
 from app.mock import pc1_signal as mock_pc1_signal
 from app.mock import ctcf_loops as mock_ctcf_loops
@@ -252,11 +253,18 @@ async def derived_three_d(
 ) -> dict:
     """3D chromatin coordinates from classical MDS on the Hi-C sub-matrix.
 
+    The MDS pipeline runs on the same matrix the Hi-C route serves: the real
+    sub-matrix when available, the deterministic mock matrix otherwise — so the
+    3D model is always derived from Hi-C contact data, never decorative geometry.
+
     Returns ``{"coords": [[x,y,z], ...], "n_bins": N, "source": "real"|"mock"}``.
-    For "mock" we return an empty coords list (no 3D model without real data).
     """
     mat, is_real = _load_real_matrix(sample, chr, start, end, bin)
     if not is_real or mat is None:
+        logger.debug("Falling back to mock three_d for %s/%s", sample, chr)
+        mat, _, _ = mock_hic_matrix(sample, chr, start, end, bin)
+        is_real = False
+    if mat is None or mat.size == 0:
         return {"coords": [], "n_bins": 0, "source": "mock"}
     coords = HiCCoords(chrom=chr, start=start, end=end, bin_size=_bin_size_for(start, end, bin))
     result = get_strategy("three_d").compute(coords, {"mat": mat})
@@ -264,7 +272,7 @@ async def derived_three_d(
     return {
         "coords": coords_array.tolist(),
         "n_bins": int(result.extra.get("n_bins", coords_array.shape[0])),
-        "source": "real",
+        "source": "real" if is_real else "mock",
     }
 
 

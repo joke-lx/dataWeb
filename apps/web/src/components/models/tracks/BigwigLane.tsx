@@ -39,6 +39,8 @@ interface BigwigLaneProps {
   sampleId: string;
   /** Track 名（如 "rna_seq"）。 */
   trackName: string;
+  /** lane 标题（显示在左侧标签 gutter）。 */
+  title?: string;
   /** 覆盖 lane 像素高度。 */
   height?: number;
 }
@@ -53,6 +55,7 @@ interface BigwigLaneProps {
 export function BigwigLane({
   sampleId,
   trackName,
+  title,
   height = BIGWIG_LANE_HEIGHT,
 }: BigwigLaneProps): JSX.Element {
   const viewport = useViewport();
@@ -111,6 +114,7 @@ export function BigwigLane({
   return (
     <div className="lane" style={{ height: `${height}px` }}>
       <div className="lane-label">
+        {title && <span className="lane-title">{title}</span>}
         <span className="lane-sample">{sampleId}</span>
       </div>
       <div

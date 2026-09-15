@@ -131,6 +131,7 @@ export function TracksModel({
       <BigwigLane
         sampleId={sampleId}
         trackName={mainSpec.trackName ?? 'rna_seq'}
+        title={mainSpec.title}
         height={mainSpec.defaultHeight}
       />
     );
@@ -144,6 +145,7 @@ export function TracksModel({
         <BigwigLane
           sampleId={sampleId}
           trackName={auxSpec.trackName ?? 'rna_seq'}
+          title={auxSpec.title}
           height={auxSpec.defaultHeight}
         />
       );
@@ -201,6 +203,7 @@ export function TracksModel({
       <BigwigLane
         sampleId={sampleId}
         trackName={auxSpec.trackName ?? 'rna_seq'}
+        title={auxSpec.title}
         height={auxSpec.defaultHeight}
       />
     );

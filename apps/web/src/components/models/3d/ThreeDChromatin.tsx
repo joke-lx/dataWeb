@@ -20,7 +20,7 @@
  * - 此实现刻意不用 OrbitControls 依赖——避免给 ctcf-motif/3d viewer 引入额外依赖
  * - PRNG 用 mulberry32 保证不同 seed 产生不同形状，但同一 seed 永远相同（可重现）
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import * as THREE from 'three';
@@ -30,6 +30,7 @@ import type { DerivedThreeDResponse } from '../../../api/client';
 import type { PeiRecord } from '../../../api/types';
 import { useCursor } from '../../../store/cursor';
 import { useViewport } from '../../../store/viewport';
+import { useAppIntl } from '../../../i18n';
 import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
 import { Loading } from '../../feedback/Loading';
 import './three-d-chromatin.css';
@@ -210,6 +211,12 @@ export function ThreeDChromatin({
 }: ThreeDChromatinProps): JSX.Element {
   const mountRef = useRef<HTMLDivElement>(null);
   const viewport = useViewport();
+  const { t } = useAppIntl();
+
+  // 场景就绪标记：effect 构建完 scene（或空状态）后才置 true。
+  // 覆盖「数据已返回、但 Three.js 场景尚未构建完成」的窗口期，
+  // 让 3D 面板从挂载到可交互期间始终有 loading 反馈。
+  const [sceneReady, setSceneReady] = useState(false);
 
   // PEI 数据查询：brain 面板启用（sampleId 存在时），其他 organ 跳过
   const peiQuery = useQuery<PeiRecord[]>({
@@ -230,8 +237,8 @@ export function ThreeDChromatin({
     staleTime: 30_000,
   });
 
-  // 3D 坐标查询：真实 Hi-C 时后端返回已居中的 MDS 坐标（含 `source`）；
-  // 不可用时返回空 coords + `source: "mock"`，前端降级为随机游走路径。
+  // 3D 坐标查询：真实 / mock Hi-C 都由后端跑同一套 MDS 返回已居中坐标；
+  // `source` 标记数据来源（real / mock），仅当区间无 Hi-C 矩阵时 coords 为空。
   const threeDQuery = useQuery<DerivedThreeDResponse>({
     queryKey: [
       'derived-three-d',
@@ -266,27 +273,31 @@ export function ThreeDChromatin({
     const mount = mountRef.current;
     if (!mount) return undefined;
 
-    // 真实数据优先：source === 'real' 且 coords ≥ 2 点时直接用后端归一化好的
-    // MDS 坐标构建 TubeGeometry；否则显示空状态，不再生成假的随机游走纤维。
-    const coords = threeDQuery.data?.coords;
-    const useRealCoords =
-      threeDQuery.data?.source === 'real' &&
-      coords !== undefined &&
-      coords.length >= 2;
+    // 重新进入构建流程：先回到「未就绪」，loading 保持显示，
+    // 直到本 effect 完成 scene 构建或空状态渲染。
+    setSceneReady(false);
 
-    if (!useRealCoords) {
-      // 无真实 Hi-C 矩阵：显示空状态，不创建 WebGL scene
+    // 后端对真实与 mock Hi-C 都跑同一套 MDS 推导坐标：只要 coords ≥ 2 点就渲染，
+    // 数据来源（real / mock）由 ModelSourceBadge 标注。真正的空状态只发生在
+    // 区间没有任何 Hi-C 矩阵（越界 / 点数不足）时。
+    const coords = threeDQuery.data?.coords;
+    const hasCoords = coords !== undefined && coords.length >= 2;
+
+    if (!hasCoords) {
+      // 该区间没有可用于重建的 Hi-C 矩阵：显示空状态，不创建 WebGL scene
       mount.innerHTML =
         '<div style="display:flex;align-items:center;justify-content:center;height:100%;' +
-        'color:#8a919c;font-size:13px;font-family:system-ui;">无真实 Hi-C 数据，无法重建 3D 结构</div>';
+        'color:#8a919c;font-size:13px;font-family:system-ui;">该区间无 Hi-C 数据，无法重建 3D 结构</div>';
+      // 空状态即「已渲染完成」：收起 loading，展示最终态
+      setSceneReady(true);
       return () => { mount.innerHTML = ''; };
     }
 
     const pathRaw = coords.map(([x, y, z]) => new THREE.Vector3(x, y, z));
-    // 真实坐标必须和 mock 一样做中心化+缩放到半径 1.25，
+    // 坐标必须做中心化+缩放到半径 1.25（后端已做一次，这里兜底），
     // 否则 addTube 的颜色公式 (len+1.25)/2.5 会错乱（质心偏移→颜色按到原点距离而非沿路径渐变）
     let normalizedRaw = pathRaw;
-    if (useRealCoords && pathRaw.length > 1) {
+    if (hasCoords && pathRaw.length > 1) {
       const center = new THREE.Vector3();
       for (const p of pathRaw) center.add(p);
       center.divideScalar(pathRaw.length);
@@ -641,6 +652,9 @@ export function ThreeDChromatin({
     mount.style.position = 'relative';
     mount.appendChild(tooltip);
 
+    // 场景构建完成（canvas + tooltip 均已挂载）：收起 loading
+    setSceneReady(true);
+
     const fmtBp = (bp: number): string => {
       if (bp >= 1e6) return `${(bp / 1e6).toFixed(2)} Mb`;
       if (bp >= 1e3) return `${(bp / 1e3).toFixed(1)} kb`;
@@ -752,8 +766,8 @@ export function ThreeDChromatin({
         aria-label={`3D chromatin folding model for ${organ}`}
       />
       <ModelSourceBadge source={threeDQuery.data?.source} />
-      {(threeDQuery.isLoading || peiQuery.isLoading) && (
-        <Loading variant="overlay" size="small" />
+      {(threeDQuery.isLoading || peiQuery.isLoading || !sceneReady) && (
+        <Loading variant="overlay" label={t('common.loading')} />
       )}
     </div>
   );

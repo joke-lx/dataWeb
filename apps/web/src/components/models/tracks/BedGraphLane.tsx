@@ -83,6 +83,7 @@ export function BedGraphLane({
   return (
     <div className="lane" style={{ height: `${height}px` }}>
       <div className="lane-label">
+        <span className="lane-title">{title}</span>
         <span className="lane-sample">{sampleId}</span>
       </div>
       <div

@@ -1,145 +1,311 @@
-/* Database list page — sidebar + results grid. */
+/* Database list page — hero + filter panel + table + floating stats. */
 
-.db-layout {
+/* ===== Hero 区：三栏分类标题 ===== */
+.db-hero {
+  text-align: center;
+  padding: var(--space-6) var(--space-4) var(--space-5);
+}
+
+.db-hero-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-4);
+  letter-spacing: 0.5px;
+}
+
+.db-hero-cols {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.db-hero-col {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.db-hero-col--blue {
+  color: #2563eb;
+}
+
+.db-hero-col--green {
+  color: #059669;
+}
+
+.db-hero-col--purple {
+  color: #7c3aed;
+}
+
+.db-hero-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ===== 主容器 ===== */
+.db-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-6);
+}
+
+/* ===== 筛选面板 ===== */
+.db-filter-panel {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
   padding: var(--space-4);
-  align-items: start;
+  margin-bottom: var(--space-4);
 }
 
-.db-sidebar {
-  position: sticky;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.db-filter-rows {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.db-main {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.db-toolbar {
+.db-filter-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--color-border);
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-3);
 }
 
-.db-toolbar .ant-tabs {
-  margin-bottom: -1px;
+.db-search-input {
+  margin-bottom: var(--space-3);
 }
 
-.db-sort {
-  width: 160px;
+.db-search-input .ant-input {
+  height: 40px;
+  border-radius: 8px;
 }
 
-.db-results {
+.db-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.db-filter-field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 4px;
 }
 
-.db-result-card {
-  border: 1px solid var(--color-border) !important;
-  border-radius: 8px !important;
-  background: var(--color-surface-1) !important;
+.db-filter-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
-.db-result-card:hover {
-  border-color: var(--color-accent) !important;
+.db-filter-select {
+  width: 100%;
 }
 
-.db-result-card__inner {
+.db-filter-actions {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2);
 }
 
-.db-result-card__icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: var(--color-accent-tint);
-  color: var(--color-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex: 0 0 auto;
+.db-filter-count {
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
-.db-result-card__body {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+/* ===== 表格面板 ===== */
+.db-table-panel {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: var(--space-4);
 }
 
-.db-result-card__id {
+.db-table .ant-table-thead > tr > th {
+  background: var(--color-surface-2);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.db-table .ant-table-tbody > tr > td {
+  font-size: 13px;
+}
+
+/* Dataset 列 */
+.db-col-dataset {
+  min-width: 200px;
+}
+
+.db-dataset-link {
   border: 0;
   background: transparent;
   padding: 0;
-  text-align: left;
-  font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-accent);
   cursor: pointer;
   text-decoration: none;
 }
 
-.db-result-card__id:hover {
+.db-dataset-link:hover {
   text-decoration: underline;
 }
 
-.db-result-card__meta {
+.db-dataset-desc {
   font-size: 12px;
   color: var(--color-text-secondary);
+  margin-top: 4px;
+  line-height: 1.5;
+  max-width: 280px;
 }
 
-.db-result-card__tags {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+/* Sample / Allele 列 */
+.db-col-sample,
+.db-col-allele {
+  font-size: 13px;
+}
+
+/* 无数据占位 */
+.db-col-empty {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+/* Publication 列 */
+.db-col-publication {
+  max-width: 280px;
+}
+
+.db-publication-link {
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.db-publication-link:hover {
+  text-decoration: underline;
+}
+
+.db-publication-authors {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.db-publication-journal {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
   margin-top: 2px;
 }
 
-.db-tag {
-  margin-inline-end: 0 !important;
-  font-size: 11px;
-}
-
-.db-tag--muted {
-  color: var(--color-text-tertiary) !important;
-  background: var(--color-surface-2) !important;
-  border-color: var(--color-border) !important;
-}
-
-.db-result-card__actions {
+/* Actions 列 */
+.db-col-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 0 0 auto;
+  gap: 6px;
 }
 
-.db-pagination {
-  align-self: center;
-  margin-top: var(--space-2);
+.db-download-link,
+.db-visualize-link {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
+.db-download-link {
+  color: #2563eb;
+}
+
+.db-visualize-link {
+  color: #059669;
+}
+
+.db-download-link:hover,
+.db-visualize-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== 左下角浮动面板 ===== */
+.db-float-panel {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.db-float-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.db-float-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.db-float-btn--active {
+  background: var(--color-accent-tint);
+  border-color: var(--color-accent);
+}
+
+.db-float-btn-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.db-float-btn-count {
+  font-size: 10px;
+  color: var(--color-text-secondary);
+}
+
+.db-stats-card {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: var(--space-3);
+  min-width: 200px;
+}
+
+.db-stats-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 8px;
+}
+
+.db-stats-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  color: var(--color-text-primary);
+}
+
+/* ===== 状态 ===== */
 .db-state {
   padding: var(--space-5);
   color: var(--color-text-secondary);
@@ -164,17 +330,26 @@
   background: var(--color-accent-tint);
 }
 
-.db-drawer__desc {
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  margin: 0 0 var(--space-3);
+/* ===== 响应式 ===== */
+@media (max-width: 960px) {
+  .db-hero-cols {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+  .db-hero-col {
+    font-size: 22px;
+  }
+  .db-filter-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .db-filter-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
-@media (max-width: 960px) {
-  .db-layout {
+@media (max-width: 640px) {
+  .db-filter-row {
     grid-template-columns: 1fr;
-  }
-  .db-sidebar {
-    position: static;
   }
 }

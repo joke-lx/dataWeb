@@ -93,3 +93,83 @@ def test_three_d_block_diagonal_structure() -> None:
     cluster_0 = result.values[:30].mean(axis=0)
     cluster_1 = result.values[30:].mean(axis=0)
     assert float(np.linalg.norm(cluster_1 - cluster_0)) > 0.3
+
+
+def test_three_d_works_on_mock_hic_matrix() -> None:
+    """The deterministic mock Hi-C matrix feeds MDS exactly like the real one.
+
+    ``/api/hic/matrix`` serves ``mock.generators.hic_matrix`` when no real
+    cache exists; the 3D pipeline must accept the same matrix so the mock
+    view is derived from Hi-C contact data, not decorative geometry.
+    """
+    from app.mock import hic_matrix
+
+    start, end, bin_bp = 1_000_000, 2_000_000, 50_000
+    mat, _, _ = hic_matrix("Brain_BF3", "chr1", start, end, bin_bp)
+    assert mat.shape[0] >= 3
+
+    coords = HiCCoords(chrom="chr1", start=start, end=end, bin_size=bin_bp)
+    result = ThreeDStructureStrategy().compute(coords, {"mat": mat})
+    assert result.values.shape == (mat.shape[0], 3)
+    assert result.values.dtype == np.float32
+    # Same normalisation contract as the real path: centred, bounded.
+    assert np.abs(result.values.mean(axis=0)).max() < 0.1
+    assert float(np.abs(result.values).max()) <= 1.0 + 1e-5
+
+
+def test_derived_three_d_route_mock_fallback_returns_coords() -> None:
+    """Route fallback: no real Hi-C → derive coords from the mock matrix.
+
+    Previously the route returned ``{"coords": [], "source": "mock"}`` and the
+    frontend showed an empty state; the mock matrix is now run through the same
+    MDS strategy, so mock-derived 3D renders with ``source: "mock"``.
+    """
+    import asyncio
+
+    from app.routes import derived as derived_routes
+
+    original = derived_routes._load_real_matrix
+
+    def _no_real_matrix(*args, **kwargs):
+        return None, False
+
+    derived_routes._load_real_matrix = _no_real_matrix  # type: ignore[assignment]
+    try:
+        resp = asyncio.run(
+            derived_routes.derived_three_d(
+                "Brain_BF3", "chr1", 1_000_000, 2_000_000, 50_000
+            )
+        )
+    finally:
+        derived_routes._load_real_matrix = original
+
+    assert resp["source"] == "mock"
+    assert resp["n_bins"] >= 3
+    assert len(resp["coords"]) == resp["n_bins"]
+    assert all(len(pt) == 3 for pt in resp["coords"])
+
+
+def test_derived_three_d_route_empty_mock_matrix_returns_empty() -> None:
+    """Zero-bin mock matrix (region shorter than one bin) → empty coords."""
+    import asyncio
+
+    from app.routes import derived as derived_routes
+
+    original = derived_routes._load_real_matrix
+
+    def _no_real_matrix(*args, **kwargs):
+        return None, False
+
+    derived_routes._load_real_matrix = _no_real_matrix  # type: ignore[assignment]
+    try:
+        resp = asyncio.run(
+            derived_routes.derived_three_d(
+                "Brain_BF3", "chr1", 1_000_000, 1_000_010, 50_000
+            )
+        )
+    finally:
+        derived_routes._load_real_matrix = original
+
+    assert resp["source"] == "mock"
+    assert resp["coords"] == []
+    assert resp["n_bins"] == 0

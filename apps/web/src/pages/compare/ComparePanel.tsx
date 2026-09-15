@@ -17,14 +17,12 @@
  *    Save Session / Synchronize All Charts）。
  */
 
-import { useState, useRef, type JSX } from 'react';
+import { useState, type JSX } from 'react';
 
 import type { Sample } from '../../api/types';
-import type { HicNormalization } from '../../api/client';
 import { PanelViewportProvider } from '../../hooks/usePanelViewport';
 import { useAppIntl } from '../../i18n';
 import { RegionInput } from '../../components/nav/RegionInput';
-import { HicToolbar } from '../../components/nav/HicToolbar';
 import { ZoomSlider } from '../../components/nav/ZoomSlider';
 import { GenomeBrowserView } from '../../components/models/tracks/GenomeBrowserView';
 import { CrosshairLayer } from '../../components/overlay/CrosshairLayer';
@@ -64,23 +62,10 @@ function ComparePanelBody({
 }): JSX.Element {
   const { t } = useAppIntl();
 
-  // 每面板独立的快速调整工具栏状态。
-  const [triangle, setTriangle] = useState(false);
-  const [autoColor, setAutoColor] = useState(true);
-  const [lockResolution, setLockResolution] = useState(false);
-  const [normalization, setNormalization] = useState<HicNormalization>('log2');
-  const [vmaxScale, setVmaxScale] = useState(1);
+  // 色标受控（GenomeBrowserView 内置工具栏下拉），其余 Hi-C 调整项
+  // （triangle / Auto / lockResolution / normalization / vmaxScale）由
+  // GenomeBrowserView 内部状态管理，避免在对比面板重复渲染一行工具栏。
   const [colorMap, setColorMap] = useState<'rdbu' | 'viridis' | 'ref' | 'reds'>('ref');
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const enterFullscreen = () => {
-    const el = bodyRef.current;
-    if (!el) return;
-    if (document.fullscreenElement !== el) {
-      el.requestFullscreen?.().catch(() => {});
-    } else {
-      document.exitFullscreen?.();
-    }
-  };
 
   return (
     <section className="compare-panel" data-sample-id={sample.id}>
@@ -111,31 +96,15 @@ function ComparePanelBody({
         <ZoomSlider />
       </div>
 
-      {/* 主体：与单样本 Hi-C 区块一致（一体化视图 + 十字线宿主） */}
+      {/* 主体：与单样本 Hi-C 区块一致（一体化视图 + 十字线宿主）。
+          Hi-C 快速调整工具栏（色标 / Triangle / Norm / 导出等）由
+          GenomeBrowserView 内置渲染，这里不再重复添加。 */}
       <div className="compare-panel__body">
         <div
           className="gbv-hic-host"
           data-crosshair-host
           data-crosshair-id={sample.id}
-          ref={bodyRef}
         >
-          <HicToolbar
-            triangle={triangle}
-            onTriangleChange={setTriangle}
-            autoColor={autoColor}
-            onAutoColorChange={setAutoColor}
-            lockResolution={lockResolution}
-            onLockResolutionChange={setLockResolution}
-            normalization={normalization}
-            onNormalizationChange={setNormalization}
-            colorMap={colorMap}
-            onColorMapChange={setColorMap}
-            getCanvas={() => bodyRef.current?.querySelector<HTMLCanvasElement>('.hic-matrix canvas') ?? null}
-            filenamePrefix={sample.id}
-            onFullscreen={enterFullscreen}
-            vmaxScale={vmaxScale}
-            onVmaxScaleChange={setVmaxScale}
-          />
           <GenomeBrowserView
             sampleId={sample.id}
             tracks={COMPARE_TRACKS}
@@ -146,11 +115,6 @@ function ComparePanelBody({
               gene: t('sample.genomeBrowser.gene'),
             }}
             hicOptions={{
-              triangle,
-              colorMode: autoColor ? 'auto' : 'full',
-              normalization,
-              lockResolution,
-              vmaxScale,
               colorMap,
               onColorMapChange: setColorMap,
             }}

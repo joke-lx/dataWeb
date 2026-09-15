@@ -95,8 +95,8 @@ export function TopBar(): JSX.Element {
  */
 function LinkBrand(): JSX.Element {
   return (
-    <NavLink to="/" className="topbar__brand" aria-label="dataWeb home">
-      dataWeb
+    <NavLink to="/" className="topbar__brand" aria-label="Animal Allele-Resolved Multi-omics home">
+      Animal Allele-Resolved Multi-omics
     </NavLink>
   );
 }

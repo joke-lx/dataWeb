@@ -76,8 +76,16 @@ export function CompareRail({
               onClick={open}
               disabled={isLoading}
               aria-haspopup="dialog"
+              aria-busy={isLoading}
             >
-              + {t('compare.workspace.addData')}
+              {isLoading ? (
+                <>
+                  <Loading variant="inline" size="small" />
+                  {t('common.loading')}
+                </>
+              ) : (
+                <>+ {t('compare.workspace.addData')}</>
+              )}
             </button>
           )}
         >
@@ -158,14 +166,17 @@ export function CompareRail({
 
       {/* 数据集列表 */}
       <div className="compare-rail__list">
-        {added.length === 0 && (
+        {isLoading ? (
+          <Loading variant="block" size="small" label={t('common.loading')} />
+        ) : added.length === 0 ? (
           <div className="compare-rail__empty">{t('compare.workspace.empty')}</div>
+        ) : (
+          added.map((id, index) => {
+            const s = samples?.find((item) => item.id === id);
+            if (!s) return null;
+            return <RailItem key={id} sample={s} index={index} onRemove={() => onRemove(id)} />;
+          })
         )}
-        {added.map((id, index) => {
-          const s = samples?.find((item) => item.id === id);
-          if (!s) return null;
-          return <RailItem key={id} sample={s} index={index} onRemove={() => onRemove(id)} />;
-        })}
       </div>
     </aside>
   );
