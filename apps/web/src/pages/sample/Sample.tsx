@@ -443,6 +443,7 @@ export function Sample(): JSX.Element {
               colorMap,
               onColorMapChange: setColorMap,
             }}
+            hideInternalToolbar={!compareActive}
           />
           {/* 十字准线 + 区域说明：悬浮 Hi-C 时竖线贯穿全部轨道 */}
           <CrosshairLayer />

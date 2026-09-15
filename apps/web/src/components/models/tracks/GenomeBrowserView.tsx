@@ -86,6 +86,8 @@ interface GenomeBrowserViewProps {
     lockResolution?: boolean;
     vmaxScale?: number;
   };
+  /** 隐藏内置 HicToolbar（Sample 页面在外部已渲染工具栏时用）。 */
+  hideInternalToolbar?: boolean;
   /** 工具栏行尾右侧附加内容（如 Export PDF 按钮）。 */
   toolbarActions?: ReactNode;
 }
@@ -145,6 +147,7 @@ export function GenomeBrowserView({
   labels,
   showRuler = false,
   hicOptions,
+  hideInternalToolbar = false,
   toolbarActions,
 }: GenomeBrowserViewProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -388,7 +391,8 @@ export function GenomeBrowserView({
           <span className="gbv-ruler__tick">{formatBp(viewport.end)}</span>
         </div>
       )}
-      {/* 快速调整工具栏 */}
+      {/* 快速调整工具栏（Sample 页面在外部已渲染时隐藏） */}
+      {!hideInternalToolbar && (
       <HicToolbar
         triangle={triangle}
         onTriangleChange={setTriangle}
@@ -407,17 +411,18 @@ export function GenomeBrowserView({
         onVmaxScaleChange={setVmaxScale}
         actions={toolbarActions}
       />
+      )}
       <HiCMatrix
         sampleId={sampleId}
         height={HIC_HEIGHT}
         colorMap={hicOptions?.colorMap}
         onColorMapChange={hicOptions?.onColorMapChange}
         hideColorBar={hicOptions?.hideColorBar}
-        triangle={triangle}
-        colorMode={autoColor ? 'auto' : 'full'}
-        normalization={normalization}
-        lockResolution={lockResolution}
-        vmaxScale={vmaxScale}
+        triangle={hicOptions?.triangle ?? triangle}
+        colorMode={hicOptions?.colorMode ?? (autoColor ? 'auto' : 'full')}
+        normalization={(hicOptions?.normalization as HicNormalization) ?? normalization}
+        lockResolution={hicOptions?.lockResolution ?? lockResolution}
+        vmaxScale={hicOptions?.vmaxScale ?? vmaxScale}
         onLoadingChange={(loading) => reportLoading('hic', loading)}
       />
       {/* 轨道堆叠区：全部勾选轨道按顺序排列（data-section 供左侧锚点滚动/显隐）。 */}
