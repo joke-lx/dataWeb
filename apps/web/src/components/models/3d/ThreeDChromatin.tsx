@@ -540,20 +540,17 @@ export function ThreeDChromatin({
       if (enhancers.length === 0) return;
 
       enhancers.forEach((record, index) => {
-        // 锚定到最近的 marker 球（循环复用：enhancer 多于 marker 时回到起点）
-        const promoterPos =
+        // 把基因组位置映射到 path 索引：path[i] 对应 viewport.start + i * viewport.bin
+        const posToPathIdx = (bp: number): number => {
+          const frac = (bp - viewport.start) / (viewport.bin || 1);
+          return Math.max(0, Math.min(path.length - 1, Math.round(frac)));
+        };
+        // enhancer 取区间中点，promoter 取 start - distance_kb（向 5' 端回退）
+        const enhancerMid = (record.start + record.end) / 2;
+        const promoterBp = record.start - (record.distance_kb || 0) * 1000;
+        const promoterPos = path[posToPathIdx(promoterBp)] ??
           spherePositions[index % spherePositions.length];
-
-        // distance_kb 越大 → 弧半径越大（远距离 enhancer 视觉上更"扩散"）
-        const distNorm = Math.min(1, record.distance_kb / 1000);
-        const raid = 0.6 + 1.4 * distNorm;
-        // 在水平面上均匀分布 enhancer（phi 等分）
-        const phi = (index / Math.max(1, enhancers.length)) * Math.PI * 2;
-        const enhancerPos = new THREE.Vector3(
-          raid * Math.cos(phi),
-          0.4 * Math.sin(phi * 1.5),
-          raid * Math.sin(phi),
-        );
+        const enhancerPos = path[posToPathIdx(enhancerMid)] ?? promoterPos.clone();
 
         const enhancer = new THREE.Mesh(enhancerGeo, enhancerMat);
         enhancer.position.copy(enhancerPos);
