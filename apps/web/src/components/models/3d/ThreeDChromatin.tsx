@@ -450,8 +450,24 @@ export function ThreeDChromatin({
     const pathRaw = useRealCoords
       ? coords.map(([x, y, z]) => new THREE.Vector3(x, y, z))
       : makePath(seed, steps);
+    // 真实坐标必须和 mock 一样做中心化+缩放到半径 1.25，
+    // 否则 addTube 的颜色公式 (len+1.25)/2.5 会错乱（质心偏移→颜色按到原点距离而非沿路径渐变）
+    let normalizedRaw = pathRaw;
+    if (useRealCoords && pathRaw.length > 1) {
+      const center = new THREE.Vector3();
+      for (const p of pathRaw) center.add(p);
+      center.divideScalar(pathRaw.length);
+      let R = 0;
+      const centered = pathRaw.map((p) => {
+        const q = p.clone().sub(center);
+        R = Math.max(R, q.length());
+        return q;
+      });
+      const scale = 1.25 / (R || 1);
+      normalizedRaw = centered.map((q) => q.multiplyScalar(scale));
+    }
     // 细粒度：真实坐标加密（每段 8 点），mock 已密不重复加密
-    const path = useRealCoords ? densify(pathRaw, 12) : pathRaw;
+    const path = useRealCoords ? densify(normalizedRaw, 12) : normalizedRaw;
     // clientWidth/Height 在 mount 时可能为 0（layout 未就绪），用 max(.., 1) 兜底
     const panelW = Math.max(mount.clientWidth, 1);
     const panelH = Math.max(mount.clientHeight, 1);
