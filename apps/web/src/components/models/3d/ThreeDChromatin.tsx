@@ -466,8 +466,9 @@ export function ThreeDChromatin({
       const scale = 1.25 / (R || 1);
       normalizedRaw = centered.map((q) => q.multiplyScalar(scale));
     }
-    // 细粒度：真实坐标加密（每段 8 点），mock 已密不重复加密
-    const path = useRealCoords ? densify(normalizedRaw, 12) : normalizedRaw;
+    // 真实坐标每 bin 一个点，TubeGeometry 自己会 Catmull-Rom 平滑，
+    // 前端不要再 densify（tension=0.5 的 Catmull-Rom 会在大间距点间过冲扭曲形状）
+    const path = normalizedRaw;
     // clientWidth/Height 在 mount 时可能为 0（layout 未就绪），用 max(.., 1) 兜底
     const panelW = Math.max(mount.clientWidth, 1);
     const panelH = Math.max(mount.clientHeight, 1);
