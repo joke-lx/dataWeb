@@ -157,10 +157,15 @@ jobs:
             # :latest which the build-push job just refreshed.
             if docker image inspect "ghcr.io/joke-lx/dataweb-api:${GITHUB_SHA}" >/dev/null 2>&1 \
                && docker image inspect "ghcr.io/joke-lx/dataweb-web:${GITHUB_SHA}" >/dev/null 2>&1; then
-              echo "TAG=${GITHUB_SHA}" > .env
+              TAG_VAL="${GITHUB_SHA}"
             else
               echo "Falling back to :latest tag"
-              echo "TAG=latest" > .env
+              TAG_VAL="latest"
+            fi
+            if grep -q '^TAG=' .env 2>/dev/null; then
+              sed -i "s|^TAG=.*|TAG=${TAG_VAL}|" .env
+            else
+              echo "TAG=${TAG_VAL}" >> .env
             fi
 
             echo "Pulling images via docker compose (forces refresh of :latest cache)..."
