@@ -46,7 +46,7 @@ interface NavItem {
 const NAV_ITEMS: readonly NavItem[] = [
   { to: '/',            labelKey: 'nav.home',   defaultLabel: 'Home', end: true },
   { to: '/database',    labelKey: 'nav.dataset', defaultLabel: 'Dataset' },
-  { to: '/explore/hic', labelKey: 'nav.visual', defaultLabel: 'Visual' },
+  { to: '/explore',     labelKey: 'nav.visual', defaultLabel: 'Visual' },
   { to: '/compare',     labelKey: 'nav.compar', defaultLabel: 'Compar' },
   { to: '/about',       labelKey: 'nav.about',  defaultLabel: 'About' },
   { to: '/help',        labelKey: 'nav.help',   defaultLabel: 'Help' },
@@ -68,6 +68,7 @@ export function TopBar(): JSX.Element {
   return (
     <header className="topbar">
       <LinkBrand />
+      <I18nToggle />
       <nav className="topbar-nav topbar-nav--main" aria-label={t('nav.home')}>
         {NAV_ITEMS.map((item) => (
           <NavLink
@@ -82,7 +83,6 @@ export function TopBar(): JSX.Element {
           </NavLink>
         ))}
       </nav>
-      <I18nToggle />
     </header>
   );
 }

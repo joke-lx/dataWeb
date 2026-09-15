@@ -63,7 +63,7 @@ export function HomeFooter(): JSX.Element {
     <footer className="home-footer">
       <div className="home-footer__inner">
         <div className="home-footer__brand">
-          <b>dataWeb</b>
+          <b>Animal Allele-Resolved Multi-omics</b>
           <span>{t('site.footer.disclaimer')}</span>
           <span>{t('site.footer.noUpload')}</span>
         </div>

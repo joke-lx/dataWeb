@@ -53,6 +53,8 @@
 
 .topbar-nav {
   display: flex;
+  align-items: stretch;
+  align-self: stretch;
   gap: 8px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -60,7 +62,9 @@
 }
 
 .topbar-nav--main {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  margin-left: auto;
+  margin-right: 32px;
 }
 
 .topbar-nav--trigger {
@@ -75,11 +79,14 @@
 }
 
 .topbar-btn {
-  padding: 4px 10px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 24px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
-  border-radius: 999px;
+  border-radius: 0;
   white-space: nowrap;
   flex-shrink: 0;
   transition: background 0.12s ease, color 0.12s ease;
@@ -95,6 +102,7 @@
   background: #fff;
   color: var(--color-accent-deep);
   font-weight: 600;
+  border-radius: 0;
 }
 
 .topbar__toggle {

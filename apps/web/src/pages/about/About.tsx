@@ -19,7 +19,7 @@ export function About(): JSX.Element {
   const { t } = useAppIntl();
 
   return (
-    <RouteShell title={t('about.title')} subtitle={t('about.subtitle')} breadcrumb="dataWeb">
+    <RouteShell title={t('about.title')} subtitle={t('about.subtitle')} breadcrumb="Animal Allele-Resolved Multi-omics">
       <div className="info-page">
         <section className="info-section">
           <h3>{t('about.overview.title')}</h3>

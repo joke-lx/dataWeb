@@ -17,10 +17,10 @@ import type { JSX } from 'react';
 import { useState } from 'react';
 
 import type { Sample } from '../../api/types';
-import { Popover } from '../../components/popover/Popover';
 import { FileTable } from '../../components/download/FileTable';
 import { Loading } from '../../components/feedback/Loading';
 import { useAppIntl } from '../../i18n';
+import { CompareDataModal } from './CompareDataModal';
 
 interface CompareRailProps {
   /** 整个物种目录（未加载时为 `undefined`）。 */
@@ -61,78 +61,38 @@ export function CompareRail({
   onToggleSync,
 }: CompareRailProps): JSX.Element {
   const { t } = useAppIntl();
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <aside className="compare-rail">
       {/* 操作区 */}
       <div className="compare-rail__actions">
-        <Popover
-          width={340}
-          align="left"
-          trigger={(open) => (
-            <button
-              type="button"
-              className="compare-rail__btn compare-rail__btn--primary"
-              onClick={open}
-              disabled={isLoading}
-              aria-haspopup="dialog"
-              aria-busy={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loading variant="inline" size="small" />
-                  {t('common.loading')}
-                </>
-              ) : (
-                <>+ {t('compare.workspace.addData')}</>
-              )}
-            </button>
-          )}
+        <button
+          type="button"
+          className="compare-rail__btn compare-rail__btn--primary"
+          onClick={() => setModalOpen(true)}
+          disabled={isLoading}
+          aria-haspopup="dialog"
+          aria-expanded={modalOpen}
+          aria-busy={isLoading}
         >
-          {(close) => (
-            <div className="compare-rail__menu" role="listbox">
-              {isLoading && (
-                <Loading variant="inline" size="small" label={t('common.loading')} />
-              )}
-              {!isLoading && (samples ?? []).length === 0 && (
-                <div className="compare-rail__menu-empty">
-                  {t('sample.notFound.title')}
-                </div>
-              )}
-              {!isLoading &&
-                (samples ?? []).map((s) => {
-                  const selected = added.includes(s.id);
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      role="option"
-                      aria-selected={selected}
-                      disabled={selected}
-                      className={
-                        'compare-rail__option' +
-                        (selected ? ' compare-rail__option--selected' : '')
-                      }
-                      onClick={() => {
-                        onAdd(s.id);
-                        close();
-                      }}
-                    >
-                      <span className="compare-rail__option-id">{s.id}</span>
-                      <span className="compare-rail__option-meta">
-                        {s.tissue} · {s.breed} · {s.sex}
-                      </span>
-                      {selected && (
-                        <span className="compare-rail__option-check" aria-hidden="true">
-                          ✓
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-            </div>
+          {isLoading ? (
+            <>
+              <Loading variant="inline" size="small" />
+              {t('common.loading')}
+            </>
+          ) : (
+            <>+ {t('compare.workspace.addData')}</>
           )}
-        </Popover>
+        </button>
+
+        <CompareDataModal
+          open={modalOpen}
+          samples={samples}
+          added={added}
+          onAdd={onAdd}
+          onClose={() => setModalOpen(false)}
+        />
 
         <button
           type="button"

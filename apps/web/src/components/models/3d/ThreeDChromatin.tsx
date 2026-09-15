@@ -316,7 +316,12 @@ export function ThreeDChromatin({
     const path = normalizedRaw;
     // clientWidth/Height 在 mount 时可能为 0（layout 未就绪），用 max(.., 1) 兜底
     const panelW = Math.max(mount.clientWidth, 1);
-    const panelH = Math.max(mount.clientHeight, 1);
+    // stage 高度兜底：若 mount（stage）因 CSS 塌陷成内容高度（≈1px，
+    // canvas 撑自己形成死锁），则改用父容器 .three-d-chromatin 的实际高度。
+    let panelH = Math.max(mount.clientHeight, 1);
+    if (panelH <= 2) {
+      panelH = Math.max(mount.scrollHeight, mount.parentElement?.clientHeight ?? 0, 1);
+    }
 
     // ── Scene / Camera / Renderer ──────────────────────────────────────
     const scene = new THREE.Scene();
@@ -329,10 +334,22 @@ export function ThreeDChromatin({
 
     // preserveDrawingBuffer=true：详情页"导出 PDF"用 html2canvas 截图时
     // 需要读取绘制缓冲（连续 rAF 渲染默认会清空缓冲导致截图空白）。
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      preserveDrawingBuffer: true,
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+    } catch (err) {
+      // WebGL 上下文不可用（驱动/浏览器限制，或高频切换区间时旧 context
+      // 尚未释放导致配额耗尽）。显示可读错误而不是白屏，并收起 loading。
+      console.error('[three-d] WebGLRenderer creation failed:', err);
+      mount.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:center;height:100%;' +
+        'color:#8a919c;font-size:13px;font-family:system-ui;">WebGL 不可用，无法渲染 3D 结构</div>';
+      setSceneReady(true);
+      return () => { mount.innerHTML = ''; };
+    }
     renderer.setSize(panelW, panelH);
     // 限到 2：4K 屏上 setPixelRatio(window.devicePixelRatio) 会让 fragment shader 跑爆
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -407,9 +424,6 @@ export function ThreeDChromatin({
         const enhancer = new THREE.Mesh(enhancerGeo, enhancerMat);
         enhancer.position.copy(enhancerPos);
         interactionGroup.add(enhancer);
-        const glow = makeGlowSprite(0x7dffa8, 0.36, 0.45);
-        glow.position.copy(enhancerPos);
-        interactionGroup.add(glow);
 
         // spanBp（PEI 跨度）越大 → 弧越高
         const spanBp = Math.max(0, record.end - record.start);
@@ -577,7 +591,12 @@ export function ThreeDChromatin({
     // 没有 observer 时 mount 后 clientHeight=0，首帧会渲染成 0×0；后续 reflow 也不会触发 resize。
     const resize = () => {
       const w = Math.max(mount.clientWidth, 1);
-      const h = Math.max(mount.clientHeight, 1);
+      // 与初始尺寸一致的高度兜底：stage 塌陷（clientHeight≈1）时
+      // 取父容器高度，避免 canvas 锁死在 1px 导致白屏。
+      let h = Math.max(mount.clientHeight, 1);
+      if (h <= 2) {
+        h = Math.max(mount.scrollHeight, mount.parentElement?.clientHeight ?? 0, 1);
+      }
       renderer.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -705,8 +724,11 @@ export function ThreeDChromatin({
       hitGeo.dispose();
       hitMat.dispose();
       renderer.dispose();
-      // 强制丢 WebGL 上下文，避免在某些浏览器/显卡上挂起旧 panel 时上下文被锁
-      renderer.forceContextLoss();
+      // 注意：不再调用 renderer.forceContextLoss()。
+      // Chrome 的 WebGL context 释放是异步的——频繁切换区间（每次 viewport
+      // 变化都重建 renderer）时，旧 context 尚未回收就创建新 context 会因
+      // 配额耗尽抛错，进而中断 effect 导致 3D 区域白屏。dispose() 已足够，
+      // context 交由浏览器 GC 回收。
       interactionGroup.traverse((child) => {
         if (child instanceof THREE.Mesh) child.geometry.dispose();
       });
