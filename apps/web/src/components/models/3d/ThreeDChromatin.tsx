@@ -213,15 +213,15 @@ function addTube(
 ): void {
   const curve = new THREE.CatmullRomCurve3(path, false, 'catmullrom', 0);
   const segments = Math.max(200, path.length * 3);
-  const tubeGeo = new THREE.TubeGeometry(curve, segments, radius, 12, false);
+  const radialSegments = 12;
+  const tubeGeo = new THREE.TubeGeometry(curve, segments, radius, radialSegments, false);
   const colors = new Float32Array(tubeGeo.attributes.position.count * 3);
   const pos = tubeGeo.attributes.position;
-  const tmp = new THREE.Vector3();
+  const ringSize = radialSegments + 1; // 每环顶点数（含闭合重复点）
   for (let i = 0; i < pos.count; i += 1) {
-    tmp.fromBufferAttribute(pos, i);
-    // t 由"该点到原点的距离 + 1.25"反推（因为 path 已经归一化到半径 1.25）：
-    // 中心点对应 t=0，边缘对应 t=1
-    const t = Math.min(1, Math.max(0, (tmp.length() + 1.25) / 2.5));
+    // 按顶点在 TubeGeometry 中的环号反推曲线参数 t，沿路径连续渐变
+    const ring = Math.floor(i / ringSize);
+    const t = ring / segments;
     const c = rainbow(1 - t);
     colors[i * 3] = c.r;
     colors[i * 3 + 1] = c.g;
