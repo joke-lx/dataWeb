@@ -660,53 +660,7 @@
   flex: 1 1 0;
 }
 
-/* ── 左栏操作按钮组 + 样本卡（对齐设计稿） ── */
-.sample-sidebar__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.sample-sidebar__btn--primary {
-  background: var(--color-accent, #1f6fb8);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.sample-sidebar__btn--danger {
-  background: #fff;
-  color: #d51031;
-  border: 1px solid #f0a0ac;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.sample-sidebar__btn--ghost {
-  background: var(--color-surface-2, #e7eaee);
-  color: var(--color-text-primary, #1a2128);
-  border: 1px solid var(--color-border, #d8dde2);
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.sample-sidebar__sync {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--color-text-secondary, #4b5560);
-  padding: 8px 10px;
-  border: 1px solid var(--color-border, #d8dde2);
-  border-radius: 6px;
-}
-.sample-sidebar__sync input { accent-color: var(--color-accent, #1f6fb8); }
-
+/* ── 样本卡（对齐设计稿） ── */
 .sample-sidebar__row-head {
   display: flex;
   align-items: center;
@@ -715,13 +669,6 @@
 }
 .sample-sidebar__num { color: var(--color-text-secondary, #4b5560); }
 .sample-sidebar__sample-name { flex: 1; }
-.sample-sidebar__remove {
-  border: none;
-  background: transparent;
-  color: var(--color-text-tertiary, #6e7884);
-  font-size: 16px;
-  cursor: pointer;
-}
 .sample-sidebar__gse {
   display: inline-block;
   margin: 6px 0;
@@ -731,32 +678,6 @@
   border-radius: 4px;
   font-size: 12px;
 }
-
-.sample-sidebar__sync-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.sample-sidebar__sync-icon {
-  border: none;
-  background: transparent;
-  color: var(--color-text-tertiary, #6e7884);
-  cursor: pointer;
-  padding: 2px;
-  display: inline-flex;
-  align-items: center;
-}
-.sample-sidebar__sync-icon:hover { color: var(--color-accent, #1f6fb8); }
-.sample-sidebar__remove {
-  border: none;
-  background: transparent;
-  color: var(--color-text-tertiary, #6e7884);
-  cursor: pointer;
-  padding: 2px;
-  display: inline-flex;
-  align-items: center;
-}
-.sample-sidebar__remove:hover { color: #c0392b; }
 
 .gbv-track-item {
   position: relative;

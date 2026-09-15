@@ -129,39 +129,6 @@ export function SampleSidebar({
 
   return (
     <aside className="sample-sidebar" aria-label={t('sample.sidebar.label')}>
-      {/* ── 顶部操作按钮组（对齐设计稿：Add Data / Clear All / Save Session / Synchronize） ── */}
-      <div className="sample-sidebar__actions">
-        <button type="button" className="sample-sidebar__btn--primary">
-          + {t('compare.workspace.addData', 'Add Data')}
-        </button>
-        <button type="button" className="sample-sidebar__btn--danger">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="clear-all-icon">
-            <path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.6 9.5a1 1 0 0 0 1 .5h4.8a1 1 0 0 0 1-.5L12 4M6.5 6.5v4M9.5 6.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          {t('compare.workspace.clearAll', 'Clear All')}
-        </button>
-        <button type="button" className="sample-sidebar__btn--ghost">
-          {t('compare.workspace.saveSession', 'Save Session')}
-        </button>
-        <label className="sample-sidebar__sync">
-          <span>{t('compare.workspace.syncCharts')}</span>
-          <span className="sample-sidebar__sync-actions">
-            <button type="button" className="sample-sidebar__sync-icon" aria-label="refresh">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M2.5 8a5.5 5.5 0 1 1 1.6 3.9M2.5 8V4.5M2.5 8H6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <button type="button" className="sample-sidebar__sync-icon" aria-label="info">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.3"/>
-                <path d="M8 7.5V11M8 5.2v.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-            </button>
-            <input type="checkbox" defaultChecked />
-          </span>
-        </label>
-      </div>
-
       {/* ── 样本卡（对齐设计稿：编号 + GSE 徽章 + Type/Assembly） ── */}
       <div className="sample-sidebar__sample">
         <div className="sample-sidebar__row-head">
@@ -174,11 +141,6 @@ export function SampleSidebar({
               </span>
             )}
           </span>
-          <button type="button" className="sample-sidebar__remove" aria-label="remove">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M2.5 4h11M6.5 4V2.5h3V4M4 4l.6 9.5a1 1 0 0 0 1 .5h4.8a1 1 0 0 0 1-.5L12 4M6.5 6.5v4M9.5 6.5v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
         </div>
         <div className="sample-sidebar__gse">GSE-mock</div>
         <dl className="sample-sidebar__meta">
