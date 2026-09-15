@@ -2,7 +2,7 @@
  * render-kit 的 Plotly 生命周期适配器，把声明式 React 属性桥接到按命令更新的 Plotly 引擎。
  * 该组件集中处理动态加载、容器缩放和资源释放，使业务轨道只需提供 figure 数据而不直接依赖 Plotly 运行时。
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { JSX } from 'react';
 
 import {
@@ -11,6 +11,7 @@ import {
   type PlotlyConfig,
   type PlotlyLayout,
 } from './plotlyTypes';
+import { Loading } from '../../feedback/Loading';
 import './plotly-track.css';
 
 interface PlotlyTrackProps {
@@ -45,6 +46,9 @@ export function PlotlyTrack({
   height,
 }: PlotlyTrackProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
+  // Plotly 引擎按需懒加载（约 3 MB chunk）：首次下载期间显示通用 loading，
+  // 避免用户看到空白 lane。引擎就绪后该遮罩移除，后续 react() 更新同步完成。
+  const [engineReady, setEngineReady] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -53,6 +57,7 @@ export function PlotlyTrack({
 
     loadPlotly().then((Plotly) => {
       if (disposed || !el) return;
+      setEngineReady(true);
       void Plotly.react(el, data, { ...layout, height }, PLOTLY_CONFIG);
     });
 
@@ -95,6 +100,8 @@ export function PlotlyTrack({
       ref={ref}
       className="plotly-track"
       style={{ height: `${height}px`, width: '100%' }}
-    />
+    >
+      {!engineReady && <Loading variant="overlay" size="small" />}
+    </div>
   );
 }

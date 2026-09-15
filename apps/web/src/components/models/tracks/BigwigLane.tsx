@@ -23,6 +23,7 @@ import type { JSX } from 'react';
 import { fetchBigwig, fetchDerivedActivity } from '../../../api/client';
 import { useViewport } from '../../../store/viewport';
 import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
+import { Loading } from '../../feedback/Loading';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
 import { buildBigwig } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
@@ -119,7 +120,7 @@ export function BigwigLane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         {useActivity && <ModelSourceBadge source={source ?? 'ab_proxy'} />}
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <Loading variant="overlay" size="small" />}
         {error && (
           <span className="track-error" title={error.message}>
             !

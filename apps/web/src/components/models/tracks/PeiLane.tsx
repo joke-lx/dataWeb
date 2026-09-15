@@ -18,6 +18,7 @@ import { fetchBed } from '../../../api/client';
 import type { PeiRecord } from '../../../api/types';
 import { useViewport } from '../../../store/viewport';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
+import { Loading } from '../../feedback/Loading';
 import { buildPei } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
 
@@ -75,7 +76,7 @@ export function PeiLane({
         data-track-name={trackName}
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <Loading variant="overlay" size="small" />}
         {error && (
           <span className="track-error" title={error.message}>
             !

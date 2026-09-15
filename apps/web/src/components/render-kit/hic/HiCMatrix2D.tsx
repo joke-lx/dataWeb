@@ -9,6 +9,7 @@ import type { HicMatrixResponse } from '../../../api/client';
 import { pxToBp } from '../../../genomics/coords';
 import { useCursor } from '../../../store/cursor';
 import { usePanelViewport } from '../../../hooks/usePanelViewport';
+import { Loading } from '../../feedback/Loading';
 import fragmentShader from '../../../genomics/hic-shader/fragment.glsl?raw';
 import vertexShader from '../../../genomics/hic-shader/vertex.glsl?raw';
 
@@ -447,7 +448,7 @@ export function HiCMatrix2D(props: HiCMatrix2DProps): JSX.Element {
       }}
     >
       <canvas ref={canvasRef} />
-      {loading && <span className="hic-loading">Loading matrix…</span>}
+      {loading && <Loading variant="overlay" label="Loading matrix…" />}
       {displayedError && (
         <span className="hic-error">{displayedError.message}</span>
       )}

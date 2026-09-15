@@ -26,6 +26,7 @@ import { fetchBigwig, fetchDerivedActivity } from '../../../api/client';
 import type { Sample } from '../../../api/types';
 import { useViewport } from '../../../store/viewport';
 import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
+import { Loading } from '../../feedback/Loading';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
 import {
   buildBigwig,
@@ -181,7 +182,7 @@ export function BigwigStacked({
           <PlotlyTrack data={plot.data} layout={plot.layout} height={stackedLaneHeight} />
         )}
         {useActivity && <ModelSourceBadge source={activitySource ?? 'ab_proxy'} />}
-        {overlayLoading && <span className="track-loading">…</span>}
+        {overlayLoading && <Loading variant="overlay" size="small" />}
         {overlayError && (
           <span className="track-error" title={overlayError.message}>
             !

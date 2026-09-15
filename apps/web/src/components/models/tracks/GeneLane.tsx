@@ -18,6 +18,7 @@ import { fetchBed } from '../../../api/client';
 import type { GeneRecord } from '../../../api/types';
 import { usePanelViewport } from '../../../hooks/usePanelViewport';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
+import { Loading } from '../../feedback/Loading';
 import { buildGene } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
 
@@ -76,7 +77,7 @@ export function GeneLane({
         data-track-name="gene"
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <Loading variant="overlay" size="small" />}
         {error && (
           <span className="track-error" title={error.message}>
             !

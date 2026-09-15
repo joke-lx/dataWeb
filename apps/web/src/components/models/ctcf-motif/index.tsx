@@ -25,6 +25,7 @@ import type { CtcfGenotypeResponse, CtcfMotifResponse } from '../../../api/types
 import { CtcfGenotypePie } from './CtcfGenotypePie';
 import { CtcfMotifLogo } from './CtcfMotifLogo';
 import { useViewport } from '../../../store/viewport';
+import { Loading } from '../../../components/feedback/Loading';
 
 /**
  * CTCF motif viewer 根组件。包含两块面板：
@@ -87,7 +88,7 @@ export function CtcfModel(): JSX.Element {
       {motif ? (
         <CtcfMotifLogo matrix={motif.matrix} consensus={motif.consensus} />
       ) : motifLoading ? (
-        <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.loadingMotif')}</p></div>
+        <Loading variant="block" label={t('ctcf.viewer.loadingMotif')} />
       ) : motifError ? (
         <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.error', { message: motifError })}</p></div>
       ) : null}
@@ -96,7 +97,7 @@ export function CtcfModel(): JSX.Element {
       {geno ? (
         <CtcfGenotypePie records={geno.records} />
       ) : genoLoading ? (
-        <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.loadingGenotype')}</p></div>
+        <Loading variant="block" label={t('ctcf.viewer.loadingGenotype')} />
       ) : genoError ? (
         <div className="ctcf-motif-panel"><p>{t('ctcf.viewer.error', { message: genoError })}</p></div>
       ) : null}

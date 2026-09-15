@@ -35,6 +35,7 @@ import './compare.css';
  * Compare 工作区路由组件。
  */
 export function Compare(): JSX.Element {
+  const { t } = useAppIntl();
   const { samples, isLoading } = useSampleCatalog();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -136,7 +137,9 @@ export function Compare(): JSX.Element {
         />
 
         <div className="compare-workspace__panels">
-          {added.length === 0 ? (
+          {isLoading ? (
+            <Loading variant="block" label={t('common.loading')} />
+          ) : added.length === 0 ? (
             dismissLanding ? (
               <div className="compare-empty">
                 <p>从左侧边栏「添加数据」选择样本开始对比</p>

@@ -22,6 +22,7 @@ import {
 import { usePanelViewport } from '../../../hooks/usePanelViewport';
 import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
+import { Loading } from '../../feedback/Loading';
 import { buildPc1Score } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
 
@@ -94,7 +95,7 @@ export function Pc1Lane({
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
         <ModelSourceBadge source={data?.source} />
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <Loading variant="overlay" size="small" />}
         {error && (
           <span className="track-error" title={error.message}>
             !

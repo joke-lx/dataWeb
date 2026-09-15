@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 
 import { fetchDerivedCtcfLoop, type DerivedLoopRecord, type DerivedSource } from '../../api/client';
 import { ModelSourceBadge } from '../feedback/ModelSourceBadge';
+import { Loading } from '../feedback/Loading';
 import { bpToPx } from '../../genomics/coords';
 import { usePanelViewport } from '../../hooks/usePanelViewport';
 import './overlay.css';
@@ -47,12 +48,14 @@ export function CTCFLoops({
   const viewport = usePanelViewport();
   const [records, setRecords] = useState<DerivedLoopRecord[]>([]);
   const [source, setSource] = useState<DerivedSource | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
 
   // 监听 sample/viewport 变化重新拉派生 loop；fetchDerivedCtcfLoop 内部走
   // react-query 不可见的直接 fetch(本组件单个 overlay 局部使用);abort 防过期覆盖
   useEffect(() => {
     const ctrl = new AbortController();
     const run = async () => {
+      setLoading(true);
       try {
         const data = await fetchDerivedCtcfLoop(
           sampleId,
@@ -65,6 +68,9 @@ export function CTCFLoops({
         setSource(data.source);
       } catch (e) {
         if ((e as Error).name !== 'AbortError') console.error('ctcf loops', e);
+      } finally {
+        if (!ctrl.signal.aborted) setLoading(false);
+      }
       }
     };
     void run();
@@ -81,6 +87,7 @@ export function CTCFLoops({
   return (
     <div className="ctcf-loops-wrap" style={{ position: 'relative' }}>
       <ModelSourceBadge source={source} />
+      {loading && <Loading variant="overlay" size="small" />}
       <svg
         className="ctcf-loops-overlay"
         width={width}

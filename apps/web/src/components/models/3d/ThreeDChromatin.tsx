@@ -31,6 +31,7 @@ import type { PeiRecord } from '../../../api/types';
 import { useCursor } from '../../../store/cursor';
 import { useViewport } from '../../../store/viewport';
 import { ModelSourceBadge } from '../../feedback/ModelSourceBadge';
+import { Loading } from '../../feedback/Loading';
 import './three-d-chromatin.css';
 
 interface ThreeDChromatinProps {
@@ -42,64 +43,10 @@ interface ThreeDChromatinProps {
   sampleId?: string;
 }
 
-// ─────── per-organ geometry params (mirrors chromatin3d.html:114-124) ────────
-//
-// seed 决定 PRNG 起点 → 决定 path 的随机形状
-// steps 决定随机游走步数 → 影响 path 长度/复杂度
-// markers 是路径上的"珠子"位置和颜色（t 是沿路径的归一化位置，0~1）
-//
-// 注意：seed 不同导致三个 panel 形状完全不同，视觉上"同物种不同组织"才有差异
-const ORGAN_PARAMS: Record<
-  ThreeDChromatinProps['organ'],
-  { seed: number; steps: number; markers: Array<{ t: number; color: number }> }
-> = {
-  liver: {
-    seed: 7,
-    steps: 80,
-    markers: [
-      { t: 0.16, color: 0x459f52 },  // green (enhancer)
-      { t: 0.26, color: 0x459f52 },
-      { t: 0.37, color: 0x459f52 },
-      { t: 0.52, color: 0x808080 },  // grey (promoter)
-      { t: 0.72, color: 0x808080 },
-    ],
-  },
-  muscle: {
-    seed: 23,
-    steps: 72,
-    markers: [{ t: 0.55, color: 0x808080 }],
-  },
-  brain: {
-    seed: 53,
-    steps: 80,
-    markers: [
-      { t: 0.12, color: 0x459f52 },  // green (enhancer)
-      { t: 0.27, color: 0x459f52 },
-      { t: 0.42, color: 0x808080 },  // grey (promoter)
-      { t: 0.63, color: 0x459f52 },
-      { t: 0.78, color: 0x808080 },
-    ],
-  },
-};
-
 // 防止 enhancer 数量爆炸；超过即截断，避免 GPU 顶点数失控
 const ENHANCER_LIMIT = 6;
 // loop 弧的管半径：与主 tube 一致（0.034），形成统一的视觉层级
 const LOOP_TUBE_RADIUS = 0.02;
-
-// ─────── deterministic PRNG / math (mirrors chromatin3d.html:29-51) ─────────
-//
-// mulberry32：32-bit 状态空间的简单 PRNG；同 seed 永远产生同序列
-// 这里用来"确定性生成 path"——同一个 organ 多次刷新页面看到的形状一致
-function mulberry32(seed: number) {
-  let a = seed | 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /**
  * rainbow(t) → 颜色
@@ -116,84 +63,6 @@ function rainbow(t: number): THREE.Color {
   const sat = 0.60 - 0.12 * clamped;     // 0.60→0.48
   const light = 0.58 + 0.08 * clamped;   // 0.58→0.66
   return new THREE.Color().setHSL(hue / 360, sat, light);
-}
-
-/**
- * 3D 随机游走 → Catmull-Rom 样条 → 归一化。
- * 三步走：
- *   1) 随机游走生成 steps 个控制点（方向向量加噪声后归一化）
- *   2) 用 Catmull-Rom 曲线插值，每对控制点间采 10 个点（保证 tube 足够光滑）
- *   3) 平移到原点 + 缩放到半径 1.25，便于不同 seed 的形状都能塞进 viewport
- *
- * 注意：归一化到固定半径意味着不同 organ 的"管子大小"在屏幕上看起来一致——只比较形状差异
- */
-/**
- * 平滑值噪声 + 余弦插值：确定性、处处连续，无折角。
- */
-function makeNoise(rng: () => number): (t: number) => number {
-  const lattice: number[] = [];
-  for (let i = 0; i < 64; i += 1) lattice.push(rng() * 2 - 1);
-  return (t: number) => {
-    const x = t * 8;
-    const i = Math.floor(x);
-    const f = x - i;
-    const u = (1 - Math.cos(f * Math.PI)) / 2;
-    const a = lattice[((i % 64) + 64) % 64];
-    const b = lattice[(((i + 1) % 64) + 64) % 64];
-    return a + (b - a) * u;
-  };
-}
-
-/**
- * fBm（分形布朗运动）：3 个 octave 叠加，振幅递减（0.6 / 0.3 / 0.1）。
- * 生成 fractal-globule 风格的自然丝滑弯曲——比正弦更"有机"，无规则感。
- */
-function makeFbm(rng: () => number): (t: number) => number {
-  const n1 = makeNoise(rng);
-  const n2 = makeNoise(rng);
-  const n3 = makeNoise(rng);
-  return (t: number) =>
-    n1(t) * 0.6 + n2(t * 2.13) * 0.3 + n3(t * 4.7) * 0.1;
-}
-
-function makePath(seed: number, steps: number): THREE.Vector3[] {
-  // fBm 噪声路径：每轴一条独立噪声曲线，低频主导 → 大尺度平滑弯曲，
-  // 高频只是细微起伏；整条纤维没有折角，弯曲丝滑自然。
-  const rng = mulberry32(seed);
-  const fx = makeFbm(rng);
-  const fy = makeFbm(rng);
-  const fz = makeFbm(rng);
-  const pts: THREE.Vector3[] = [];
-  const N = Math.max(24, steps);
-  for (let i = 0; i <= N; i += 1) {
-    const t = i / N;
-    pts.push(new THREE.Vector3(fx(t) * 1.15, fy(t) * 1.15, fz(t) * 0.7));
-  }
-
-  // Catmull-Rom 平滑（tension 0.5 最圆润），每段 20 个采样点
-  const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
-  const totalLen = pts.length - 1;
-  const ptsPerSeg = 20;
-  const smooth: THREE.Vector3[] = [];
-  for (let i = 0; i < totalLen; i += 1) {
-    for (let s = 0; s < ptsPerSeg; s += 1) {
-      smooth.push(curve.getPoint((i + s / ptsPerSeg) / totalLen));
-    }
-  }
-  smooth.push(pts[totalLen].clone());
-
-  // 归一化到半径 1.25：中心化 → 找最大距离 R → 缩放到 1.25 / R
-  const center = new THREE.Vector3(0, 0, 0);
-  for (const pt of smooth) center.add(pt);
-  center.divideScalar(smooth.length);
-  let R = 0;
-  const centred = smooth.map((pt) => {
-    const q = pt.clone().sub(center);
-    R = Math.max(R, q.length());
-    return q;
-  });
-  const scale = 1.25 / (R || 1);
-  return centred.map((q) => q.multiplyScalar(scale));
 }
 
 /**
@@ -237,28 +106,6 @@ function addTube(
 }
 
 /**
- * 在 path 上某点放一个 sphere marker，返回 mesh 以便后续查询位置。
- */
-function addSphere(
-  pos: THREE.Vector3,
-  radius: number,
-  color: number,
-  scene: THREE.Scene,
-): THREE.Mesh {
-  const geo = new THREE.SphereGeometry(radius, 24, 24);
-  const mat = new THREE.MeshPhysicalMaterial({
-    color,
-    roughness: 0.32,
-    metalness: 0.08,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.3,
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.copy(pos);
-  scene.add(mesh);
-  return mesh;
-}
-
 /**
  * 辉光 Sprite：canvas 径向渐变纹理 + AdditiveBlending，
  * 给 marker / enhancer / 高亮球加柔光光晕，提升 3D 质感。
@@ -419,18 +266,23 @@ export function ThreeDChromatin({
     const mount = mountRef.current;
     if (!mount) return undefined;
 
-    const { seed, steps, markers } = ORGAN_PARAMS[organ];
     // 真实数据优先：source === 'real' 且 coords ≥ 2 点时直接用后端归一化好的
-    // MDS 坐标构建 TubeGeometry；否则回退到 makePath 随机游走（任何 source 下都有几何）。
+    // MDS 坐标构建 TubeGeometry；否则显示空状态，不再生成假的随机游走纤维。
     const coords = threeDQuery.data?.coords;
     const useRealCoords =
       threeDQuery.data?.source === 'real' &&
       coords !== undefined &&
       coords.length >= 2;
-    // 原始坐标点：真实 MDS 每 bin 一个点；mock 是随机游走控制点
-    const pathRaw = useRealCoords
-      ? coords.map(([x, y, z]) => new THREE.Vector3(x, y, z))
-      : makePath(seed, steps);
+
+    if (!useRealCoords) {
+      // 无真实 Hi-C 矩阵：显示空状态，不创建 WebGL scene
+      mount.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:center;height:100%;' +
+        'color:#8a919c;font-size:13px;font-family:system-ui;">无真实 Hi-C 数据，无法重建 3D 结构</div>';
+      return () => { mount.innerHTML = ''; };
+    }
+
+    const pathRaw = coords.map(([x, y, z]) => new THREE.Vector3(x, y, z));
     // 真实坐标必须和 mock 一样做中心化+缩放到半径 1.25，
     // 否则 addTube 的颜色公式 (len+1.25)/2.5 会错乱（质心偏移→颜色按到原点距离而非沿路径渐变）
     let normalizedRaw = pathRaw;
@@ -494,23 +346,8 @@ export function ThreeDChromatin({
     // 所有 marker 辉光 sprite：随 effect cleanup 统一 dispose
     const glowSprites: THREE.Sprite[] = [];
 
-    // ── 路径标记球 ─────────────────────────────────────────────────────
-    // 把球和位置都存下来——后面 attach enhancer 时要复用球位置（作为 promoter 锚点）
-    const sphereMeshes: THREE.Mesh[] = [];
-    const spherePositions: THREE.Vector3[] = [];
-    for (const m of markers) {
-      const idx = Math.round(m.t * (path.length - 1));
-      spherePositions.push(path[idx].clone());
-      sphereMeshes.push(addSphere(path[idx], 0.06, m.color, scene));
-      const glow = makeGlowSprite(m.color, 0.42, 0.5);
-      glow.position.copy(path[idx]);
-      scene.add(glow);
-      glowSprites.push(glow);
-    }
-
     // ── 每 bin 一颗珠子（beads-on-a-string，细粒度主体）──────────────
-    // 真实数据：珠子数 = bin 数（coords 长度）；mock：均匀取 20 颗
-    const beadCount = useRealCoords ? coords.length : 20;
+    const beadCount = coords.length;
     const beads = addBeads(path, beadCount, scene);
 
     // ── 交互 group（PEI enhancer 球 + loop 弧）───────────────────────
@@ -548,8 +385,8 @@ export function ThreeDChromatin({
         // enhancer 取区间中点，promoter 取 start - distance_kb（向 5' 端回退）
         const enhancerMid = (record.start + record.end) / 2;
         const promoterBp = record.start - (record.distance_kb || 0) * 1000;
-        const promoterPos = path[posToPathIdx(promoterBp)] ??
-          spherePositions[index % spherePositions.length];
+        const promoterIdx = posToPathIdx(promoterBp);
+        const promoterPos = path[promoterIdx] ?? path[Math.floor(path.length / 2)];
         const enhancerPos = path[posToPathIdx(enhancerMid)] ?? promoterPos.clone();
 
         const enhancer = new THREE.Mesh(enhancerGeo, enhancerMat);
@@ -914,6 +751,9 @@ export function ThreeDChromatin({
       aria-label={`3D chromatin folding model for ${organ}`}
     >
       <ModelSourceBadge source={threeDQuery.data?.source} />
+      {(threeDQuery.isLoading || peiQuery.isLoading) && (
+        <Loading variant="overlay" size="small" />
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import type { JSX } from 'react';
 import { fetchSV, type SVRecord } from '../../../api/client';
 import { useViewport } from '../../../store/viewport';
 import { PlotlyTrack } from '../../render-kit/plotly/PlotlyTrack';
+import { Loading } from '../../feedback/Loading';
 import { buildSv } from '../../render-kit/plotlyBuilders';
 import '../../render-kit/lane.css';
 
@@ -70,7 +71,7 @@ export function SvLane({
         data-track-name="sv"
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {isLoading && <span className="track-loading">…</span>}
+        {isLoading && <Loading variant="overlay" size="small" />}
         {error && (
           <span className="track-error" title={error.message}>
             !
