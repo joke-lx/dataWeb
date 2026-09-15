@@ -312,6 +312,12 @@ export function GenomeBrowserView({
       case 'hic':
         // loop：Hi-C + CTCF loop 弧线 overlay（参考图 Loops lane）。
         if (id === 'loop') {
+          // SVG 宽度和左边距都对齐实测的 Hi-C canvas，保证弧线与热图像素级对齐。
+          // hicCanvasBox 未就绪时回退到旧逻辑（gutter + 内容宽）。
+          const loopsWidth = hicCanvasBox.width > 0 ? hicCanvasBox.width : plotWidth;
+          const loopsOffset = hicCanvasBox.width > 0
+            ? hicCanvasBox.left - LABEL_GUTTER
+            : 0;
           return (
             <div
               className="gbv-lane gbv-lane--loops"
@@ -322,7 +328,14 @@ export function GenomeBrowserView({
                 <span className="lane-sample">{sampleId}</span>
               </div>
               <div className="gbv-lane__content">
-                <CTCFLoops sampleId={sampleId} height={LOOPS_HEIGHT} width={plotWidth} onLoadingChange={(loading) => reportLoading(id, loading)} />
+                <div style={{ marginLeft: `${loopsOffset}px`, width: `${loopsWidth}px` }}>
+                  <CTCFLoops
+                    sampleId={sampleId}
+                    height={LOOPS_HEIGHT}
+                    width={loopsWidth}
+                    onLoadingChange={(loading) => reportLoading(id, loading)}
+                  />
+                </div>
               </div>
             </div>
           );

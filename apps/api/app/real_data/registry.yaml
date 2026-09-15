@@ -14,6 +14,9 @@ samples:
     ab: 01.AB_compartment/Brain_BF3.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_BF3.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_BF3.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Tissue/Brain.merged.RNA_seq.bam.50bp.bw
 - id: Brain_BF4
   tissue: Brain
   breed: Bama
@@ -25,6 +28,9 @@ samples:
     ab: 01.AB_compartment/Brain_BF4.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_BF4.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_BF4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Tissue/Brain.merged.RNA_seq.bam.50bp.bw
 - id: Brain_BM4
   tissue: Brain
   breed: Bama
@@ -36,6 +42,9 @@ samples:
     ab: 01.AB_compartment/Brain_BM4.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_BM4.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_BM4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Tissue/Brain.merged.RNA_seq.bam.50bp.bw
 - id: Brain_BM5
   tissue: Brain
   breed: Bama
@@ -47,6 +56,9 @@ samples:
     ab: 01.AB_compartment/Brain_BM5.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_BM5.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_BM5.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Tissue/Brain.merged.RNA_seq.bam.50bp.bw
 - id: Brain_TF4
   tissue: Brain
   breed: Tibetan
@@ -58,6 +70,9 @@ samples:
     ab: 01.AB_compartment/Brain_TF4.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_TF4.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_TF4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Breed/Brain.Tibetan.reads.bam.50bp.bw
 - id: Brain_TF5
   tissue: Brain
   breed: Tibetan
@@ -69,6 +84,9 @@ samples:
     ab: 01.AB_compartment/Brain_TF5.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_TF5.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_TF5.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Breed/Brain.Tibetan.reads.bam.50bp.bw
 - id: Brain_TM3
   tissue: Brain
   breed: Tibetan
@@ -80,6 +98,9 @@ samples:
     ab: 01.AB_compartment/Brain_TM3.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_TM3.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_TM3.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Breed/Brain.Tibetan.reads.bam.50bp.bw
 - id: Brain_TM4
   tissue: Brain
   breed: Tibetan
@@ -91,6 +112,9 @@ samples:
     ab: 01.AB_compartment/Brain_TM4.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Brain_TM4.IS_split.TAD.length.200k
     pei: 03.PEI/Brain_TM4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
+    h3k27ac: 04.Chip-seq/Tissue/Brain_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Brain_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Brain/Breed/Brain.Tibetan.reads.bam.50bp.bw
 - id: Liver_BF3_180d
   tissue: Liver
   breed: Bama
@@ -100,6 +124,8 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_BF3.180d.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BF3_28d
   tissue: Liver
   breed: Bama
@@ -109,6 +135,8 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_BF3.28d.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BF3
   tissue: Liver
   breed: Bama
@@ -121,6 +149,8 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_BF3.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_BF3.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BF4
   tissue: Liver
   breed: Bama
@@ -133,6 +163,8 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_BF4.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_BF4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BF5
   tissue: Liver
   breed: Bama
@@ -144,6 +176,8 @@ samples:
     ab: 01.AB_compartment/Liver_BF5.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Liver_BF5.IS_split.TAD.length.200k
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BM2_28d
   tissue: Liver
   breed: Bama
@@ -153,6 +187,8 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_BM2.28d.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BM2
   tissue: Liver
   breed: Bama
@@ -164,6 +200,8 @@ samples:
     ab: 01.AB_compartment/Liver_BM2.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Liver_BM2.IS_split.TAD.length.200k
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BM4
   tissue: Liver
   breed: Bama
@@ -176,6 +214,8 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_BM4.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_BM4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BM5
   tissue: Liver
   breed: Bama
@@ -188,6 +228,8 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_BM5.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_BM5.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_BM8
   tissue: Liver
   breed: Bama
@@ -197,6 +239,8 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_BM8.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
 - id: Liver_TF2_28d
   tissue: Liver
   breed: Tibetan
@@ -206,6 +250,9 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_TF2.28d.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TF2
   tissue: Liver
   breed: Tibetan
@@ -217,6 +264,9 @@ samples:
     ab: 01.AB_compartment/Liver_TF2.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Liver_TF2.IS_split.TAD.length.200k
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TF4
   tissue: Liver
   breed: Tibetan
@@ -229,6 +279,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_TF4.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_TF4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TF5
   tissue: Liver
   breed: Tibetan
@@ -241,6 +294,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_TF5.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_TF5.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TF8
   tissue: Liver
   breed: Tibetan
@@ -250,6 +306,9 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_TF8.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TM3_180d
   tissue: Liver
   breed: Tibetan
@@ -259,6 +318,9 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_TM3.180d.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TM3_28d
   tissue: Liver
   breed: Tibetan
@@ -268,6 +330,9 @@ samples:
   real_files:
     tad: 02.TAD/boundary/Liver_TM3.28d.IS_split.TAD
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TM3
   tissue: Liver
   breed: Tibetan
@@ -280,6 +345,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_TM3.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_TM3.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TM4
   tissue: Liver
   breed: Tibetan
@@ -292,6 +360,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Liver_TM4.IS_split.TAD.length.200k
     pei: 03.PEI/Liver_TM4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Liver_TM5
   tissue: Liver
   breed: Tibetan
@@ -303,6 +374,9 @@ samples:
     ab: 01.AB_compartment/Liver_TM5.20kb.AB_Index.txt
     tad_200k: 02.TAD/boundary/cut200k/Liver_TM5.IS_split.TAD.length.200k
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Liver_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Liver_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Liver_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Liver/Breed/Liver.Tibetan.reads.bam.50bp.bw
 - id: Muscle_BF3
   tissue: Muscle
   breed: Bama
@@ -315,6 +389,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_BF3.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_BF3.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw
 - id: Muscle_BF4
   tissue: Muscle
   breed: Bama
@@ -327,6 +404,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_BF4.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_BF4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw
 - id: Muscle_BM4
   tissue: Muscle
   breed: Bama
@@ -339,6 +419,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_BM4.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_BM4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw
 - id: Muscle_BM5
   tissue: Muscle
   breed: Bama
@@ -351,6 +434,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_BM5.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_BM5.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw
 - id: Muscle_TF4
   tissue: Muscle
   breed: Tibetan
@@ -363,6 +449,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_TF4.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_TF4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw
 - id: Muscle_TF5
   tissue: Muscle
   breed: Tibetan
@@ -375,6 +464,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_TF5.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_TF5.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw
 - id: Muscle_TM3
   tissue: Muscle
   breed: Tibetan
@@ -387,6 +479,9 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_TM3.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_TM3.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw
 - id: Muscle_TM4
   tissue: Muscle
   breed: Tibetan
@@ -399,3 +494,6 @@ samples:
     tad_200k: 02.TAD/boundary/cut200k/Muscle_TM4.IS_split.TAD.length.200k
     pei: 03.PEI/Muscle_TM4.5kb.raw.PEI.xls.keep_PEIs.pick.FDR4_Dis25k.cut_0.2OE.keepbyFrequency
     chip_tissue_ATAC: 04.Chip-seq/Tissue/Muscle_merged_ATAC.bam.200bp.bw
+    h3k27ac: 04.Chip-seq/Tissue/Muscle_H3K27ac.merged.bam.200bp.bw
+    h3k4me3: 04.Chip-seq/Tissue/Muscle_H3K4me3.merged.bam.200bp.bw
+    rna_seq: 05.RNA-signal/Muscle/Tissue/Liver.merged.RNA_seq.bam.50bp.bw

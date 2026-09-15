@@ -69,7 +69,7 @@ export async function fetchBigwig(
   start: number,
   end: number,
   bins: number,
-): Promise<{ values: Float32Array; vmin: number; vmax: number }> {
+): Promise<{ values: Float32Array; vmin: number; vmax: number; source: 'real' | 'mock' }> {
   const params = new URLSearchParams({
     sample,
     track,
@@ -104,6 +104,8 @@ export async function fetchBigwig(
     values,
     vmin: headerVmin === null ? inferredMin : Number.parseFloat(headerVmin),
     vmax: headerVmax === null ? inferredMax : Number.parseFloat(headerVmax),
+    // 后端对无注册表映射的请求回退 mock，并在此 header 标记；前端据此决定是否降级 ab_proxy。
+    source: r.headers.get('X-Genomics-Source') === 'mock' ? 'mock' : 'real',
   };
 }
 

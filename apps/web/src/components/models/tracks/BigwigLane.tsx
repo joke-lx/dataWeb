@@ -12,9 +12,9 @@
  * 架构位置：aux 路径上唯一的 bigwig lane；主轨道走 `BigwigStacked`。
  *
  * Activity proxy (Hi-C 派生)：当 trackName 属于 `ACTIVITY_PROXY_TRACKS`（RNA-seq /
- * H3K4me3 / H3K27ac），我们没有真实测序数据，但 Hi-C 的 A/B compartment 与表达 /
- * 组蛋白修饰 / 开放性有强相关 —— 用 `fetchDerivedActivity` 给一个 [0, 1] 区间
- * 信号，UI 加 `ModelSourceBadge source="ab_proxy"` 标注。
+ * H3K4me3 / H3K27ac）且该样本在注册表中**没有**真实 bigwig 映射（后端 source=mock）时，
+ * 用 `fetchDerivedActivity` 给一个 [0, 1] 区间信号并标注 `ab_proxy`；有真实数据时
+ * 直接渲染真实 bigwig 并标注 `real`。
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -30,9 +30,9 @@ import '../../render-kit/lane.css';
 
 const BIGWIG_LANE_HEIGHT = 180;
 
-/** Activity proxy 适用的 track name —— Hi-C A/B 派生的表达/ChIP/ATAC 代理。 */
+/** 允许在无真实数据时降级到 Hi-C A/B 派生代理的 track name。 */
 const ACTIVITY_PROXY_TRACKS = new Set(['rna_seq', 'h3k4me3', 'h3k27ac']);
-const isActivityProxy = (t: string) => ACTIVITY_PROXY_TRACKS.has(t);
+const canProxy = (t: string) => ACTIVITY_PROXY_TRACKS.has(t);
 
 interface BigwigLaneProps {
   /** 当前样本 id。 */
@@ -64,41 +64,39 @@ export function BigwigLane({
   const viewportWidth = viewport.end - viewport.start;
   const bins = Math.max(50, Math.min(800, Math.ceil(viewportWidth / 1000)));
 
-  const useActivity = isActivityProxy(trackName);
+  const showProxyBadge = canProxy(trackName);
 
   // bins 进 queryKey——zoom/pan 触发 bins 变化 → 重新拉数据。
-  // activity 路径返回 {values: number[], source}；bigwig 路径返回 {values: Float32Array, vmin, vmax}。
-  // 显式标 union 让 useQuery 不挑错。
+  // 统一先请求真实 bigwig：后端无注册表映射时回退 mock 并在响应 header 标记 source=mock；
+  // 此时若该轨道允许代理（RNA-seq/H3K4me3/H3K27ac），改走 fetchDerivedActivity（ab_proxy）。
   type BigwigData =
-    | { values: Float32Array; vmin: number; vmax: number; source?: undefined }
+    | { values: Float32Array; vmin: number; vmax: number; source: 'real' | 'mock' }
     | { values: number[]; source: string };
   const { data, isLoading, error } = useQuery<BigwigData>({
-    queryKey: useActivity
-      ? ['derived-activity', sampleId, trackName, viewport.chr, viewport.start, viewport.end, bins]
-      : ['bigwig', sampleId, trackName, viewport.chr, viewport.start, viewport.end, bins],
-    queryFn: () =>
-      useActivity
-        ? fetchDerivedActivity(
-            sampleId,
-            viewport.chr,
-            viewport.start,
-            viewport.end,
-            viewport.bin,
-            bins,
-          ).then<BigwigData>((d) => ({
-            values: d.records.map((r) => r.score),
-            source: d.source,
-          }))
-        : fetchBigwig(
-            sampleId,
-            trackName,
-            viewport.chr,
-            viewport.start,
-            viewport.end,
-            bins,
-          ),
+    queryKey: ['bigwig', sampleId, trackName, viewport.chr, viewport.start, viewport.end, bins],
+    queryFn: async () => {
+      const res = await fetchBigwig(
+        sampleId,
+        trackName,
+        viewport.chr,
+        viewport.start,
+        viewport.end,
+        bins,
+      );
+      if (res.source === 'mock' && canProxy(trackName)) {
+        const derived = await fetchDerivedActivity(
+          sampleId,
+          viewport.chr,
+          viewport.start,
+          viewport.end,
+          viewport.bin,
+          bins,
+        );
+        return { values: derived.records.map((r) => r.score), source: derived.source };
+      }
+      return res;
+    },
     enabled: !!trackName,
-    
     staleTime: 30_000,
   });
 
@@ -109,7 +107,9 @@ export function BigwigLane({
       : new Float32Array(data.values)
     : undefined;
   const plot = buildBigwig(plotValues, viewport, trackName, height);
-  const source = data && 'source' in data ? data.source : undefined;
+  // real bigwig → source='real'（绿点）；ab_proxy 降级 → derived.source（'ab_proxy'）。
+  const source = data ? ('source' in data ? data.source : 'real') : undefined;
+  const isActivityData = data !== undefined && !(data.values instanceof Float32Array);
 
   return (
     <div className="lane" style={{ height: `${height}px` }}>
@@ -119,11 +119,11 @@ export function BigwigLane({
       </div>
       <div
         className="lane-content"
-        data-kind={useActivity ? 'activity' : 'bigwig'}
+        data-kind={isActivityData ? 'activity' : 'bigwig'}
         data-track-name={trackName}
       >
         <PlotlyTrack data={plot.data} layout={plot.layout} height={height} />
-        {useActivity && <ModelSourceBadge source={source ?? 'ab_proxy'} />}
+        {showProxyBadge && <ModelSourceBadge source={source ?? 'ab_proxy'} />}
         {isLoading && <Loading variant="overlay" size="small" />}
         {error && (
           <span className="track-error" title={error.message}>

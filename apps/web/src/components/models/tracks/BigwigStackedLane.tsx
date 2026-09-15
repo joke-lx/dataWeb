@@ -14,9 +14,9 @@
  * 架构位置：tracks 模型目录下的"多样本 bigwig"lane，被 `<TracksModel />`
  * 在主轨道 `kind === 'bigwig'` 分支调用。
  *
- * Activity proxy：当 trackName 属于 RNA/ChIP/ATAC 集合，没有真实数据，
- * 改用 `fetchDerivedActivity`（Hi-C A/B 派生的 [0,1] 信号）—— lane 加
- * `ModelSourceBadge source="ab_proxy"`。
+ * Activity proxy：当 trackName 属于 RNA/ChIP 集合且样本**无**真实 bigwig 映射
+ * （后端 source=mock）时，改用 `fetchDerivedActivity`（Hi-C A/B 派生的 [0,1] 信号）
+ * 并标注 `ab_proxy`；有真实数据时直接渲染并标注 `real`。
  */
 
 import { useEffect } from 'react';
@@ -36,9 +36,9 @@ import { buildBigwigStacked, type BigwigSeries } from './BigwigStacked';
 import { colorForTissue, type SampleColor } from './sampleColors';
 import '../../render-kit/lane.css';
 
-/** 与 BigwigLane 共享的 activity 代理白名单。 */
+/** 与 BigwigLane 共享的 activity 代理白名单（仅当样本无真实 bigwig 映射时启用）。 */
 const ACTIVITY_PROXY_TRACKS = new Set(['rna_seq', 'h3k4me3', 'h3k27ac']);
-const isActivityProxy = (t: string) => ACTIVITY_PROXY_TRACKS.has(t);
+const canProxy = (t: string) => ACTIVITY_PROXY_TRACKS.has(t);
 
 interface BigwigStackedProps {
   sampleIds: string[];
@@ -79,35 +79,37 @@ export function BigwigStacked({
   const viewportWidth = viewport.end - viewport.start;
   const bins = Math.max(50, Math.min(800, Math.ceil(viewportWidth / 1000)));
 
-  const useActivity = isActivityProxy(trackName);
+  const showProxyBadge = canProxy(trackName);
 
   // 用 useQueries 并行拉取——多个 query 共享 React Query 的 cache / dedup / retry 策略。
+  // 统一先请求真实 bigwig；无映射（source=mock）且轨道允许代理时降级 fetchDerivedActivity。
   const queries = useQueries({
     queries: sampleIds.map((id) => ({
-      queryKey: useActivity
-        ? ['derived-activity', id, trackName, viewport.chr, viewport.start, viewport.end, bins]
-        : ['bigwig-stacked', id, trackName, viewport.chr, viewport.start, viewport.end, bins],
-      queryFn: () =>
-        useActivity
-          ? fetchDerivedActivity(
-              id,
-              viewport.chr,
-              viewport.start,
-              viewport.end,
-              viewport.bin,
-              bins,
-            ).then((d) => ({ values: d.records.map((r) => r.score), source: d.source }))
-          : fetchBigwig(
-              id,
-              trackName,
-              viewport.chr,
-              viewport.start,
-              viewport.end,
-              bins,
-            ),
+      queryKey: ['bigwig-stacked', id, trackName, viewport.chr, viewport.start, viewport.end, bins],
+      queryFn: async () => {
+        const res = await fetchBigwig(
+          id,
+          trackName,
+          viewport.chr,
+          viewport.start,
+          viewport.end,
+          bins,
+        );
+        if (res.source === 'mock' && canProxy(trackName)) {
+          const derived = await fetchDerivedActivity(
+            id,
+            viewport.chr,
+            viewport.start,
+            viewport.end,
+            viewport.bin,
+            bins,
+          );
+          return { values: derived.records.map((r) => r.score), source: derived.source };
+        }
+        return res;
+      },
       enabled: !!trackName,
-      
-    staleTime: 30_000,
+      staleTime: 30_000,
     })),
   });
 
@@ -166,10 +168,15 @@ export function BigwigStacked({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlayLoading]);
-  // activity 代理时所有 sample 共享同一 source（ab_proxy）
-  const activitySource = queries[0]?.data && 'source' in queries[0].data
-    ? (queries[0].data as { source: string }).source
-    : undefined;
+  // 数据来源角标：代理轨道显示真实数据（real）或降级代理（ab_proxy）。
+  // 多样本混合时任一样本降级代理 → 标注 ab_proxy（保守提示）。
+  const anyProxy = queries.some(
+    (q) => q.data && 'source' in q.data && (q.data as { source: string }).source === 'ab_proxy',
+  );
+  const anyReal = queries.some(
+    (q) => q.data && 'source' in q.data && (q.data as { source: string }).source === 'real',
+  );
+  const isActivityData = anyProxy;
 
   return (
     <div
@@ -186,7 +193,7 @@ export function BigwigStacked({
       </div>
       <div
         className="lane-content"
-        data-kind={useActivity ? 'activity' : 'bigwig'}
+        data-kind={isActivityData ? 'activity' : 'bigwig'}
         data-track-name={trackName}
       >
         {series.every((s) => !s.values) ? (
@@ -197,7 +204,9 @@ export function BigwigStacked({
         ) : (
           <PlotlyTrack data={plot.data} layout={plot.layout} height={stackedLaneHeight} />
         )}
-        {useActivity && <ModelSourceBadge source={activitySource ?? 'ab_proxy'} />}
+        {showProxyBadge && (
+          <ModelSourceBadge source={anyProxy ? 'ab_proxy' : anyReal ? 'real' : undefined} />
+        )}
         {overlayLoading && <Loading variant="overlay" size="small" />}
         {overlayError && (
           <span className="track-error" title={overlayError.message}>

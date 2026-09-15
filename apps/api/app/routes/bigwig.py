@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api", tags=["bigwig"])
 logger = logging.getLogger(__name__)
 
 
-def _binary_response(values: NDArray, vmin: float, vmax: float) -> Response:
+def _binary_response(values: NDArray, vmin: float, vmax: float, source: str) -> Response:
     return Response(
         content=values.tobytes(),
         media_type="application/octet-stream",
@@ -39,6 +39,7 @@ def _binary_response(values: NDArray, vmin: float, vmax: float) -> Response:
             "X-Genomics-Shape": f"{values.shape[0]}",
             "X-Genomics-Vmin": repr(float(vmin)),
             "X-Genomics-Vmax": repr(float(vmax)),
+            "X-Genomics-Source": source,
         },
     )
 
@@ -58,5 +59,5 @@ async def bigwig_values_endpoint(
     except FileNotFoundError as error:
         logger.debug("Falling back to mock bigwig for %s/%s: %s", sample, track, error)
         arr = bigwig_track(sample, chr, start, end, bins, track)
-        return _binary_response(arr, float(arr.min()), float(arr.max()))
-    return _binary_response(result["values"], result["vmin"], result["vmax"])
+        return _binary_response(arr, float(arr.min()), float(arr.max()), "mock")
+    return _binary_response(result["values"], result["vmin"], result["vmax"], "real")
