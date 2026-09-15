@@ -5,13 +5,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app import db
 from app.routes import bed, bigwig, ctcf, ctcf_motif, derived, differential, download, hic, samples, species, sv
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Placeholder for startup/shutdown logic (DB pools, caches, etc.).
+    # Warm up the optional DB engine at startup so misconfiguration fails fast;
+    # when DATAWEB_DATABASE_URL is unset the layer stays disabled.
+    if db.is_enabled():
+        db.ping()
     yield
+    db.dispose()
 
 
 app = FastAPI(
@@ -34,6 +39,13 @@ app.add_middleware(
 async def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
+
+
+@app.get("/api/health/db")
+async def health_db() -> dict:
+    """Database connectivity check (best-effort; never raises)."""
+    status = db.ping()
+    return {"database": status["ok"], "error": status["error"]}
 
 
 # Mock data routes (Task B + Task J)

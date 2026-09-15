@@ -165,7 +165,7 @@ const EXPLORE_META: Record<string, ExploreMeta> = {
   },
   '3d': {
     title: '3D chromatin structure',
-    subtitle: 'Per-organ random-walk backbone with PEI enhancer arcs',
+    subtitle: 'Hi-C derived 3D fold with PEI enhancer arcs',
     legend: [
       { term: 'Tube', descKey: 'explore.legend.threeD.tube' },
       { term: 'Sphere', descKey: 'explore.legend.threeD.sphere' },

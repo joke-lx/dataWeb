@@ -131,6 +131,35 @@ export function Database(): JSX.Element {
     };
   }, [all]);
 
+  // 物种汇总：按 Pig / Chicken 统计样品数及各特征维度去重数。
+  // 物种列表与首页一致；暂无样本的物种如实显示 0。
+  const summary = useMemo(() => {
+    const forSpecies = (sp: string) => {
+      const rows = all.filter((r) => r.species === sp);
+      const uniqCount = (pick: (r: DatasetRow) => string | undefined) =>
+        new Set(rows.map(pick).filter(Boolean)).size;
+      return {
+        samples: rows.length,
+        tissues: uniqCount((r) => r.tissue),
+        breeds: uniqCount((r) => r.breed),
+        devStages: uniqCount((r) => r.dev_stage),
+      };
+    };
+    return { pig: forSpecies('pig'), chicken: forSpecies('chicken') };
+  }, [all]);
+
+  const summaryRows: Array<{
+    key: string;
+    label: string;
+    pig: number;
+    chicken: number;
+  }> = [
+    { key: 'samples', label: t('database.summary.samples'), pig: summary.pig.samples, chicken: summary.chicken.samples },
+    { key: 'tissues', label: t('database.summary.tissues'), pig: summary.pig.tissues, chicken: summary.chicken.tissues },
+    { key: 'breeds', label: t('database.summary.breeds'), pig: summary.pig.breeds, chicken: summary.chicken.breeds },
+    { key: 'devStages', label: t('database.summary.devStages'), pig: summary.pig.devStages, chicken: summary.chicken.devStages },
+  ];
+
   const onSearchChange = (next: string) => {
     setQ(next);
     setPage(1);
@@ -301,6 +330,29 @@ export function Database(): JSX.Element {
         <div className="db-container">
           {/* 筛选区 */}
           <div className="db-filter-panel">
+            {/* 物种汇总对比表：猪/鸡的样品数与特征统计 */}
+            <div className="db-summary">
+              <div className="db-summary-title">{t('database.summary.title')}</div>
+              <table className="db-summary-table">
+                <thead>
+                  <tr>
+                    <th>{t('database.summary.metric')}</th>
+                    <th>{t('common.species.pig')}</th>
+                    <th>{t('common.species.chicken')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summaryRows.map((row) => (
+                    <tr key={row.key}>
+                      <td>{row.label}</td>
+                      <td>{row.pig}</td>
+                      <td>{row.chicken}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
             <div className="db-filter-title">
               <FilterOutlined /> {t('database.filter.title')}
             </div>

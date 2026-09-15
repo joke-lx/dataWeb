@@ -22,6 +22,7 @@ deterministic mock generator so existing UI never breaks — identical to how
 from __future__ import annotations
 
 import logging
+import math
 from typing import Annotated, Any
 
 import numpy as np
@@ -65,6 +66,11 @@ def _load_real_matrix(
 def _bin_size_for(start: int, end: int, bin_bp: int) -> int:
     """Round requested bp-bin down to a sensible slice bin size."""
     return max(1, bin_bp)
+
+# Classical MDS is O(n^3) and a 3D structure beyond a few hundred beads is
+# neither readable nor cheap to render. Coarsen the effective bin so the
+# three_d endpoint never builds a matrix larger than this.
+MAX_THREE_D_BINS = 500
 
 
 @router.get("/derived/tad_boundary")
@@ -257,16 +263,24 @@ async def derived_three_d(
     sub-matrix when available, the deterministic mock matrix otherwise — so the
     3D model is always derived from Hi-C contact data, never decorative geometry.
 
+    When the requested interval would yield more than ``MAX_THREE_D_BINS``
+    bins, the effective bin is coarsened first: MDS is O(n^3) and a structure
+    of thousands of beads is neither renderable nor readable. The returned
+    coords still span the whole requested region (the frontend maps each
+    coordinate to bp via ``start + i * (end-start) / n``).
+
     Returns ``{"coords": [[x,y,z], ...], "n_bins": N, "source": "real"|"mock"}``.
     """
-    mat, is_real = _load_real_matrix(sample, chr, start, end, bin)
+    span = end - start
+    eff_bin = max(1, max(bin, math.ceil(span / MAX_THREE_D_BINS)))
+    mat, is_real = _load_real_matrix(sample, chr, start, end, eff_bin)
     if not is_real or mat is None:
         logger.debug("Falling back to mock three_d for %s/%s", sample, chr)
-        mat, _, _ = mock_hic_matrix(sample, chr, start, end, bin)
+        mat, _, _ = mock_hic_matrix(sample, chr, start, end, eff_bin)
         is_real = False
     if mat is None or mat.size == 0:
         return {"coords": [], "n_bins": 0, "source": "mock"}
-    coords = HiCCoords(chrom=chr, start=start, end=end, bin_size=_bin_size_for(start, end, bin))
+    coords = HiCCoords(chrom=chr, start=start, end=end, bin_size=eff_bin)
     result = get_strategy("three_d").compute(coords, {"mat": mat})
     coords_array = np.asarray(result.values, dtype=np.float32)
     return {

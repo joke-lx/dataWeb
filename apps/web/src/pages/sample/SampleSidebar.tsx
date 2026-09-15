@@ -144,7 +144,7 @@ export function SampleSidebar({
           {t('compare.workspace.saveSession', 'Save Session')}
         </button>
         <label className="sample-sidebar__sync">
-          <span>{t('compare.workspace.sync', 'Synchronize All Charts')}</span>
+          <span>{t('compare.workspace.syncCharts')}</span>
           <span className="sample-sidebar__sync-actions">
             <button type="button" className="sample-sidebar__sync-icon" aria-label="refresh">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">

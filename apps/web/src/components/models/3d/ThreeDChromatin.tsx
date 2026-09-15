@@ -46,8 +46,8 @@ interface ThreeDChromatinProps {
 
 // 防止 enhancer 数量爆炸；超过即截断，避免 GPU 顶点数失控
 const ENHANCER_LIMIT = 6;
-// loop 弧的管半径：与主 tube 一致（0.034），形成统一的视觉层级
-const LOOP_TUBE_RADIUS = 0.02;
+// loop 弧的管半径：与主 tube 一致（0.008），发丝级视觉层级
+const LOOP_TUBE_RADIUS = 0.008;
 
 /**
  * rainbow(t) → 颜色
@@ -73,13 +73,14 @@ function rainbow(t: number): THREE.Color {
  */
 /**
  * 把 path 转成 rainbow 渐变的 tube 几何并加到 scene。
- * 半径参数化：细粒度建模下主纤维更细（0.028），让"每 bin 一颗珠子"成为视觉主体。
+ * 半径参数化：发丝级细管（0.008，480px 面板默认视距 ≈ 4-5px），
+ * 让"每 bin 一颗珠子"成为视觉主体，纤维只作骨架。
  * 分段数随 path 长度加密（每点 3 段起步，下限 200）——加密后的路径保证折角平滑。
  */
 function addTube(
   path: THREE.Vector3[],
   scene: THREE.Scene,
-  radius = 0.016,
+  radius = 0.008,
 ): void {
   const curve = new THREE.CatmullRomCurve3(path, false, 'catmullrom', 0);
   const segments = Math.max(200, path.length * 3);
@@ -388,10 +389,13 @@ export function ThreeDChromatin({
       if (enhancers.length === 0) return;
 
       enhancers.forEach((record, index) => {
-        // 把基因组位置映射到 path 索引：path[i] 对应 viewport.start + i * viewport.bin
+        // 把基因组位置映射到 path 索引。后端为控制 MDS 规模会对大区间做 bin
+        // 粗化，坐标点数可能少于视口 bin 数；因此按「区间跨度 / 坐标数」把
+        // path[i] 视为区间内均匀分布的基因组位置，而不是用 viewport.bin。
+        const span = Math.max(1, viewport.end - viewport.start);
         const posToPathIdx = (bp: number): number => {
-          const frac = (bp - viewport.start) / (viewport.bin || 1);
-          return Math.max(0, Math.min(path.length - 1, Math.round(frac)));
+          const frac = (bp - viewport.start) / span;
+          return Math.max(0, Math.min(path.length - 1, Math.round(frac * (path.length - 1))));
         };
         // enhancer 取区间中点，promoter 取 start - distance_kb（向 5' 端回退）
         const enhancerMid = (record.start + record.end) / 2;
@@ -438,7 +442,7 @@ export function ThreeDChromatin({
           'catmullrom',
           0.5,
         );
-        const arcGeo = new THREE.TubeGeometry(arcCurve, 32, LOOP_TUBE_RADIUS, 6, false);
+        const arcGeo = new THREE.TubeGeometry(arcCurve, 32, LOOP_TUBE_RADIUS, 10, false);
 
         // 采样 tube 彩虹渐变的颜色：用与 tube 着色一致的公式
         // 使弧线两端接到 tube 时颜色匹配，视觉上自然融合
@@ -673,8 +677,12 @@ export function ThreeDChromatin({
         return;
       }
       const idx = hits[0].object.userData.pathIdx as number;
-      const bp = viewport.start + idx * viewport.bin;
-      const bpEnd = bp + viewport.bin;
+      // 后端对大区间会粗化 bin，坐标数可能少于视口 bin 数；
+      // 因此按「区间跨度 / 坐标数」均匀映射，而不是用 viewport.bin。
+      const span = Math.max(1, viewport.end - viewport.start);
+      const binBp = span / path.length;
+      const bp = viewport.start + idx * binBp;
+      const bpEnd = bp + binBp;
       tooltip.textContent = `${viewport.chr}:${fmtBp(bp)} – ${fmtBp(bpEnd)}`;
       tooltip.style.left = `${event.clientX - rect.left + 12}px`;
       tooltip.style.top = `${event.clientY - rect.top - 28}px`;
@@ -766,7 +774,10 @@ export function ThreeDChromatin({
         aria-label={`3D chromatin folding model for ${organ}`}
       />
       <ModelSourceBadge source={threeDQuery.data?.source} />
-      {(threeDQuery.isLoading || peiQuery.isLoading || !sceneReady) && (
+      {(threeDQuery.isLoading ||
+        (threeDQuery.isFetching && threeDQuery.isPlaceholderData) ||
+        peiQuery.isLoading ||
+        !sceneReady) && (
         <Loading variant="overlay" label={t('common.loading')} />
       )}
     </div>

@@ -17,9 +17,15 @@ dependencies = [
 # versions; keep it opt-in so the dev install doesn't break on 3.13/3.14.
 # Install with `pip install -e '.[bw]'` when you actually need to read
 # binary .bw tracks.
+# SQLAlchemy + psycopg are opt-in too (install with `pip install -e '.[db]'`):
+# the app runs fine without a database — reads fall back to files/mock.
 
 [project.optional-dependencies]
 bw = ["pyBigWig>=0.3.22"]
+db = [
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.1",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

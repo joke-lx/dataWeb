@@ -173,3 +173,43 @@ def test_derived_three_d_route_empty_mock_matrix_returns_empty() -> None:
     assert resp["source"] == "mock"
     assert resp["coords"] == []
     assert resp["n_bins"] == 0
+
+
+def test_derived_three_d_route_caps_huge_regions() -> None:
+    """Large intervals coarsen the effective bin: n_bins stays ≤ MAX_THREE_D_BINS.
+
+    MDS is O(n^3) — a 300 Mb / 50 kb request would otherwise build a 6000-bin
+    matrix and take tens of seconds (white screen + no loading on the frontend).
+    """
+    import asyncio
+
+    from app.routes import derived as derived_routes
+    from app.routes.derived import MAX_THREE_D_BINS
+
+    original = derived_routes._load_real_matrix
+
+    def _no_real_matrix(*args, **kwargs):
+        return None, False
+
+    derived_routes._load_real_matrix = _no_real_matrix  # type: ignore[assignment]
+    try:
+        resp = asyncio.run(
+            derived_routes.derived_three_d(
+                "Brain_BF3", "chr1", 1_000_000, 301_000_000, 50_000
+            )
+        )
+    finally:
+        derived_routes._load_real_matrix = original
+
+    assert resp["source"] == "mock"
+    assert 0 < resp["n_bins"] <= MAX_THREE_D_BINS
+    assert len(resp["coords"]) == resp["n_bins"]
+    assert all(len(pt) == 3 for pt in resp["coords"])
+
+    # 小区域不受粗化影响：坐标数仍按请求 bin 计算（真实或 mock 数据都是 40）
+    resp_small = asyncio.run(
+        derived_routes.derived_three_d(
+            "Brain_BF3", "chr1", 1_000_000, 3_000_000, 50_000
+        )
+    )
+    assert resp_small["n_bins"] == 40
